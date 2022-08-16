@@ -21,11 +21,31 @@
  *                                                                         *
  ***************************************************************************/
 """
+import time
+
+import numpy as np
+import cv2
+
+from PyQt5.QtCore import QByteArray
+from PyQt5.QtGui import QPixmap
+from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+from qgis.core import QgsRectangle
+from qgis.core import QgsMessageLog
+from qgis.core import QgsApplication
+from qgis.core import QgsTask
+from qgis.core import QgsProject
+from qgis.core import QgsCoordinateTransform
+from qgis.gui import QgisInterface
+from qgis.core import Qgis
+import qgis
+
 # Initialize Qt resources from file resources.py
+from .common.defines import PLUGIN_NAME, LOG_TAB_NAME
 from .resources import *
+
 
 # Import the code for the DockWidget
 from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
@@ -35,7 +55,7 @@ import os.path
 class DeepSegmentationFramework:
     """QGIS Plugin Implementation."""
 
-    def __init__(self, iface):
+    def __init__(self, iface: QgisInterface):
         """Constructor.
 
         :param iface: An interface instance that will be passed to this class
@@ -72,7 +92,6 @@ class DeepSegmentationFramework:
 
         self.pluginIsActive = False
         self.dockwidget = None
-
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -225,8 +244,227 @@ class DeepSegmentationFramework:
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
+            self.dockwidget.do_something.connect(self._do_something)
 
-            # show the dockwidget
-            # TODO: fix to allow choice of dock location
-            self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
+            self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
+
+    def round_extent(self, extent, units_per_pixel_xy: tuple):
+        # rounded to layer "grid" for pixels. Grid starts at rlayer_extent.xMinimum
+        # with resolution of rlayer_units_per_pixel
+        x_min = int(extent.xMinimum() / units_per_pixel_xy[0]) * units_per_pixel_xy[0]
+        x_max = int(extent.xMaximum() / units_per_pixel_xy[0]) * units_per_pixel_xy[0]
+        y_min = int(extent.yMinimum() / units_per_pixel_xy[1]) * units_per_pixel_xy[1]
+        y_max = int(extent.yMaximum() / units_per_pixel_xy[1]) * units_per_pixel_xy[1]
+        extent.setXMinimum(x_min)
+        extent.setXMaximum(x_max)
+        extent.setYMinimum(y_min)
+        extent.setYMaximum(y_max)
+        return extent
+
+    def _show_active_raster_as_image(self, expected_meters_per_pixel: float = 0.03):
+        rlayer = self.iface.activeLayer()
+        rlayer_extent = rlayer.extent()
+        rlayer_units_per_pixel = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
+
+        # transform visible extent from mapCanvas CRS to layer CRS
+        active_extent_canvas_crs = self.iface.mapCanvas().extent()
+        canvas_crs = self.iface.mapCanvas().mapSettings().destinationCrs()
+        t = QgsCoordinateTransform()
+        t.setSourceCrs(canvas_crs)
+        t.setDestinationCrs(rlayer.crs())
+        active_extent = t.transform(active_extent_canvas_crs)
+
+        active_extent_intersect = active_extent.intersect(rlayer_extent)
+        active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
+
+        expected_units_per_pixel = expected_meters_per_pixel  # for EPSG32633
+        expected_units_per_pixel_2d = expected_units_per_pixel, expected_units_per_pixel
+        # to get all pixels - use the 'rlayer_units_per_pixel' instead of 'expected_units_per_pixel_2d'
+        image_size = int((active_extent_rounded.width()) / expected_units_per_pixel_2d[0]), \
+                     int((active_extent_rounded.height()) / expected_units_per_pixel_2d[1])
+
+        band_count = rlayer.bandCount()
+        band_data = []
+
+        # enable resampling
+        data_provider = rlayer.dataProvider()
+        data_provider.enableProviderResampling(True)
+        original_resampling_method = data_provider.zoomedInResamplingMethod()
+        data_provider.setZoomedInResamplingMethod(data_provider.ResamplingMethod.Bilinear)
+        data_provider.setZoomedOutResamplingMethod(data_provider.ResamplingMethod.Bilinear)
+
+        for band_number in range(1, band_count + 1):
+            raster_block = rlayer.dataProvider().block(
+                band_number,
+                active_extent_rounded,
+                image_size[0], image_size[1])
+            rb = raster_block
+            rb.height(), rb.width()
+            raw_data = rb.data()
+            bytes_array = bytes(raw_data)
+            dt = rb.dataType()
+            dt
+            if dt == dt.__class__.Byte:
+                number_of_channels = 1
+            elif dt == dt.__class__.ARGB32:
+                number_of_channels = 4
+            else:
+                raise Exception("Invalid type!")
+
+            a = np.frombuffer(bytes_array, dtype=np.uint8)
+            b = a.reshape((image_size[1], image_size[0], number_of_channels))
+            band_data.append(b)
+
+        data_provider.setZoomedInResamplingMethod(original_resampling_method)  # restore old resampling method
+
+        if band_count == 4:
+            band_data = [band_data[2], band_data[1], band_data[0], band_data[3]]
+
+        img = np.concatenate(band_data, axis=2)
+
+        cv2.namedWindow('img2', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('img2', 800, 800)
+        cv2.imshow('img2', img)
+
+    def _do_something(self):
+        # After pressing 'do_something' button
+
+        # proj = QgsProject.instance()
+        # value, _ = proj.readNumEntry(PLUGIN_NAME, 'testcounter', 0)
+        # value += 1
+        # proj.writeEntry(PLUGIN_NAME, 'testcounter', value)
+        self._show_active_raster_as_image()
+
+        # self.iface.messageBar().pushMessage("Info", "hello", level=Qgis.Critical)
+        # self.iface.messageBar().pushMessage("Info", f"hello {value}", level=Qgis.Success)
+        # task = TestTask('my task', 10)
+        # QgsApplication.taskManager().addTask(task)
+        # QgsMessageLog.logMessage("doing something...", LOG_TAB_NAME, level=Qgis.Info)
+        # print(f'{value = }')
+
+
+"""
+Writing function of the entire image (from Raster Vision plugin).
+But it behaves strangle for e.g. google earth data, and we don't want to create a temporary file for entire map
+(for unlimited map we would need an limit anyway)
+
+from qgis.core import (QgsProject,
+                       QgsRasterFileWriter,
+                       QgsRasterLayer,
+                       QgsRasterPipe)
+
+def export_raster_layer(layer, path):
+    provider = layer.dataProvider()
+    renderer = layer.renderer()
+    pipe = QgsRasterPipe()
+    pipe.set(provider.clone())
+    pipe.set(renderer.clone())
+    
+    file_writer = QgsRasterFileWriter(path)
+    file_writer.writeRaster(
+        pipe,
+        provider.xSize(),
+        provider.ySize(),
+        provider.extent(),
+        provider.crs())        
+        
+with TemporaryDirectory(dir=settings.get_working_dir()) as tmp_dir:
+    path = os.path.join(tmp_dir, "{}.tif".format(layer_name))
+"""
+
+
+"""
+Logging:
+self.iface.messageBar().pushMessage("Info", "hello", level=Qgis.Success)
+QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
+
+
+QgsProject.instance().mapLayers()
+qgis.utils.iface.activeLayer()
+
+
+Raster Layers:
+rlayer = qgis.utils.iface.activeLayer() # some raster layer
+rlayer.width(), rlayer.height()  # dimension of the layer (in px)
+rlayer.extent()  # get the extent of the layer as QgsRectangle
+
+rlayer.rasterType()  # value 2 is multiband
+rlayer.bandCount()
+print(rlayer.bandName(1))
+
+val, res = rlayer.dataProvider().sample(QgsPointXY(638907, 5802464), 1)  # get data point  [ sample (const QgsPointXY &point, int band, bool *ok=nullptr, const QgsRectangle &boundingBox=QgsRectangle(), int width=0, int height=0, int dpi=96) ]
+rlayer.dataProvider().identify(QgsPointXY(638907, 5802464), QgsRaster.IdentifyFormatValue).results()
+rlayer.rasterUnitsPerPixelX()
+
+
+# seting rendering mode 
+fcn = QgsColorRampShader()
+fcn.setColorRampType(QgsColorRampShader.Discrete)
+lst = [ QgsColorRampShader.ColorRampItem(0, QColor(0,255,0)),
+      QgsColorRampShader.ColorRampItem(255, QColor(255,255,0)) ]
+fcn.setColorRampItemList(lst)
+shader = QgsRasterShader()
+shader.setRasterShaderFunction(fcn)
+renderer = QgsSingleBandPseudoColorRenderer(rlayer.dataProvider(), 1, shader)
+rlayer.setRenderer(renderer)
+
+
+# Editing raster data
+block = QgsRasterBlock(Qgis.Byte, 2, 2)
+block.setData(b'\xaa\xbb\xcc\xdd')
+provider = rlayer.dataProvider()
+provider.setEditable(True)
+provider.writeBlock(block, 1, 0, 0)
+provider.setEditable(False)
+
+
+# Project settings
+proj = QgsProject.instance()
+value, _ = proj.readNumEntry(PLUGIN_NAME, 'testcounter', 0)
+value += 1
+proj.writeEntry(PLUGIN_NAME, 'testcounter', value)
+        
+
+# Running background task:
+
+# e.g. after clicking the button:
+task = TestTask('my task', 10)
+QgsApplication.taskManager().addTask(task)
+
+
+class TestTask(QgsTask):
+    importComplete = pyqtSignal()
+    errorOccurred = pyqtSignal()
+
+    def __init__(self, name, delay):
+        QgsTask.__init__(self, name)
+
+        self.name = name
+        self.delay = delay / 100.0
+
+    def run(self):
+        print('heavyFunction...')
+        QgsMessageLog.logMessage("heavyFunction...", LOG_TAB_NAME, level=Qgis.Info)
+        # time.sleep(5)
+
+        for i in range(100):
+            if self.isCanceled():
+                break
+            time.sleep(self.delay)
+            self.setProgress(i)
+
+        return True
+
+    def finished(self, result):
+        QgsMessageLog.logMessage('In finished(), emit signal')
+        if result:
+            self.importComplete.emit()
+        else:
+            self.errorOccurred.emit()
+
+
+# Access plugin in qgis console
+my_plugin = qgis.utils.plugins['My Plugin']
+
+"""

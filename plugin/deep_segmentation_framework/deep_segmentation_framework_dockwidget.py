@@ -21,11 +21,15 @@
  *                                                                         *
  ***************************************************************************/
 """
-
+import logging
 import os
 
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
+from qgis.core import QgsMessageLog
+from qgis.core import Qgis
+
+from .common.defines import LOG_TAB_NAME
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
@@ -34,17 +38,22 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
+    do_something = pyqtSignal()  # signal used for quick testing
 
     def __init__(self, parent=None):
         """Constructor."""
         super(DeepSegmentationFrameworkDockWidget, self).__init__(parent)
-        # Set up the user interface from Designer.
-        # After setupUI you can access any designer object by doing
-        # self.<objectname>, and you can use autoconnect slots - see
-        # http://doc.qt.io/qt-5/designer-using-a-ui-file.html
-        # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        self._create_connections()
+        QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
+
+    def _create_connections(self):
+        self.pushButton_doSomething.clicked.connect(self._do_something)
+
+    def _do_something(self):
+        self.do_something.emit()
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
+
