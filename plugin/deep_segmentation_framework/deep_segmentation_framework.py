@@ -32,6 +32,7 @@ from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+from qgis.core import QgsUnitTypes
 from qgis.core import QgsRectangle
 from qgis.core import QgsMessageLog
 from qgis.core import QgsApplication
@@ -44,6 +45,7 @@ import qgis
 
 # Initialize Qt resources from file resources.py
 from .common.defines import PLUGIN_NAME, LOG_TAB_NAME
+from .common.inference_parameters import InferenceParameters
 from .resources import *
 
 
@@ -244,7 +246,8 @@ class DeepSegmentationFramework:
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
-            self.dockwidget.do_something.connect(self._do_something)
+            self.dockwidget.do_something_signal.connect(self._do_something)
+            self.dockwidget.run_inference_signal.connect(self._run_inference)
 
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
@@ -262,25 +265,46 @@ class DeepSegmentationFramework:
         extent.setYMaximum(y_max)
         return extent
 
-    def _show_active_raster_as_image(self, expected_meters_per_pixel: float = 0.03):
+    def _get_extent_for_processing(self, rlayer, entire_field: bool):
+        """
+        :param entire_field: Whether extent for the entire field should be given.
+        Otherwise, only active map area will be used
+        """
+        if entire_field:
+            active_extent = rlayer.extent()
+        else:
+            # transform visible extent from mapCanvas CRS to layer CRS
+            active_extent_canvas_crs = self.iface.mapCanvas().extent()
+            canvas_crs = self.iface.mapCanvas().mapSettings().destinationCrs()
+            t = QgsCoordinateTransform()
+            t.setSourceCrs(canvas_crs)
+            t.setDestinationCrs(rlayer.crs())
+            active_extent = t.transform(active_extent_canvas_crs)
+        return active_extent
+
+    @staticmethod
+    def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
+        # TODO - potentially implement conversions from other units
+        if rlayer.crs().mapUnits() != QgsUnitTypes.DistanceUnit.DistanceMeters:
+            raise Exception("Unsupported layer units")
+        return distance_m
+
+    def _get_active_extent_rounded(self, rlayer, inference_parameters: InferenceParameters):
         rlayer = self.iface.activeLayer()
         rlayer_extent = rlayer.extent()
         rlayer_units_per_pixel = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
 
-        # transform visible extent from mapCanvas CRS to layer CRS
-        active_extent_canvas_crs = self.iface.mapCanvas().extent()
-        canvas_crs = self.iface.mapCanvas().mapSettings().destinationCrs()
-        t = QgsCoordinateTransform()
-        t.setSourceCrs(canvas_crs)
-        t.setDestinationCrs(rlayer.crs())
-        active_extent = t.transform(active_extent_canvas_crs)
+        active_extent = self._get_extent_for_processing(rlayer=rlayer, entire_field=inference_parameters.entire_field)
 
         active_extent_intersect = active_extent.intersect(rlayer_extent)
         active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
+        return active_extent_rounded
 
-        expected_units_per_pixel = expected_meters_per_pixel  # for EPSG32633
+    def _show_raster_as_image(self, rlayer, active_extent_rounded, inference_parameters: InferenceParameters):
+        expected_meters_per_pixel = inference_parameters.resolution_cm_per_px / 100
+        expected_units_per_pixel = self.convert_meters_to_rlayer_units(rlayer, expected_meters_per_pixel)
         expected_units_per_pixel_2d = expected_units_per_pixel, expected_units_per_pixel
-        # to get all pixels - use the 'rlayer_units_per_pixel' instead of 'expected_units_per_pixel_2d'
+        # to get all pixels - use the 'rlayer.rasterUnitsPerPixelX()' instead of 'expected_units_per_pixel_2d'
         image_size = int((active_extent_rounded.width()) / expected_units_per_pixel_2d[0]), \
                      int((active_extent_rounded.height()) / expected_units_per_pixel_2d[1])
 
@@ -329,12 +353,13 @@ class DeepSegmentationFramework:
 
     def _do_something(self):
         # After pressing 'do_something' button
+        print('Doing something...')
 
         # proj = QgsProject.instance()
         # value, _ = proj.readNumEntry(PLUGIN_NAME, 'testcounter', 0)
         # value += 1
         # proj.writeEntry(PLUGIN_NAME, 'testcounter', value)
-        self._show_active_raster_as_image()
+        # self._show_active_raster_as_image()
 
         # self.iface.messageBar().pushMessage("Info", "hello", level=Qgis.Critical)
         # self.iface.messageBar().pushMessage("Info", f"hello {value}", level=Qgis.Success)
@@ -342,6 +367,11 @@ class DeepSegmentationFramework:
         # QgsApplication.taskManager().addTask(task)
         # QgsMessageLog.logMessage("doing something...", LOG_TAB_NAME, level=Qgis.Info)
         # print(f'{value = }')
+
+    def _run_inference(self, inference_parameters: InferenceParameters):
+        rlayer = self.iface.activeLayer()
+        active_extent_rounded = self._get_active_extent_rounded(rlayer, inference_parameters)
+        self._show_raster_as_image(rlayer, active_extent_rounded, inference_parameters)
 
 
 """

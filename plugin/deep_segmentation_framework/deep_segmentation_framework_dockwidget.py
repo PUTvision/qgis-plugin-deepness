@@ -30,6 +30,7 @@ from qgis.core import QgsMessageLog
 from qgis.core import Qgis
 
 from .common.defines import LOG_TAB_NAME
+from .common.inference_parameters import InferenceParameters
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
@@ -38,7 +39,8 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
-    do_something = pyqtSignal()  # signal used for quick testing
+    do_something_signal = pyqtSignal()  # signal used for quick testing
+    run_inference_signal = pyqtSignal(InferenceParameters)
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -49,9 +51,18 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def _create_connections(self):
         self.pushButton_doSomething.clicked.connect(self._do_something)
+        self.pushButton_run_inference.clicked.connect(self._run_inference)
 
     def _do_something(self):
-        self.do_something.emit()
+        self.do_something_signal.emit()
+
+    def _run_inference(self):
+        inference_parameters = InferenceParameters(
+            resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
+            tile_size_px=self.spinBox_tileSize_px.value(),
+            entire_field=self.radioButton_inference_entire_field.isChecked(),
+        )
+        self.run_inference_signal.emit(inference_parameters)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
