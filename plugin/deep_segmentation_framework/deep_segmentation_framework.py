@@ -21,6 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
+import copy
 import time
 
 import numpy as np
@@ -284,12 +285,13 @@ class DeepSegmentationFramework:
 
     @staticmethod
     def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
+        """ How many map units are there in one meter """
         # TODO - potentially implement conversions from other units
         if rlayer.crs().mapUnits() != QgsUnitTypes.DistanceUnit.DistanceMeters:
             raise Exception("Unsupported layer units")
         return distance_m
 
-    def _get_active_extent_rounded(self, rlayer, inference_parameters: InferenceParameters):
+    def _get_active_extent_rounded(self, rlayer, inference_parameters: InferenceParameters) -> QgsRectangle:
         rlayer = self.iface.activeLayer()
         rlayer_extent = rlayer.extent()
         rlayer_units_per_pixel = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
@@ -300,13 +302,17 @@ class DeepSegmentationFramework:
         active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
         return active_extent_rounded
 
-    def _show_raster_as_image(self, rlayer, active_extent_rounded, inference_parameters: InferenceParameters):
+    def _show_raster_as_image(self, rlayer, extent, inference_parameters: InferenceParameters):
         expected_meters_per_pixel = inference_parameters.resolution_cm_per_px / 100
         expected_units_per_pixel = self.convert_meters_to_rlayer_units(rlayer, expected_meters_per_pixel)
         expected_units_per_pixel_2d = expected_units_per_pixel, expected_units_per_pixel
         # to get all pixels - use the 'rlayer.rasterUnitsPerPixelX()' instead of 'expected_units_per_pixel_2d'
-        image_size = int((active_extent_rounded.width()) / expected_units_per_pixel_2d[0]), \
-                     int((active_extent_rounded.height()) / expected_units_per_pixel_2d[1])
+        image_size = round((extent.width()) / expected_units_per_pixel_2d[0]), \
+                     round((extent.height()) / expected_units_per_pixel_2d[1])
+
+        # sanity check, that we gave proper extent as parameter
+        assert image_size[0] == inference_parameters.tile_size_px
+        assert image_size[1] == inference_parameters.tile_size_px
 
         band_count = rlayer.bandCount()
         band_data = []
@@ -321,7 +327,7 @@ class DeepSegmentationFramework:
         for band_number in range(1, band_count + 1):
             raster_block = rlayer.dataProvider().block(
                 band_number,
-                active_extent_rounded,
+                extent,
                 image_size[0], image_size[1])
             rb = raster_block
             rb.height(), rb.width()
@@ -350,6 +356,7 @@ class DeepSegmentationFramework:
         cv2.namedWindow('img2', cv2.WINDOW_NORMAL)
         cv2.resizeWindow('img2', 800, 800)
         cv2.imshow('img2', img)
+        cv2.waitKey(1)
 
     def _do_something(self):
         # After pressing 'do_something' button
@@ -370,8 +377,44 @@ class DeepSegmentationFramework:
 
     def _run_inference(self, inference_parameters: InferenceParameters):
         rlayer = self.iface.activeLayer()
-        active_extent_rounded = self._get_active_extent_rounded(rlayer, inference_parameters)
-        self._show_raster_as_image(rlayer, active_extent_rounded, inference_parameters)
+        processed_extent = self._get_active_extent_rounded(rlayer, inference_parameters)
+
+        stride = inference_parameters.tile_size_px - inference_parameters.processing_overlap_px
+        px_in_rlayer_units = self.convert_meters_to_rlayer_units(rlayer, inference_parameters.resolution_m_per_px)  # number of rlayer units for one tile pixel
+        img_size_x_pixels = round(processed_extent.width() / px_in_rlayer_units)
+        img_size_y_pixels = round(processed_extent.height() / px_in_rlayer_units)
+
+        x_bins_number = (img_size_x_pixels - inference_parameters.tile_size_px) // stride + 1  # use int casting instead of // to have always at least 1
+        y_bins_number = (img_size_y_pixels - inference_parameters.tile_size_px) // stride + 1
+        total_tiles = x_bins_number * y_bins_number
+
+        final_shape_px = (img_size_x_pixels, img_size_y_pixels)
+        full_predicted_img = np.zeros(final_shape_px, np.uint8)
+
+        if total_tiles < 1:
+            raise Exception("TODO! Add support for partial tiles!")
+        # TODO - add support for to small images - padding for the last bin
+        # (and also bins_number calculation, to have at least one)
+
+        # TODO - add processing in background thread
+        for y_bin_number in range(y_bins_number):
+            for x_bin_number in range(x_bins_number):
+                tile_no = y_bin_number * x_bins_number + x_bin_number
+                # if x_bin_number == (x_bins_number - 1):
+                print(f" Processing tile {tile_no} / {total_tiles} [{tile_no / total_tiles * 100:.2f}%]")
+
+                start_pixel_x = x_bin_number * stride
+                start_pixel_y = y_bin_number * stride
+
+                tile_extent = QgsRectangle(processed_extent)  # copy
+                x_min = processed_extent.xMinimum() + start_pixel_x * px_in_rlayer_units
+                y_min = processed_extent.yMinimum() + start_pixel_y * px_in_rlayer_units
+                tile_extent.setXMinimum(x_min)
+                # extent needs to be on the further edge (so including the corner pixel, hence we do not subtract 1)
+                tile_extent.setXMaximum(x_min + inference_parameters.tile_size_px * px_in_rlayer_units)
+                tile_extent.setYMinimum(y_min)
+                tile_extent.setYMaximum(y_min + inference_parameters.tile_size_px * px_in_rlayer_units)
+                self._show_raster_as_image(rlayer, tile_extent, inference_parameters)
 
 
 """
