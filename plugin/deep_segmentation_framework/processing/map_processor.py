@@ -40,9 +40,6 @@ class TileParams:
         self.inference_parameters = inference_parameters
         self.px_in_rlayer_units = px_in_rlayer_units
 
-        self.start_pixel_x = x_bin_number * self.stride_px
-        self.start_pixel_y = y_bin_number * self.stride_px
-
         self.extent = self._calculate_extent(file_extent)  # type: QgsRectangle  # tile extent in CRS cordinates
 
     def _calculate_extent(self, file_extent):
@@ -64,23 +61,23 @@ class TileParams:
 
         :return Slice to be used on the full image
         """
-        half_stride = self.stride_px // 2
+        half_overlap = (self.inference_parameters.tile_size_px - self.stride_px) // 2
 
         # 'core' part of the tile (not overlapping with other tiles), for sure copied for each tile
-        x_min = self.start_pixel_x + half_stride
-        x_max = self.start_pixel_x + self.inference_parameters.tile_size_px - half_stride - 1
-        y_min = self.start_pixel_y + half_stride
-        y_max = self.start_pixel_y + self.inference_parameters.tile_size_px - half_stride - 1
+        x_min = self.start_pixel_x + half_overlap
+        x_max = self.start_pixel_x + self.inference_parameters.tile_size_px - half_overlap - 1
+        y_min = self.start_pixel_y + half_overlap
+        y_max = self.start_pixel_y + self.inference_parameters.tile_size_px - half_overlap - 1
 
         # edge tiles handling
         if self.x_bin_number == 0:
-            x_min -= half_stride
+            x_min -= half_overlap
         if self.y_bin_number == 0:
-            y_min -= half_stride
+            y_min -= half_overlap
         if self.x_bin_number == self.x_bins_number-1:
-            x_max += half_stride
+            x_max += half_overlap
         if self.y_bin_number == self.y_bins_number-1:
-            y_max += half_stride
+            y_max += half_overlap
 
         roi_slice = np.s_[y_min:y_max + 1, x_min:x_max + 1]
         return roi_slice
@@ -200,7 +197,7 @@ class MapProcessor(QgsTask):
 
     def _process(self):
         total_tiles = self.x_bins_number * self.y_bins_number
-        final_shape_px = (self.img_size_x_pixels, self.img_size_y_pixels)
+        final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
         full_predicted_img = np.zeros(final_shape_px, np.uint8)
 
         if total_tiles < 1:
@@ -218,6 +215,9 @@ class MapProcessor(QgsTask):
                 self.setProgress(progress)
                 print(f" Processing tile {tile_no} / {total_tiles} [{progress:.2f}%]")
 
+                if x_bin_number == 3:
+                    a=9
+
                 tile_params = TileParams(x_bin_number=x_bin_number, y_bin_number=y_bin_number,
                                          x_bins_number=self.x_bins_number, y_bins_number=self.y_bins_number,
                                          inference_parameters=self.inference_parameters,
@@ -225,9 +225,11 @@ class MapProcessor(QgsTask):
                                          px_in_rlayer_units=self.px_in_rlayer_units)
                 tile_img = self._get_image(self.rlayer, tile_params.extent, self.inference_parameters)
                 # self.show_img_signal.emit(tile_img)
-                tile_output = self._process_tile(tile_img)
+                tile_result = self._process_tile(tile_img)
                 # self.show_img_signal.emit(tile_output)
-                self._set_mask_on_full_img(tile_img, full_predicted_img, tile_params)
+                self._set_mask_on_full_img(tile_result=tile_result,
+                                           full_predicted_img=full_predicted_img,
+                                           tile_params=tile_params)
 
         self.show_img_signal.emit(full_predicted_img)
         return True

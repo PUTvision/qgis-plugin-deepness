@@ -17,7 +17,7 @@ from deep_segmentation_framework.processing.map_processor import MapProcessor
 
 
 RASTER_FILE_PATH = '/home/przemek/Desktop/corn/10ha_copy/fotomapa.tif'
-PROCESSED_EXTENT_1 = QgsRectangle(  # big part of the field
+PROCESSED_EXTENT_1 = QgsRectangle(  # big part of the field (15 tiles with 512px)
         638895.87214042595587671, 5802472.81716971844434738,
         638973.46824810293037444, 5802515.99556608032435179)
 PROCESSED_EXTENT_2_FULL = QgsRectangle(  # entire field
