@@ -46,10 +46,10 @@ from qgis.core import Qgis
 import qgis
 
 # Initialize Qt resources from file resources.py
-from .common.defines import PLUGIN_NAME, LOG_TAB_NAME
-from .common.inference_parameters import InferenceParameters
-from .processing.map_processor import MapProcessor
-from .resources import *
+from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
+from deep_segmentation_framework.common.inference_parameters import InferenceParameters
+from deep_segmentation_framework.processing.map_processor import MapProcessor
+from deep_segmentation_framework.resources import *
 
 
 # Import the code for the DockWidget

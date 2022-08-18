@@ -29,8 +29,8 @@ from qgis.PyQt.QtCore import pyqtSignal
 from qgis.core import QgsMessageLog
 from qgis.core import Qgis
 
-from .common.defines import LOG_TAB_NAME
-from .common.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.defines import LOG_TAB_NAME
+from deep_segmentation_framework.common.inference_parameters import InferenceParameters
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))

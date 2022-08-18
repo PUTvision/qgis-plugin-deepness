@@ -14,11 +14,9 @@ __copyright__ = 'Copyright 2022, Przemyslaw Aszkowski'
 
 import unittest
 
-from qgis.PyQt.QtGui import QDockWidget
+from deep_segmentation_framework.deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
 
-from deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
-
-from utilities import get_qgis_app
+from deep_segmentation_framework.test.utilities import get_qgis_app
 
 QGIS_APP = get_qgis_app()
 
