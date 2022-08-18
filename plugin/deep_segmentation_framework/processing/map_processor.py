@@ -99,6 +99,7 @@ class TileParams:
                             ]
         return roi_slice_on_tile
 
+
 class MapProcessor(QgsTask):
     finished_signal = pyqtSignal(str)  # error message if finished with error, empty string otherwise
     show_img_signal = pyqtSignal(object)  # request to show an image
@@ -107,6 +108,7 @@ class MapProcessor(QgsTask):
                  rlayer: QgsRasterLayer,
                  processed_extent: QgsRectangle,
                  inference_parameters: InferenceParameters):
+        print(processed_extent)
         QgsTask.__init__(self, self.__class__.__name__)
         self.rlayer = rlayer
         self.processed_extent = processed_extent
@@ -212,7 +214,7 @@ class MapProcessor(QgsTask):
                 if self.isCanceled():
                     return False
                 tile_no = y_bin_number * self.x_bins_number + x_bin_number
-                progress = int(tile_no / total_tiles * 100)
+                progress = tile_no / total_tiles * 100
                 self.setProgress(progress)
                 print(f" Processing tile {tile_no} / {total_tiles} [{progress:.2f}%]")
 

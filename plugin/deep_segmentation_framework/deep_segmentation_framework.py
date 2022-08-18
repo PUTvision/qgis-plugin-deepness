@@ -244,7 +244,7 @@ class DeepSegmentationFramework:
             # dockwidget may not exist if:
             #    first run of plugin
             #    removed on close (see self.onClosePlugin method)
-            if self.dockwidget == None:
+            if self.dockwidget is None:
                 # Create the dockwidget (after translation) and keep reference
                 self.dockwidget = DeepSegmentationFrameworkDockWidget()
 
@@ -269,12 +269,12 @@ class DeepSegmentationFramework:
         extent.setYMaximum(y_max)
         return extent
 
-    def _get_extent_for_processing(self, rlayer, entire_field: bool):
+    def _get_extent_for_processing(self, rlayer, use_entire_field: bool):
         """
-        :param entire_field: Whether extent for the entire field should be given.
+        :param use_entire_field: Whether extent for the entire field should be given.
         Otherwise, only active map area will be used
         """
-        if entire_field:
+        if use_entire_field:
             active_extent = rlayer.extent()
         else:
             # transform visible extent from mapCanvas CRS to layer CRS
@@ -307,7 +307,8 @@ class DeepSegmentationFramework:
         rlayer_extent = rlayer.extent()
         rlayer_units_per_pixel = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
 
-        active_extent = self._get_extent_for_processing(rlayer=rlayer, entire_field=inference_parameters.entire_field)
+        active_extent = self._get_extent_for_processing(rlayer=rlayer,
+                                                        use_entire_field=inference_parameters.entire_field)
 
         active_extent_intersect = active_extent.intersect(rlayer_extent)
         active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
