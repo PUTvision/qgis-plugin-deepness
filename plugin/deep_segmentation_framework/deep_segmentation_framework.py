@@ -33,6 +33,7 @@ from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+from qgis.core import QgsVectorLayer
 from qgis.core import QgsUnitTypes
 from qgis.core import QgsRectangle
 from qgis.core import QgsMessageLog
@@ -47,6 +48,7 @@ import qgis
 # Initialize Qt resources from file resources.py
 from .common.defines import PLUGIN_NAME, LOG_TAB_NAME
 from .common.inference_parameters import InferenceParameters
+from .processing.map_processor import MapProcessor
 from .resources import *
 
 
@@ -95,6 +97,7 @@ class DeepSegmentationFramework:
 
         self.pluginIsActive = False
         self.dockwidget = None
+        self._map_processor = None
 
     # noinspection PyMethodMayBeStatic
     def tr(self, message):
@@ -283,81 +286,6 @@ class DeepSegmentationFramework:
             active_extent = t.transform(active_extent_canvas_crs)
         return active_extent
 
-    @staticmethod
-    def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
-        """ How many map units are there in one meter """
-        # TODO - potentially implement conversions from other units
-        if rlayer.crs().mapUnits() != QgsUnitTypes.DistanceUnit.DistanceMeters:
-            raise Exception("Unsupported layer units")
-        return distance_m
-
-    def _get_active_extent_rounded(self, rlayer, inference_parameters: InferenceParameters) -> QgsRectangle:
-        rlayer = self.iface.activeLayer()
-        rlayer_extent = rlayer.extent()
-        rlayer_units_per_pixel = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
-
-        active_extent = self._get_extent_for_processing(rlayer=rlayer, entire_field=inference_parameters.entire_field)
-
-        active_extent_intersect = active_extent.intersect(rlayer_extent)
-        active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
-        return active_extent_rounded
-
-    def _show_raster_as_image(self, rlayer, extent, inference_parameters: InferenceParameters):
-        expected_meters_per_pixel = inference_parameters.resolution_cm_per_px / 100
-        expected_units_per_pixel = self.convert_meters_to_rlayer_units(rlayer, expected_meters_per_pixel)
-        expected_units_per_pixel_2d = expected_units_per_pixel, expected_units_per_pixel
-        # to get all pixels - use the 'rlayer.rasterUnitsPerPixelX()' instead of 'expected_units_per_pixel_2d'
-        image_size = round((extent.width()) / expected_units_per_pixel_2d[0]), \
-                     round((extent.height()) / expected_units_per_pixel_2d[1])
-
-        # sanity check, that we gave proper extent as parameter
-        assert image_size[0] == inference_parameters.tile_size_px
-        assert image_size[1] == inference_parameters.tile_size_px
-
-        band_count = rlayer.bandCount()
-        band_data = []
-
-        # enable resampling
-        data_provider = rlayer.dataProvider()
-        data_provider.enableProviderResampling(True)
-        original_resampling_method = data_provider.zoomedInResamplingMethod()
-        data_provider.setZoomedInResamplingMethod(data_provider.ResamplingMethod.Bilinear)
-        data_provider.setZoomedOutResamplingMethod(data_provider.ResamplingMethod.Bilinear)
-
-        for band_number in range(1, band_count + 1):
-            raster_block = rlayer.dataProvider().block(
-                band_number,
-                extent,
-                image_size[0], image_size[1])
-            rb = raster_block
-            rb.height(), rb.width()
-            raw_data = rb.data()
-            bytes_array = bytes(raw_data)
-            dt = rb.dataType()
-            dt
-            if dt == dt.__class__.Byte:
-                number_of_channels = 1
-            elif dt == dt.__class__.ARGB32:
-                number_of_channels = 4
-            else:
-                raise Exception("Invalid type!")
-
-            a = np.frombuffer(bytes_array, dtype=np.uint8)
-            b = a.reshape((image_size[1], image_size[0], number_of_channels))
-            band_data.append(b)
-
-        data_provider.setZoomedInResamplingMethod(original_resampling_method)  # restore old resampling method
-
-        if band_count == 4:
-            band_data = [band_data[2], band_data[1], band_data[0], band_data[3]]
-
-        img = np.concatenate(band_data, axis=2)
-
-        cv2.namedWindow('img2', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('img2', 800, 800)
-        cv2.imshow('img2', img)
-        cv2.waitKey(1)
-
     def _do_something(self):
         # After pressing 'do_something' button
         print('Doing something...')
@@ -375,46 +303,58 @@ class DeepSegmentationFramework:
         # QgsMessageLog.logMessage("doing something...", LOG_TAB_NAME, level=Qgis.Info)
         # print(f'{value = }')
 
+    def _get_active_extent_rounded(self, rlayer, inference_parameters: InferenceParameters) -> QgsRectangle:
+        rlayer_extent = rlayer.extent()
+        rlayer_units_per_pixel = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
+
+        active_extent = self._get_extent_for_processing(rlayer=rlayer, entire_field=inference_parameters.entire_field)
+
+        active_extent_intersect = active_extent.intersect(rlayer_extent)
+        active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
+        return active_extent_rounded
+
     def _run_inference(self, inference_parameters: InferenceParameters):
+        if self._map_processor and self._map_processor.is_busy():
+            msg = "Error! Processing already in progress! Please wait or cancel previous task."
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
+            return
+
         rlayer = self.iface.activeLayer()
+        if rlayer is None:
+            msg = "Error! Please select the layer to process first!"
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
+            return
+
+        if isinstance(rlayer, QgsVectorLayer):
+            msg = "Error! Please select a raster layer (vector layer selected)"
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
+            return
+
         processed_extent = self._get_active_extent_rounded(rlayer, inference_parameters)
 
-        stride = inference_parameters.tile_size_px - inference_parameters.processing_overlap_px
-        px_in_rlayer_units = self.convert_meters_to_rlayer_units(rlayer, inference_parameters.resolution_m_per_px)  # number of rlayer units for one tile pixel
-        img_size_x_pixels = round(processed_extent.width() / px_in_rlayer_units)
-        img_size_y_pixels = round(processed_extent.height() / px_in_rlayer_units)
+        self._map_processor = MapProcessor(rlayer=rlayer,
+                                           processed_extent=processed_extent,
+                                           inference_parameters=inference_parameters)
+        self._map_processor.finished_signal.connect(self._map_processor_finished)
+        self._map_processor.show_img_signal.connect(self._show_img)
+        QgsApplication.taskManager().addTask(self._map_processor)
 
-        x_bins_number = (img_size_x_pixels - inference_parameters.tile_size_px) // stride + 1  # use int casting instead of // to have always at least 1
-        y_bins_number = (img_size_y_pixels - inference_parameters.tile_size_px) // stride + 1
-        total_tiles = x_bins_number * y_bins_number
+    @staticmethod
+    def _show_img(img):
+        cv2.namedWindow('img', cv2.WINDOW_NORMAL)
+        cv2.resizeWindow('img', 800, 800)
+        cv2.imshow('img', img)
+        cv2.waitKey(1)
+        pass
 
-        final_shape_px = (img_size_x_pixels, img_size_y_pixels)
-        full_predicted_img = np.zeros(final_shape_px, np.uint8)
-
-        if total_tiles < 1:
-            raise Exception("TODO! Add support for partial tiles!")
-        # TODO - add support for to small images - padding for the last bin
-        # (and also bins_number calculation, to have at least one)
-
-        # TODO - add processing in background thread
-        for y_bin_number in range(y_bins_number):
-            for x_bin_number in range(x_bins_number):
-                tile_no = y_bin_number * x_bins_number + x_bin_number
-                # if x_bin_number == (x_bins_number - 1):
-                print(f" Processing tile {tile_no} / {total_tiles} [{tile_no / total_tiles * 100:.2f}%]")
-
-                start_pixel_x = x_bin_number * stride
-                start_pixel_y = y_bin_number * stride
-
-                tile_extent = QgsRectangle(processed_extent)  # copy
-                x_min = processed_extent.xMinimum() + start_pixel_x * px_in_rlayer_units
-                y_min = processed_extent.yMinimum() + start_pixel_y * px_in_rlayer_units
-                tile_extent.setXMinimum(x_min)
-                # extent needs to be on the further edge (so including the corner pixel, hence we do not subtract 1)
-                tile_extent.setXMaximum(x_min + inference_parameters.tile_size_px * px_in_rlayer_units)
-                tile_extent.setYMinimum(y_min)
-                tile_extent.setYMaximum(y_min + inference_parameters.tile_size_px * px_in_rlayer_units)
-                self._show_raster_as_image(rlayer, tile_extent, inference_parameters)
+    def _map_processor_finished(self, error_msg):
+        if error_msg:
+            msg = f'Error! Processing error: "{error_msg}"!'
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
+        else:
+            msg = 'Processing finished!'
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Success)
+        self._map_processor = None
 
 
 """
@@ -505,36 +445,6 @@ proj.writeEntry(PLUGIN_NAME, 'testcounter', value)
 task = TestTask('my task', 10)
 QgsApplication.taskManager().addTask(task)
 
-
-class TestTask(QgsTask):
-    importComplete = pyqtSignal()
-    errorOccurred = pyqtSignal()
-
-    def __init__(self, name, delay):
-        QgsTask.__init__(self, name)
-
-        self.name = name
-        self.delay = delay / 100.0
-
-    def run(self):
-        print('heavyFunction...')
-        QgsMessageLog.logMessage("heavyFunction...", LOG_TAB_NAME, level=Qgis.Info)
-        # time.sleep(5)
-
-        for i in range(100):
-            if self.isCanceled():
-                break
-            time.sleep(self.delay)
-            self.setProgress(i)
-
-        return True
-
-    def finished(self, result):
-        QgsMessageLog.logMessage('In finished(), emit signal')
-        if result:
-            self.importComplete.emit()
-        else:
-            self.errorOccurred.emit()
 
 
 # Access plugin in qgis console
