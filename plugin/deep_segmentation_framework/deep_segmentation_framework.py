@@ -345,7 +345,6 @@ class DeepSegmentationFramework:
         cv2.resizeWindow('img', 800, 800)
         cv2.imshow('img', img)
         cv2.waitKey(1)
-        pass
 
     def _map_processor_finished(self, error_msg):
         if error_msg:
