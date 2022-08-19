@@ -224,12 +224,12 @@ class MapProcessor(QgsTask):
                                          file_extent=self.processed_extent,
                                          px_in_rlayer_units=self.px_in_rlayer_units)
                 tile_img = self._get_image(self.rlayer, tile_params.extent, self.inference_parameters)
-                # self.show_img_signal.emit(tile_img)
+                self.show_img_signal.emit(tile_img)
                 tile_output = self._process_tile(tile_img)
                 # self.show_img_signal.emit(tile_output)
-                self._set_mask_on_full_img(tile_img, full_predicted_img, tile_params)
+                # self._set_mask_on_full_img(tile_img, full_predicted_img, tile_params)
 
-        self.show_img_signal.emit(full_predicted_img)
+        # self.show_img_signal.emit(full_predicted_img)
         return True
 
     def _set_mask_on_full_img(self, full_predicted_img, tile_result, tile_params: TileParams):
