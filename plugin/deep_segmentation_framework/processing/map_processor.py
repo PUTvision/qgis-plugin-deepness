@@ -215,8 +215,6 @@ class MapProcessor(QgsTask):
                 self.setProgress(progress)
                 print(f" Processing tile {tile_no} / {total_tiles} [{progress:.2f}%]")
 
-                if x_bin_number == 3:
-                    a=9
 
                 tile_params = TileParams(x_bin_number=x_bin_number, y_bin_number=y_bin_number,
                                          x_bins_number=self.x_bins_number, y_bins_number=self.y_bins_number,
@@ -224,14 +222,14 @@ class MapProcessor(QgsTask):
                                          file_extent=self.processed_extent,
                                          px_in_rlayer_units=self.px_in_rlayer_units)
                 tile_img = self._get_image(self.rlayer, tile_params.extent, self.inference_parameters)
-                # self.show_img_signal.emit(tile_img)
-                tile_result = self._process_tile(tile_img)
+                self.show_img_signal.emit(tile_img)
+                # tile_result = self._process_tile(tile_img)
                 # self.show_img_signal.emit(tile_output)
-                self._set_mask_on_full_img(tile_result=tile_result,
+                # self._set_mask_on_full_img(tile_result=tile_result,
                                            full_predicted_img=full_predicted_img,
                                            tile_params=tile_params)
 
-        self.show_img_signal.emit(full_predicted_img)
+        # self.show_img_signal.emit(full_predicted_img)
         return True
 
     def _set_mask_on_full_img(self, full_predicted_img, tile_result, tile_params: TileParams):
