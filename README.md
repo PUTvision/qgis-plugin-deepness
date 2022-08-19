@@ -21,6 +21,6 @@ pip install -r requirements.txt
 qgis
 ```
  - Enable `Deep Segmentation Framework` the plugin in the `Plugins -> Manage and install plugins`
- - Install and enable plugin to reload plugins: `Plugin reloader`
+ - Install and enable plugin to reload plugins: `Plugin reloader` and to print stack errors: `first aid` plugin
 
 Every time plugin code is modified, use the `Plugin reloader` to reload our plugin.
