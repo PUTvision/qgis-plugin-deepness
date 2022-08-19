@@ -226,8 +226,8 @@ class MapProcessor(QgsTask):
                 # tile_result = self._process_tile(tile_img)
                 # self.show_img_signal.emit(tile_output)
                 # self._set_mask_on_full_img(tile_result=tile_result,
-                                           full_predicted_img=full_predicted_img,
-                                           tile_params=tile_params)
+                #                            full_predicted_img=full_predicted_img,
+                #                            tile_params=tile_params)
 
         # self.show_img_signal.emit(full_predicted_img)
         return True
