@@ -57,13 +57,13 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.do_something_signal.emit()
 
     def get_inference_parameters(self) -> InferenceParameters:
-        postprocessing_dilate_size = self.spinBox_dilateSize.value() \
+        postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
         inference_parameters = InferenceParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
             entire_field=self.radioButton_inferenceEntireField.isChecked(),
-            postprocessing_dilate_size=postprocessing_dilate_size,
+            postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
         )
         return inference_parameters
 

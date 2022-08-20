@@ -69,9 +69,9 @@ geometry = QgsGeometry.fromPolygonXY([
         QgsPointXY(638890, 5802430),
     ],
     [
-        QgsPointXY(638875.89,5802423.04),
-        QgsPointXY(638890.14,5802421.42),
-        QgsPointXY(638888.92,5802413.58),
+        QgsPointXY(638875.89, 5802423.04),
+        QgsPointXY(638890.14, 5802421.42),
+        QgsPointXY(638888.92, 5802413.58),
     ],
 ])
 # geometry.addRing([

@@ -16,13 +16,17 @@ from deep_segmentation_framework.deep_segmentation_framework_dockwidget import D
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 
 
-RASTER_FILE_PATH = '/home/przemek/Desktop/corn/10ha_copy/fotomapa.tif'
+RASTER_FILE_PATH = '/home/przemek/Desktop/corn/borecko/fotomapa.tif'
+# RASTER_FILE_PATH = '/home/przemek/Desktop/corn/10ha_copy/fotomapa.tif'
 PROCESSED_EXTENT_1 = QgsRectangle(  # big part of the field (15 tiles with 512px)
         638895.87214042595587671, 5802472.81716971844434738,
         638973.46824810293037444, 5802515.99556608032435179)
 PROCESSED_EXTENT_2_FULL = QgsRectangle(  # entire field
         638838.69500850629992783, 5802263.68493685312569141,
         639034.16520346351899207, 5802604.9122637296095490)
+PROCESSED_EXTENT_3_SINGLE_TILE_WITH_BORDER = QgsRectangle(  # entire field
+        638923.81203882768750191, 5802448.52505646646022797,
+        638963.58058058377355337, 5802469.66866450011730194)
 
 
 def dummy_test():
@@ -39,7 +43,7 @@ def general_test():
     rlayer = QgsRasterLayer(RASTER_FILE_PATH, 'fotomapa')
     rlayer.setCrs(QgsCoordinateReferenceSystem("EPSG:32633"))
 
-    processed_extent = PROCESSED_EXTENT_1
+    processed_extent = PROCESSED_EXTENT_3_SINGLE_TILE_WITH_BORDER
 
     map_processor = MapProcessor(
         rlayer=rlayer,

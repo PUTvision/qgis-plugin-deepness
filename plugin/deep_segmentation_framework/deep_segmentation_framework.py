@@ -341,13 +341,14 @@ class DeepSegmentationFramework:
         QgsApplication.taskManager().addTask(self._map_processor)
 
     @staticmethod
-    def _show_img(img):
-        cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('img', 800, 800)
-        cv2.imshow('img', img)
+    def _show_img(img, window_name):
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(window_name, 800, 800)
+        cv2.imshow(window_name, img)
         cv2.waitKey(1)
 
     def _map_processor_finished(self, error_msg):
+        print(f'_map_processor_finished. {error_msg = }')
         if error_msg:
             msg = f'Error! Processing error: "{error_msg}"!'
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
