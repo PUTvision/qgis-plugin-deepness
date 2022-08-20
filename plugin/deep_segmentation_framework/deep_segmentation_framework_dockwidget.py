@@ -35,7 +35,7 @@ from qgis.core import QgsMessageLog
 from qgis.core import QgsProject
 from qgis.core import QgsVectorLayer
 from qgis.core import Qgis
-from PyQt5.QtWidgets import QInputDialog, QLineEdit
+from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit, QFileDialog
 
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
 from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessAreaType
@@ -77,9 +77,19 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _create_connections(self):
         self.pushButton_doSomething.clicked.connect(self._do_something)
         self.pushButton_run_inference.clicked.connect(self._run_inference)
+        self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
 
     def _do_something(self):
         self.do_something_signal.emit()
+
+    def _browse_model_path(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            'Select Model ONNX file...',
+            os.path.expanduser('~'),
+            'All files (*.*);; ONNX files (*.onnx)')
+        if file_path:
+            self.lineEdit_modelPath.setText(file_path)
 
     def update_input_layer_selection(self, all_layers):
         combobox = self.comboBox_inputLayer  # type: QComboBox
