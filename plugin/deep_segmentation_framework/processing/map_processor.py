@@ -103,7 +103,7 @@ class MapProcessor(QgsTask):
 
     def __init__(self,
                  rlayer: QgsRasterLayer,
-                 processed_extent: QgsRectangle,
+                 processed_extent: QgsRectangle,  # in fotomap CRS
                  inference_parameters: InferenceParameters):
         print(processed_extent)
         QgsTask.__init__(self, self.__class__.__name__)
@@ -214,7 +214,6 @@ class MapProcessor(QgsTask):
                 progress = tile_no / total_tiles * 100
                 self.setProgress(progress)
                 print(f" Processing tile {tile_no} / {total_tiles} [{progress:.2f}%]")
-
 
                 tile_params = TileParams(x_bin_number=x_bin_number, y_bin_number=y_bin_number,
                                          x_bins_number=self.x_bins_number, y_bins_number=self.y_bins_number,
