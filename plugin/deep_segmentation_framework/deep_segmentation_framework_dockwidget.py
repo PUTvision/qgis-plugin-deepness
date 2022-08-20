@@ -23,9 +23,13 @@
 """
 import logging
 import os
+from dataclasses import dataclass
 
+from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
+from qgis.core import QgsVectorLayer
+from qgis.core import QgsRasterLayer
 from qgis.core import QgsMessageLog
 from qgis.core import Qgis
 
@@ -36,11 +40,17 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
 
 
+@dataclass
+class InferenceInput:
+    inference_parameters: InferenceParameters
+    input_layer_id: str
+
+
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
     do_something_signal = pyqtSignal()  # signal used for quick testing
-    run_inference_signal = pyqtSignal(InferenceParameters)
+    run_inference_signal = pyqtSignal(InferenceInput)
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -48,6 +58,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.setupUi(self)
         self._create_connections()
         QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
+        self._available_input_layers = {}  # type: Dict[str, str]  # id, name
 
     def _create_connections(self):
         self.pushButton_doSomething.clicked.connect(self._do_something)
@@ -55,6 +66,48 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def _do_something(self):
         self.do_something_signal.emit()
+
+    def update_input_layer_selection(self, all_layers):
+        combobox = self.comboBox_inputLayer  # type: QComboBox
+        if combobox.count() > 0:
+            selected_item_index = combobox.currentIndex()
+            selected_item_id = list(self._available_input_layers.keys())[selected_item_index]
+        else:
+            selected_item_id = None
+
+        self._available_input_layers = {}
+        for layer_id, layer in all_layers.items():
+            if not isinstance(layer, QgsRasterLayer):
+                continue  # not a vector layer - ignore
+            name = layer.name()
+            self._available_input_layers[layer_id] = name
+
+        combobox.clear()
+        for name in self._available_input_layers.values():
+            combobox.addItem(name)
+
+        # discard previously selected item, if it is no longer available:
+        if selected_item_id not in self._available_input_layers:
+            selected_item_id = None
+
+        if not selected_item_id:
+            # if none item is selected, and 'fotomapa' is available, select it,
+            # as it is usually the layer we are looking for
+            for layer_id, name in self._available_input_layers.items():
+                if 'fotomapa' in name:
+                    selected_item_id = layer_id
+                    break
+
+        if selected_item_id:
+            index_of_selected_item_id = list(self._available_input_layers.keys()).index(selected_item_id)
+            combobox.setCurrentIndex(index_of_selected_item_id)
+            #  TODO: save selected_item as project plugin parameter the last selection
+            #  (so it will be selected next time project starts)
+
+    def _get_input_layer_selected_id(self):
+        combobox = self.comboBox_inputLayer  # type: QComboBox
+        index = combobox.currentIndex()
+        return list(self._available_input_layers.keys())[index]
 
     def get_inference_parameters(self) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
@@ -69,7 +122,11 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def _run_inference(self):
         inference_parameters = self.get_inference_parameters()
-        self.run_inference_signal.emit(inference_parameters)
+        inference_input = InferenceInput(
+            inference_parameters=inference_parameters,
+            input_layer_id=self._get_input_layer_selected_id(),
+        )
+        self.run_inference_signal.emit(inference_input)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
