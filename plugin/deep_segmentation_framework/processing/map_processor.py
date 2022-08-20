@@ -255,8 +255,6 @@ class MapProcessor(QgsTask):
         self.show_img_signal.emit(img, window_name)
 
     def _erode_dilate_image(self, img):
-        return img
-
         # self._show_image(img)
         if self.inference_parameters.postprocessing_dilate_erode_size:
             print('Opening...')
@@ -370,6 +368,12 @@ class MapProcessor(QgsTask):
         vlayer = QgsVectorLayer("multipolygon", "model_output", "memory")
         vlayer.setCrs(self.rlayer.crs())
         prov = vlayer.dataProvider()
+
+        color = vlayer.renderer().symbol().color()
+        OUTPUT_VLAYER_COLOR_TRANSPARENCY = 80
+        color.setAlpha(OUTPUT_VLAYER_COLOR_TRANSPARENCY)
+        vlayer.renderer().symbol().setColor(color)
+        # TODO - add also outline for the layer (thicker black border)
 
         prov.addFeatures(features)
         vlayer.updateExtents()
