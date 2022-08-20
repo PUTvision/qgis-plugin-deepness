@@ -50,7 +50,7 @@ import qgis
 
 # Initialize Qt resources from file resources.py
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessAreaType
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.resources import *
 
@@ -257,7 +257,7 @@ class DeepSegmentationFramework:
             #    removed on close (see self.onClosePlugin method)
             if self.dockwidget is None:
                 # Create the dockwidget (after translation) and keep reference
-                self.dockwidget = DeepSegmentationFrameworkDockWidget()
+                self.dockwidget = DeepSegmentationFrameworkDockWidget(self.iface)
                 self._layers_changed(None)
                 QgsProject.instance().layersAdded.connect(self._layers_changed)
                 QgsProject.instance().layersRemoved.connect(self._layers_changed)
@@ -283,15 +283,11 @@ class DeepSegmentationFramework:
         extent.setYMaximum(y_max)
         return extent
 
-    def _get_extent_for_processing(self, rlayer, use_entire_field: bool, mask_layer_name: str = None):
-        """
-        :param use_entire_field: Whether extent for the entire field should be given.
-        Otherwise, only active map area will be used
-        """
-
-        if use_entire_field:
+    def _get_extent_for_processing(self, rlayer, processed_area_type: ProcessAreaType, mask_layer_name: str = None):
+        if processed_area_type == ProcessAreaType.ENTIRE_LAYER:
             active_extent = rlayer.extent()
-        elif mask_layer_name is not None:
+        elif processed_area_type == ProcessAreaType.FROM_POLYGONS:
+            assert mask_layer_name is not None
             active_extent_in_mask_layer_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
             active_extent = active_extent_in_mask_layer_crs.getGeometry(0)
             active_extent.convertToSingleType()
@@ -301,7 +297,7 @@ class DeepSegmentationFramework:
             t.setSourceCrs(active_extent_in_mask_layer_crs.sourceCrs())
             t.setDestinationCrs(rlayer.crs())
             active_extent = t.transform(active_extent)
-        else:
+        elif processed_area_type == ProcessAreaType.VISIBLE_PART:
             # transform visible extent from mapCanvas CRS to layer CRS
             active_extent_in_canvas_crs = self.iface.mapCanvas().extent()
             canvas_crs = self.iface.mapCanvas().mapSettings().destinationCrs()
@@ -309,6 +305,8 @@ class DeepSegmentationFramework:
             t.setSourceCrs(canvas_crs)
             t.setDestinationCrs(rlayer.crs())
             active_extent = t.transform(active_extent_in_canvas_crs)
+        else:
+            raise Exception("Invalid processed are type!")
 
         return active_extent
 
@@ -334,7 +332,7 @@ class DeepSegmentationFramework:
         rlayer_units_per_pixel = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
 
         active_extent = self._get_extent_for_processing(rlayer=rlayer,
-                                                        use_entire_field=inference_parameters.entire_field,
+                                                        processed_area_type=inference_parameters.processed_area_type,
                                                         mask_layer_name=inference_parameters.mask_layer_name)
 
         active_extent_intersect = active_extent.intersect(rlayer_extent)

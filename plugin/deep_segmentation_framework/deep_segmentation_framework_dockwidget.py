@@ -21,6 +21,7 @@
  *                                                                         *
  ***************************************************************************/
 """
+import enum
 import logging
 import os
 from dataclasses import dataclass
@@ -37,10 +38,14 @@ from qgis.core import Qgis
 from PyQt5.QtWidgets import QInputDialog, QLineEdit
 
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessAreaType
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
+
+
+class OperationFailedException(Exception):
+    pass
 
 
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
@@ -49,13 +54,25 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     do_something_signal = pyqtSignal()  # signal used for quick testing
     run_inference_signal = pyqtSignal(InferenceParameters)
 
-    def __init__(self, parent=None):
+    def __init__(self, iface, parent=None):
         """Constructor."""
         super(DeepSegmentationFrameworkDockWidget, self).__init__(parent)
+        self.iface = iface
         self.setupUi(self)
         self._create_connections()
         QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
         self._available_input_layers = {}  # type: Dict[str, str]  # id, name
+        self._setup_misc_ui()
+
+    def _setup_misc_ui(self):
+        combobox = self.comboBox_processedAreaSelection
+        for name in ProcessAreaType.get_all_names():
+            combobox.addItem(name)
+
+    def get_selected_processed_area_type(self) -> ProcessAreaType:
+        combobox = self.comboBox_processedAreaSelection  # type: QComboBox
+        txt = combobox.currentText()
+        return ProcessAreaType(txt)
 
     def _create_connections(self):
         self.pushButton_doSomething.clicked.connect(self._do_something)
@@ -109,27 +126,29 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return list(self._available_input_layers.keys())[index]
 
     def get_mask_layer_name(self):
-        if self.radioButton_inferencePolygonPart.isChecked():
-            qid = QInputDialog()
-            vals = [layer.name() for layer in QgsProject.instance().mapLayers().values() if isinstance(layer, QgsVectorLayer)]
-            mask_layer_name, ok = QInputDialog.getItem( qid, "Select layer", "Select mask layer to processing", vals, 0, False)
+        if not self.get_selected_processed_area_type() == ProcessAreaType.FROM_POLYGONS:
+            return None
 
-            if not ok:
-                msg = "Error! Layer not selected! Try again."
-                QgsMessageLog.logMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
-                raise Exception(msg)
-        else:
-            mask_layer_name = None
+        qid = QInputDialog()
+        vals = [layer.name() for layer in QgsProject.instance().mapLayers().values()
+                if isinstance(layer, QgsVectorLayer)]
+        mask_layer_name, ok = QInputDialog.getItem(qid, "Select layer", "Select mask layer to processing", vals, 0, False)
+
+        if not ok:
+            msg = "Error! Layer not selected! Try again."
+            raise OperationFailedException(msg)
+
         return mask_layer_name
 
     def get_inference_parameters(self) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
+        processed_area_type = self.get_selected_processed_area_type()
 
         inference_parameters = InferenceParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
-            entire_field=self.radioButton_inferenceEntireField.isChecked(),
+            processed_area_type=processed_area_type,
             mask_layer_name=self.get_mask_layer_name(),
             input_layer_id=self._get_input_layer_selected_id(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
@@ -137,7 +156,13 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return inference_parameters
 
     def _run_inference(self):
-        inference_parameters = self.get_inference_parameters()
+        try:
+            inference_parameters = self.get_inference_parameters()
+        except OperationFailedException as e:
+            msg = str(e)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
+            return
+
         self.run_inference_signal.emit(inference_parameters)
 
     def closeEvent(self, event):

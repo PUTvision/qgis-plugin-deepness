@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>442</width>
-    <height>721</height>
+    <height>723</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -39,54 +39,9 @@
             <item>
              <widget class="QGroupBox" name="groupBox_4">
               <property name="title">
-               <string>Field</string>
+               <string>Map layer</string>
               </property>
               <layout class="QGridLayout" name="gridLayout_5">
-               <item row="1" column="0">
-                <widget class="QLabel" name="label_6">
-                 <property name="text">
-                  <string>...</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="1">
-                <widget class="QLabel" name="label_7">
-                 <property name="text">
-                  <string>...</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="1" column="2">
-                <widget class="QLabel" name="label_7">
-                 <property name="text">
-                  <string>...</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="0">
-                <widget class="QRadioButton" name="radioButton_inferenceEntireField">
-                 <property name="text">
-                  <string>Entire field</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="1">
-                <widget class="QRadioButton" name="radioButton_inferenceVisiblePart">
-                 <property name="text">
-                  <string>Visible part</string>
-                 </property>
-                 <property name="checked">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-               <item row="2" column="2">
-                <widget class="QRadioButton" name="radioButton_inferencePolygonPart">
-                 <property name="text">
-                  <string>Polygon</string>
-                 </property>
-                </widget>
-               </item>
                <item row="0" column="0">
                 <widget class="QLabel" name="label_10">
                  <property name="text">
@@ -96,6 +51,37 @@
                </item>
                <item row="0" column="1" colspan="2">
                 <widget class="QComboBox" name="comboBox_inputLayer"/>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLabel" name="label_6">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="2">
+                <widget class="QLabel" name="label_7">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1" colspan="2">
+                <widget class="QComboBox" name="comboBox_processedAreaSelection"/>
+               </item>
+               <item row="2" column="1">
+                <widget class="QLabel" name="label_7">
+                 <property name="text">
+                  <string>...</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="label_11">
+                 <property name="text">
+                  <string>Processed area:</string>
+                 </property>
+                </widget>
                </item>
               </layout>
              </widget>
