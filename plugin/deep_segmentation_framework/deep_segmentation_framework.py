@@ -53,7 +53,7 @@ from deep_segmentation_framework.resources import *
 
 
 # Import the code for the DockWidget
-from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
+from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget, InferenceInput
 import os.path
 
 
@@ -233,6 +233,9 @@ class DeepSegmentationFramework:
 
     #--------------------------------------------------------------------------
 
+    def _layers_changed(self, _):
+        self.dockwidget.update_input_layer_selection(QgsProject.instance().mapLayers())
+
     def run(self):
         """Run method that loads and starts the plugin"""
 
@@ -247,6 +250,9 @@ class DeepSegmentationFramework:
             if self.dockwidget is None:
                 # Create the dockwidget (after translation) and keep reference
                 self.dockwidget = DeepSegmentationFrameworkDockWidget()
+                self._layers_changed(None)
+                QgsProject.instance().layersAdded.connect(self._layers_changed)
+                QgsProject.instance().layersRemoved.connect(self._layers_changed)
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
@@ -321,13 +327,15 @@ class DeepSegmentationFramework:
         active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
         return active_extent_rounded
 
-    def _run_inference(self, inference_parameters: InferenceParameters):
+    def _run_inference(self, inference_input : InferenceInput):
+        inference_parameters = inference_input.inference_parameters
+
         if self._map_processor and self._map_processor.is_busy():
             msg = "Error! Processing already in progress! Please wait or cancel previous task."
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
             return
 
-        rlayer = self.iface.activeLayer()
+        rlayer = QgsProject.instance().mapLayers()[inference_input.input_layer_id]
         if rlayer is None:
             msg = "Error! Please select the layer to process first!"
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
@@ -348,13 +356,14 @@ class DeepSegmentationFramework:
         QgsApplication.taskManager().addTask(self._map_processor)
 
     @staticmethod
-    def _show_img(img):
-        cv2.namedWindow('img', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('img', 800, 800)
-        cv2.imshow('img', img)
+    def _show_img(img, window_name):
+        cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+        cv2.resizeWindow(window_name, 800, 800)
+        cv2.imshow(window_name, img)
         cv2.waitKey(1)
 
     def _map_processor_finished(self, error_msg):
+        print(f'_map_processor_finished. {error_msg = }')
         if error_msg:
             msg = f'Error! Processing error: "{error_msg}"!'
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
