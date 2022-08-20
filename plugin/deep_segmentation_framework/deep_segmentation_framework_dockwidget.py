@@ -27,9 +27,12 @@ import os
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.core import QgsMessageLog
+from qgis.core import QgsProject
+from qgis.core import QgsVectorLayer
 from qgis.core import Qgis
+from PyQt5.QtWidgets import QInputDialog, QLineEdit
 
-from deep_segmentation_framework.common.defines import LOG_TAB_NAME
+from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
 from deep_segmentation_framework.common.inference_parameters import InferenceParameters
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -59,10 +62,24 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def get_inference_parameters(self) -> InferenceParameters:
         postprocessing_dilate_size = self.spinBox_dilateSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
+
+        if self.radioButton_inferencePolygonPart.isChecked():
+            qid = QInputDialog()
+            vals = [layer.name() for layer in QgsProject.instance().mapLayers().values() if isinstance(layer, QgsVectorLayer)]
+            mask_layer_name, ok = QInputDialog.getItem( qid, "Select layer", "Select mask layer to processing", vals, 0, False)
+
+            if not ok:
+                msg = "Error! Layer not selected! Try again."
+                QgsMessageLog.logMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
+        else:
+            mask_layer_name = None
+
+
         inference_parameters = InferenceParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
             entire_field=self.radioButton_inferenceEntireField.isChecked(),
+            layer_name=mask_layer_name,
             postprocessing_dilate_size=postprocessing_dilate_size,
         )
         return inference_parameters
