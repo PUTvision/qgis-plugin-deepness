@@ -19,6 +19,8 @@ class InferenceParameters:
     tile_size_px: int  # Tile size for processing (model input size)
     postprocessing_dilate_erode_size: int  # dilate/erode operation size, once we have a single class map. 0 if inactive
 
+    model_file_path: str  # path to the model file
+
     input_layer_id: str
     mask_layer_name: str  # Processing of masked layer - if processed_area_type is FROM_POLYGONS
 

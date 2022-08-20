@@ -28,9 +28,8 @@ if IS_DEBUG:
 
 
 class ModelWrapper:
-    def __init__(self):
-        # TODO
-        self.model_file_path = '/home/przemek/Desktop/corn/model/corn_segmentation_model.onnx'
+    def __init__(self, model_file_path):
+        self.model_file_path = model_file_path
         self.sess = ort.InferenceSession(self.model_file_path)
         inputs = self.sess.get_inputs()
         if len(inputs) > 1:
@@ -165,7 +164,7 @@ class MapProcessor(QgsTask):
 
         self.x_bins_number = (self.img_size_x_pixels - self.inference_parameters.tile_size_px) // self.stride_px + 1  # use int casting instead of // to have always at least 1
         self.y_bins_number = (self.img_size_y_pixels - self.inference_parameters.tile_size_px) // self.stride_px + 1
-        self.model_wrapper = ModelWrapper()
+        self.model_wrapper = ModelWrapper(model_file_path=inference_parameters.model_file_path)
 
     def run(self):
         print('run...')

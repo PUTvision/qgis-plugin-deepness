@@ -25,6 +25,7 @@ import enum
 import logging
 import os
 from dataclasses import dataclass
+import onnxruntime as ort
 
 from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtGui, QtWidgets, uic
@@ -37,7 +38,7 @@ from qgis.core import QgsVectorLayer
 from qgis.core import Qgis
 from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit, QFileDialog
 
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
+from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
 from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessAreaType
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -69,6 +70,10 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         for name in ProcessAreaType.get_all_names():
             combobox.addItem(name)
 
+        model_path = ConfigEntryKey.MODEL_FILE_PATH.get()
+        self.lineEdit_modelPath.setText(model_path)
+        self._load_model_and_display_info(model_path)
+
     def get_selected_processed_area_type(self) -> ProcessAreaType:
         combobox = self.comboBox_processedAreaSelection  # type: QComboBox
         txt = combobox.currentText()
@@ -90,6 +95,33 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             'All files (*.*);; ONNX files (*.onnx)')
         if file_path:
             self.lineEdit_modelPath.setText(file_path)
+            ConfigEntryKey.MODEL_FILE_PATH.set(file_path)
+            self._load_model_and_display_info(file_path)
+
+    def _load_model_and_display_info(self, file_path):
+        """
+        Tries to load the model and display its message.
+        """
+
+        input_size_px = 1
+        txt = ''
+        if file_path:
+            try:
+                sess = ort.InferenceSession(file_path)
+                input_0 = sess.get_inputs()[0]
+                txt += f'Input shape: {input_0.shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
+                input_size_px = input_0.shape[-1]
+
+                # TODO idk how variable input will be handled
+                self.spinBox_tileSize_px.setValue(input_size_px)
+                self.spinBox_tileSize_px.setEnabled(False)
+            except:
+                txt = "Error! Failed to load the model!\nModel may be not usable"
+                logging.exception(txt)
+                self.spinBox_tileSize_px.setEnabled(True)
+
+        self.label_modelInfo.setText(txt)
+
 
     def update_input_layer_selection(self, all_layers):
         combobox = self.comboBox_inputLayer  # type: QComboBox
@@ -154,6 +186,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
         processed_area_type = self.get_selected_processed_area_type()
+        model_file_path = self.lineEdit_modelPath.text()
+        self._load_model_and_display_info(model_file_path)
 
         inference_parameters = InferenceParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
@@ -162,6 +196,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             mask_layer_name=self.get_mask_layer_name(),
             input_layer_id=self._get_input_layer_selected_id(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
+            model_file_path=model_file_path,
         )
         return inference_parameters
 
