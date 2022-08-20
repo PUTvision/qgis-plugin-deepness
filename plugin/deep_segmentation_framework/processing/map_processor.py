@@ -1,10 +1,12 @@
 import copy
 import time
 
+from matplotlib import pyplot as plt
 import numpy as np
 import cv2
 
 from qgis.PyQt.QtCore import pyqtSignal
+from qgis._core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsPointXY
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsUnitTypes
 from qgis.core import QgsRectangle
@@ -99,11 +101,11 @@ class TileParams:
 
 class MapProcessor(QgsTask):
     finished_signal = pyqtSignal(str)  # error message if finished with error, empty string otherwise
-    show_img_signal = pyqtSignal(object)  # request to show an image
+    show_img_signal = pyqtSignal(object, str)  # request to show an image. Params: (image, window_name)
 
     def __init__(self,
                  rlayer: QgsRasterLayer,
-                 processed_extent: QgsRectangle,
+                 processed_extent: QgsRectangle,  # in fotomap CRS
                  inference_parameters: InferenceParameters):
         print(processed_extent)
         QgsTask.__init__(self, self.__class__.__name__)
@@ -195,10 +197,24 @@ class MapProcessor(QgsTask):
         img = np.concatenate(band_data, axis=2)
         return img
 
+    def _show_image(self, img, window_name='img'):
+        self.show_img_signal.emit(img, window_name)
+
+    def _erode_dilate_image(self, img):
+        # self._show_image(img)
+        if self.inference_parameters.postprocessing_dilate_erode_size:
+            print('Opening...')
+            size = (self.inference_parameters.postprocessing_dilate_erode_size // 2) ** 2 + 1
+            kernel = np.ones((size, size), np.uint8)
+            img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+            img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
+            # self._show_image(img, 'opened')
+        return img
+
     def _process(self):
         total_tiles = self.x_bins_number * self.y_bins_number
         final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
-        full_predicted_img = np.zeros(final_shape_px, np.uint8)
+        full_result_img = np.zeros(final_shape_px, np.uint8)
 
         if total_tiles < 1:
             raise Exception("TODO! Add support for partial tiles!")
@@ -215,33 +231,108 @@ class MapProcessor(QgsTask):
                 self.setProgress(progress)
                 print(f" Processing tile {tile_no} / {total_tiles} [{progress:.2f}%]")
 
-
                 tile_params = TileParams(x_bin_number=x_bin_number, y_bin_number=y_bin_number,
                                          x_bins_number=self.x_bins_number, y_bins_number=self.y_bins_number,
                                          inference_parameters=self.inference_parameters,
                                          file_extent=self.processed_extent,
                                          px_in_rlayer_units=self.px_in_rlayer_units)
                 tile_img = self._get_image(self.rlayer, tile_params.extent, self.inference_parameters)
-                self.show_img_signal.emit(tile_img)
-                # tile_result = self._process_tile(tile_img)
-                # self.show_img_signal.emit(tile_output)
-                # self._set_mask_on_full_img(tile_result=tile_result,
-                #                            full_predicted_img=full_predicted_img,
-                #                            tile_params=tile_params)
+                # self._show_image(tile_img)
+                # plt.imshow(tile_img)
+                tile_result = self._process_tile(tile_img)
+                # self._show_image(tile_result)
+                self._set_mask_on_full_img(tile_result=tile_result,
+                                           full_result_img=full_result_img,
+                                           tile_params=tile_params)
 
-        # self.show_img_signal.emit(full_predicted_img)
+        full_result_img = self._erode_dilate_image(full_result_img)
+        self._create_vlayer_from_mask(full_result_img)
         return True
 
-    def _set_mask_on_full_img(self, full_predicted_img, tile_result, tile_params: TileParams):
+    def _set_mask_on_full_img(self, full_result_img, tile_result, tile_params: TileParams):
         roi_slice_on_full_image = tile_params.get_slice_on_full_image_for_copying()
         roi_slice_on_tile_image = tile_params.get_slice_on_tile_image_for_copying(roi_slice_on_full_image)
-        full_predicted_img[roi_slice_on_full_image] = tile_result[roi_slice_on_tile_image]
+        full_result_img[roi_slice_on_full_image] = tile_result[roi_slice_on_tile_image]
+
+    def _convert_cv_contours_to_features(self, features, cv_contours, hierarchy,
+                                         current_contour_index, is_hole, current_holes):
+        if current_contour_index == -1:
+            return
+
+        while True:
+            contour = cv_contours[current_contour_index]
+            if len(contour) >= 3:
+                first_child = hierarchy[current_contour_index][2]
+                internal_holes = []
+                self._convert_cv_contours_to_features(
+                    features=features,
+                    cv_contours=cv_contours,
+                    hierarchy=hierarchy,
+                    current_contour_index=first_child,
+                    is_hole=not is_hole,
+                    current_holes=internal_holes)
+
+                if is_hole:
+                    current_holes.append(contour)
+                else:
+                    feature = QgsFeature()
+                    polygon_xy_vec_vec = [
+                        contour,
+                        *internal_holes
+                    ]
+                    geometry = QgsGeometry.fromPolygonXY(polygon_xy_vec_vec)
+                    feature.setGeometry(geometry)
+
+                    # polygon = shapely.geometry.Polygon(contour, holes=internal_holes)
+                    features.append(feature)
+
+            current_contour_index = hierarchy[current_contour_index][0]
+            if current_contour_index == -1:
+                break
+
+    def _create_vlayer_from_mask(self, mask_img):
+        # create vector layer with polygons from the mask image
+        contours, hierarchy = cv2.findContours(mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours = self.transform_contours_yx_pixels_to_target_crs(contours)
+        features = []
+        self._convert_cv_contours_to_features(
+            features=features,
+            cv_contours=contours,
+            hierarchy=hierarchy[0],
+            is_hole=False,
+            current_holes=[],
+            current_contour_index=0,
+        )
+
+        vlayer = QgsVectorLayer("multipolygon", "model_output", "memory")
+        vlayer.setCrs(self.rlayer.crs())
+        prov = vlayer.dataProvider()
+
+        prov.addFeatures(features)
+        vlayer.updateExtents()
+        QgsProject.instance().addMapLayer(vlayer)
+
+    def transform_contours_yx_pixels_to_target_crs(self, polygons):
+        x_left = self.processed_extent.xMinimum()
+        y_upper = self.processed_extent.yMaximum()
+
+        polygons_crs = []
+        for polygon_3d in polygons:
+            polygon = polygon_3d.squeeze()
+            polygon_crs = []
+            for i in range(len(polygon)):
+                yx_px = polygon[i]
+                x_crs = yx_px[0] * self.px_in_rlayer_units + x_left
+                y_crs = -(yx_px[1] * self.px_in_rlayer_units - y_upper)
+                polygon_crs.append(QgsPointXY(x_crs, y_crs))
+            polygons_crs.append(polygon_crs)
+        return polygons_crs
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
         # TODO
         tile_img = copy.copy(tile_img)
         tile_img = tile_img[:, :, 1]
-        tile_img[tile_img < 100] = 0
+        tile_img[tile_img <= 100] = 0
         tile_img[tile_img > 100] = 255
         result = tile_img
         return result

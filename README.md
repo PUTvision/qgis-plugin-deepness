@@ -5,7 +5,7 @@ Plugin for QGis to perform map/image segmentation with neural network models.
  - Install QGis `apt install qgis` (tested with QGis 3.12)
  - Create virtual environment (with global packages inherited!)
 ```
-TODO
+python3 -m venv venv --system-site-packages
 ```
  - create a softlink to our plugin in a Qgis plugin directory:
 ```
