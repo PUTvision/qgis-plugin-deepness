@@ -23,6 +23,7 @@
 """
 import copy
 import time
+import os
 
 import numpy as np
 
@@ -48,7 +49,7 @@ from qgis.core import Qgis
 import qgis
 
 # Initialize Qt resources from file resources.py
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
+from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
 from deep_segmentation_framework.common.inference_parameters import InferenceParameters
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.resources import *
@@ -58,8 +59,6 @@ from deep_segmentation_framework.resources import *
 from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
 import os.path
 
-
-IS_DEBUG = True
 
 class DeepSegmentationFramework:
     """QGIS Plugin Implementation."""
@@ -369,10 +368,11 @@ class DeepSegmentationFramework:
         QgsApplication.taskManager().addTask(self._map_processor)
 
     @staticmethod
-    def _show_img(img, window_name):
+    def _show_img(img_rgb, window_name):
+        img_bgr = img_rgb[..., ::-1]
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(window_name, 800, 800)
-        cv2.imshow(window_name, img)
+        cv2.imshow(window_name, img_bgr)
         cv2.waitKey(1)
 
     def _map_processor_finished(self, error_msg):
