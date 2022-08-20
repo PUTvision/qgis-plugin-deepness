@@ -381,7 +381,9 @@ class MapProcessor(QgsTask):
 
         polygons_crs = []
         for polygon_3d in polygons:
-            polygon = polygon_3d.squeeze()
+            # https://stackoverflow.com/questions/33458362/opencv-findcontours-why-do-we-need-a-vectorvectorpoint-to-store-the-cont
+            polygon = polygon_3d.squeeze(axis=1)
+
             polygon_crs = []
             for i in range(len(polygon)):
                 yx_px = polygon[i]
@@ -395,7 +397,6 @@ class MapProcessor(QgsTask):
         # TODO - create proper mapping for channels (layer channels to model channels)
         # Handle RGB, RGBA properly
         # TODO check if we have RGB or RGBA
-        # self.model_wrapper.process(tile_img)
 
         # thresholding on one channel
         # tile_img = copy.copy(tile_img)
@@ -405,10 +406,12 @@ class MapProcessor(QgsTask):
         # result = tile_img
 
         # thresholding on Red channel (max value - with manually drawn dots on fotomap)
-        tile_img = copy.copy(tile_img)
-        tile_img = tile_img[:, :, 0]
-        tile_img[tile_img < 255] = 0
-        tile_img[tile_img >= 255] = 255
-        result = tile_img
+        # tile_img = copy.copy(tile_img)
+        # tile_img = tile_img[:, :, 0]
+        # tile_img[tile_img < 255] = 0
+        # tile_img[tile_img >= 255] = 255
+        # result = tile_img
+
+        result = self.model_wrapper.process(tile_img)
         return result
 
