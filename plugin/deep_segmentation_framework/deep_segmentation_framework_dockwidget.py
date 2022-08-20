@@ -43,17 +43,11 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
 
 
-@dataclass
-class InferenceInput:
-    inference_parameters: InferenceParameters
-    input_layer_id: str
-
-
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
     do_something_signal = pyqtSignal()  # signal used for quick testing
-    run_inference_signal = pyqtSignal(InferenceInput)
+    run_inference_signal = pyqtSignal(InferenceParameters)
 
     def __init__(self, parent=None):
         """Constructor."""
@@ -110,22 +104,11 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _get_input_layer_selected_id(self):
         combobox = self.comboBox_inputLayer  # type: QComboBox
         index = combobox.currentIndex()
+        if index == -1:
+            return None
         return list(self._available_input_layers.keys())[index]
 
-    def get_inference_parameters(self, mask_layer_name:str) -> InferenceParameters:
-        postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
-                                         if self.checkBox_removeSmallAreas.isChecked() else 0
-
-        inference_parameters = InferenceParameters(
-            resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
-            tile_size_px=self.spinBox_tileSize_px.value(),
-            entire_field=self.radioButton_inferenceEntireField.isChecked(),
-            mask_layer_name=mask_layer_name,
-            postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
-        )
-        return inference_parameters
-
-    def _run_inference(self):
+    def get_mask_layer_name(self):
         if self.radioButton_inferencePolygonPart.isChecked():
             qid = QInputDialog()
             vals = [layer.name() for layer in QgsProject.instance().mapLayers().values() if isinstance(layer, QgsVectorLayer)]
@@ -134,16 +117,28 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if not ok:
                 msg = "Error! Layer not selected! Try again."
                 QgsMessageLog.logMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
-                return
+                raise Exception(msg)
         else:
             mask_layer_name = None
+        return mask_layer_name
 
-        inference_parameters = self.get_inference_parameters(mask_layer_name=mask_layer_name)
-        inference_input = InferenceInput(
-            inference_parameters=inference_parameters,
+    def get_inference_parameters(self) -> InferenceParameters:
+        postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
+                                         if self.checkBox_removeSmallAreas.isChecked() else 0
+
+        inference_parameters = InferenceParameters(
+            resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
+            tile_size_px=self.spinBox_tileSize_px.value(),
+            entire_field=self.radioButton_inferenceEntireField.isChecked(),
+            mask_layer_name=self.get_mask_layer_name(),
             input_layer_id=self._get_input_layer_selected_id(),
+            postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
         )
-        self.run_inference_signal.emit(inference_input)
+        return inference_parameters
+
+    def _run_inference(self):
+        inference_parameters = self.get_inference_parameters()
+        self.run_inference_signal.emit(inference_parameters)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()

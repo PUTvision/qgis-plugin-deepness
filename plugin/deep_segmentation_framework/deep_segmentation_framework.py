@@ -55,7 +55,7 @@ from deep_segmentation_framework.resources import *
 
 
 # Import the code for the DockWidget
-from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget, InferenceInput
+from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
 import os.path
 
 
@@ -289,26 +289,27 @@ class DeepSegmentationFramework:
         :param use_entire_field: Whether extent for the entire field should be given.
         Otherwise, only active map area will be used
         """
+
         if use_entire_field:
             active_extent = rlayer.extent()
         elif mask_layer_name is not None:
-            active_extent_canvas_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
-            active_extent = active_extent_canvas_crs.getGeometry(0)
+            active_extent_in_mask_layer_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
+            active_extent = active_extent_in_mask_layer_crs.getGeometry(0)
             active_extent.convertToSingleType()
             active_extent = active_extent.boundingBox()
 
             t = QgsCoordinateTransform()
-            t.setSourceCrs(active_extent_canvas_crs.sourceCrs())
+            t.setSourceCrs(active_extent_in_mask_layer_crs.sourceCrs())
             t.setDestinationCrs(rlayer.crs())
             active_extent = t.transform(active_extent)
         else:
             # transform visible extent from mapCanvas CRS to layer CRS
-            active_extent_canvas_crs = self.iface.mapCanvas().extent()
+            active_extent_in_canvas_crs = self.iface.mapCanvas().extent()
             canvas_crs = self.iface.mapCanvas().mapSettings().destinationCrs()
             t = QgsCoordinateTransform()
             t.setSourceCrs(canvas_crs)
             t.setDestinationCrs(rlayer.crs())
-            active_extent = t.transform(active_extent_canvas_crs)
+            active_extent = t.transform(active_extent_in_canvas_crs)
 
         return active_extent
 
@@ -341,15 +342,13 @@ class DeepSegmentationFramework:
         active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
         return active_extent_rounded
 
-    def _run_inference(self, inference_input : InferenceInput):
-        inference_parameters = inference_input.inference_parameters
-
+    def _run_inference(self, inference_parameters):
         if self._map_processor and self._map_processor.is_busy():
             msg = "Error! Processing already in progress! Please wait or cancel previous task."
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
             return
 
-        rlayer = QgsProject.instance().mapLayers()[inference_input.input_layer_id]
+        rlayer = QgsProject.instance().mapLayers()[inference_parameters.input_layer_id]
         if rlayer is None:
             msg = "Error! Please select the layer to process first!"
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
