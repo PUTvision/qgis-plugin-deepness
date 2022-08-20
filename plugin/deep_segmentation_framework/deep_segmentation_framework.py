@@ -275,13 +275,23 @@ class DeepSegmentationFramework:
         extent.setYMaximum(y_max)
         return extent
 
-    def _get_extent_for_processing(self, rlayer, use_entire_field: bool):
+    def _get_extent_for_processing(self, rlayer, use_entire_field: bool, mask_layer_name: str = None):
         """
         :param use_entire_field: Whether extent for the entire field should be given.
         Otherwise, only active map area will be used
         """
         if use_entire_field:
             active_extent = rlayer.extent()
+        elif mask_layer_name is not None:
+            active_extent_canvas_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
+            active_extent = active_extent_canvas_crs.getGeometry(0)
+            active_extent.convertToSingleType()
+            active_extent = active_extent.boundingBox()
+
+            t = QgsCoordinateTransform()
+            t.setSourceCrs(active_extent_canvas_crs.sourceCrs())
+            t.setDestinationCrs(rlayer.crs())
+            active_extent = t.transform(active_extent)
         else:
             # transform visible extent from mapCanvas CRS to layer CRS
             active_extent_canvas_crs = self.iface.mapCanvas().extent()
@@ -290,6 +300,7 @@ class DeepSegmentationFramework:
             t.setSourceCrs(canvas_crs)
             t.setDestinationCrs(rlayer.crs())
             active_extent = t.transform(active_extent_canvas_crs)
+
         return active_extent
 
     def _do_something(self):
@@ -314,7 +325,8 @@ class DeepSegmentationFramework:
         rlayer_units_per_pixel = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
 
         active_extent = self._get_extent_for_processing(rlayer=rlayer,
-                                                        use_entire_field=inference_parameters.entire_field)
+                                                        use_entire_field=inference_parameters.entire_field,
+                                                        mask_layer_name=inference_parameters.mask_layer_name)
 
         active_extent_intersect = active_extent.intersect(rlayer_extent)
         active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
