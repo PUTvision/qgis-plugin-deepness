@@ -283,10 +283,15 @@ class DeepSegmentationFramework:
         if use_entire_field:
             active_extent = rlayer.extent()
         elif mask_layer_name is not None:
-            active_extent = rlayer.extent()
-            active_extent = QgsProject.instance().mapLayersByName(mask_layer_name)[0].getGeometry(0)
+            active_extent_canvas_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
+            active_extent = active_extent_canvas_crs.getGeometry(0)
             active_extent.convertToSingleType()
             active_extent = active_extent.boundingBox()
+
+            t = QgsCoordinateTransform()
+            t.setSourceCrs(active_extent_canvas_crs.sourceCrs())
+            t.setDestinationCrs(rlayer.crs())
+            active_extent = t.transform(active_extent)
         else:
             # transform visible extent from mapCanvas CRS to layer CRS
             active_extent_canvas_crs = self.iface.mapCanvas().extent()
@@ -321,7 +326,7 @@ class DeepSegmentationFramework:
 
         active_extent = self._get_extent_for_processing(rlayer=rlayer,
                                                         use_entire_field=inference_parameters.entire_field,
-                                                        mask_layer_name=inference_parameters.layer_name)
+                                                        mask_layer_name=inference_parameters.mask_layer_name)
 
         active_extent_intersect = active_extent.intersect(rlayer_extent)
         active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
