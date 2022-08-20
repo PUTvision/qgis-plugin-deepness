@@ -275,16 +275,16 @@ class DeepSegmentationFramework:
         extent.setYMaximum(y_max)
         return extent
 
-    def _get_extent_for_processing(self, rlayer, use_entire_field: bool, layer_name: str = None):
+    def _get_extent_for_processing(self, rlayer, use_entire_field: bool, mask_layer_name: str = None):
         """
         :param use_entire_field: Whether extent for the entire field should be given.
         Otherwise, only active map area will be used
         """
         if use_entire_field:
             active_extent = rlayer.extent()
-        elif layer_name is not None:
+        elif mask_layer_name is not None:
             active_extent = rlayer.extent()
-            active_extent = QgsProject.instance().mapLayersByName(layer_name)[0].getGeometry(0)
+            active_extent = QgsProject.instance().mapLayersByName(mask_layer_name)[0].getGeometry(0)
             active_extent.convertToSingleType()
             active_extent = active_extent.boundingBox()
         else:
@@ -321,7 +321,7 @@ class DeepSegmentationFramework:
 
         active_extent = self._get_extent_for_processing(rlayer=rlayer,
                                                         use_entire_field=inference_parameters.entire_field,
-                                                        layer_name=inference_parameters.layer_name)
+                                                        mask_layer_name=inference_parameters.layer_name)
 
         active_extent_intersect = active_extent.intersect(rlayer_extent)
         active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)

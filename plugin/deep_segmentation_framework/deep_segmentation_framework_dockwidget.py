@@ -124,6 +124,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if not ok:
                 msg = "Error! Layer not selected! Try again."
                 QgsMessageLog.logMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
+                raise Exception(msg)
         else:
             mask_layer_name = None
 
@@ -132,7 +133,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
             entire_field=self.radioButton_inferenceEntireField.isChecked(),
-            layer_name=mask_layer_name,
+            mask_layer_name=mask_layer_name,
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
         )
         return inference_parameters
