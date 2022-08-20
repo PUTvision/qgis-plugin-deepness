@@ -1,2 +1,6 @@
+## CORE ##
+opencv-contrib-python
+
+## DEVEL ##
 pytest
 onnxruntime

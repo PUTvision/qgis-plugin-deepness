@@ -5,6 +5,7 @@ from dataclasses import dataclass
 class InferenceParameters:
     resolution_cm_per_px: float  # image resolution to used during processing
     entire_field: bool  # whether to perform operation on the entire field (otherwise on the visible map part)
+    mask_layer_name: str #Processing of masked layer
     tile_size_px: int  # Tile size for processing (model input size)
     postprocessing_dilate_erode_size: int  # dilate/erode operation size, once we have a single class map. 0 if inactive
     processing_overlap_percentage: float = 10.0  # aka stride - overlap of neighbouring tiles while processing
