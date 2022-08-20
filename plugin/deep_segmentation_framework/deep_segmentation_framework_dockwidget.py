@@ -112,22 +112,9 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         index = combobox.currentIndex()
         return list(self._available_input_layers.keys())[index]
 
-    def get_inference_parameters(self) -> InferenceParameters:
+    def get_inference_parameters(self, mask_layer_name:str) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
-
-        if self.radioButton_inferencePolygonPart.isChecked():
-            qid = QInputDialog()
-            vals = [layer.name() for layer in QgsProject.instance().mapLayers().values() if isinstance(layer, QgsVectorLayer)]
-            mask_layer_name, ok = QInputDialog.getItem( qid, "Select layer", "Select mask layer to processing", vals, 0, False)
-
-            if not ok:
-                msg = "Error! Layer not selected! Try again."
-                QgsMessageLog.logMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
-                raise Exception(msg)
-        else:
-            mask_layer_name = None
-
 
         inference_parameters = InferenceParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
@@ -139,7 +126,19 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return inference_parameters
 
     def _run_inference(self):
-        inference_parameters = self.get_inference_parameters()
+        if self.radioButton_inferencePolygonPart.isChecked():
+            qid = QInputDialog()
+            vals = [layer.name() for layer in QgsProject.instance().mapLayers().values() if isinstance(layer, QgsVectorLayer)]
+            mask_layer_name, ok = QInputDialog.getItem( qid, "Select layer", "Select mask layer to processing", vals, 0, False)
+
+            if not ok:
+                msg = "Error! Layer not selected! Try again."
+                QgsMessageLog.logMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
+                return
+        else:
+            mask_layer_name = None
+
+        inference_parameters = self.get_inference_parameters(mask_layer_name=mask_layer_name)
         inference_input = InferenceInput(
             inference_parameters=inference_parameters,
             input_layer_id=self._get_input_layer_selected_id(),
