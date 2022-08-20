@@ -25,6 +25,8 @@ import copy
 import time
 
 import numpy as np
+
+os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2
 import cv2
 
 from PyQt5.QtCore import QByteArray
@@ -57,6 +59,8 @@ from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDoc
 import os.path
 
 
+IS_DEBUG = True
+
 class DeepSegmentationFramework:
     """QGIS Plugin Implementation."""
 
@@ -68,6 +72,7 @@ class DeepSegmentationFramework:
             application at run time.
         :type iface: QgsInterface
         """
+        print('1) __init__')
         # Save reference to the QGIS interface
         self.iface = iface
 
@@ -113,7 +118,6 @@ class DeepSegmentationFramework:
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('DeepSegmentationFramework', message)
-
 
     def add_action(
         self,
@@ -188,9 +192,9 @@ class DeepSegmentationFramework:
 
         return action
 
-
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
+        print('2) initGui')
 
         icon_path = ':/plugins/deep_segmentation_framework/icon.png'
         self.add_action(
@@ -199,10 +203,14 @@ class DeepSegmentationFramework:
             callback=self.run,
             parent=self.iface.mainWindow())
 
+        if IS_DEBUG:
+            self.run()
+
     #--------------------------------------------------------------------------
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
+        print('3) onClosePlugin')
 
         #print "** CLOSING DeepSegmentationFramework"
 
@@ -217,9 +225,9 @@ class DeepSegmentationFramework:
 
         self.pluginIsActive = False
 
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
+        print('4) unload')
 
         #print "** UNLOAD DeepSegmentationFramework"
 
@@ -238,6 +246,7 @@ class DeepSegmentationFramework:
 
     def run(self):
         """Run method that loads and starts the plugin"""
+        print(f'5) run. {self.dockwidget = }')
 
         if not self.pluginIsActive:
             self.pluginIsActive = True

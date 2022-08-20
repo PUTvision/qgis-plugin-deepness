@@ -4,6 +4,7 @@ import time
 from matplotlib import pyplot as plt
 import numpy as np
 import cv2
+import onnxruntime as ort
 
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis._core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsPointXY
@@ -21,6 +22,43 @@ import qgis
 
 from ..common.defines import PLUGIN_NAME, LOG_TAB_NAME
 from ..common.inference_parameters import InferenceParameters
+
+
+class ModelWrapper:
+    def __init__(self):
+        # TODO
+        self.model_file_path = '/home/przemek/Desktop/corn/model/corn_segmentation_model.onnx'
+        self.sess = ort.InferenceSession(self.model_file_path)
+        inputs = self.sess.get_inputs()
+        if len(inputs) > 1:
+            raise Exception("ONNX model: unsupported number of inputs")
+        input_0 = inputs[0]
+        self.input_shape = input_0.shape
+        self.input_name = input_0.name
+
+    def get_number_of_channels(self):
+        return self.input_shape[-3]
+
+    def process(self, img):
+        """
+
+        :param img: RGB img [TILE_SIZE x TILE_SIZE x channels], type uint8, values 0 to 255
+        :return: single prediction mask
+        """
+
+        # TODO add support for channels mapping
+
+        img = img[:, :, :self.get_number_of_channels()]
+
+        input_batch = img.astype('float32')
+        input_batch /= 255
+        input_batch = input_batch.transpose(2, 0, 1)
+        input_batch = np.expand_dims(input_batch, axis=0)
+
+        model_output = self.sess.run(None, {self.input_name: input_batch})
+        # TODO - add support for multiple output classes
+        damaged_area_onnx = model_output[0][0][1] * 255
+        return damaged_area_onnx
 
 
 class TileParams:
@@ -123,6 +161,7 @@ class MapProcessor(QgsTask):
 
         self.x_bins_number = (self.img_size_x_pixels - self.inference_parameters.tile_size_px) // self.stride_px + 1  # use int casting instead of // to have always at least 1
         self.y_bins_number = (self.img_size_y_pixels - self.inference_parameters.tile_size_px) // self.stride_px + 1
+        self.model_wrapper = ModelWrapper()
 
     def run(self):
         print('run...')
@@ -221,7 +260,6 @@ class MapProcessor(QgsTask):
         # TODO - add support for to small images - padding for the last bin
         # (and also bins_number calculation, to have at least one)
 
-        # TODO - add processing in background thread
         for y_bin_number in range(self.y_bins_number):
             for x_bin_number in range(self.x_bins_number):
                 if self.isCanceled():
@@ -239,6 +277,9 @@ class MapProcessor(QgsTask):
                 tile_img = self._get_image(self.rlayer, tile_params.extent, self.inference_parameters)
                 # self._show_image(tile_img)
                 # plt.imshow(tile_img)
+
+                # TODO add support for smaller
+
                 tile_result = self._process_tile(tile_img)
                 # self._show_image(tile_result)
                 self._set_mask_on_full_img(tile_result=tile_result,
@@ -329,7 +370,11 @@ class MapProcessor(QgsTask):
         return polygons_crs
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
-        # TODO
+        # TODO - create proper mapping for channels (layer channels to model channels)
+        # Handle RGB, RGBA properly
+        # TODO check if we have RGB or RGBA
+        self.model_wrapper.process(tile_img)
+
         tile_img = copy.copy(tile_img)
         tile_img = tile_img[:, :, 1]
         tile_img[tile_img <= 100] = 0
