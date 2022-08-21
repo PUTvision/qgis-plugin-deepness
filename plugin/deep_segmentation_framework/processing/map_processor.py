@@ -52,13 +52,14 @@ class MapProcessor(QgsTask):
         self.rlayer_units_per_pixel = processing_utils.convert_meters_to_rlayer_units(
             self.rlayer, self.inference_parameters.resolution_m_per_px)  # number of rlayer units for one tile pixel
 
-        # extent in which the actual required area is contained, without additional extensions
+        # extent in which the actual required area is contained, without additional extensions, rounded to rlayer grid
         self.base_extent = extent_utils.calculate_base_processing_extent_in_rlayer_crs(
             map_canvas=map_canvas,
             rlayer=self.rlayer,
             inference_parameters=self.inference_parameters)
 
-        # extent which should be used during model inference, as it includes extra margins to have full tiles
+        # extent which should be used during model inference, as it includes extra margins to have full tiles,
+        # rounded to rlayer grid
         self.extended_extent = extent_utils.calculate_extended_processing_extent(
             base_extent=self.base_extent,
             rlayer=self.rlayer,
@@ -133,18 +134,46 @@ class MapProcessor(QgsTask):
         full_result_img = processing_utils.erode_dilate_image(img=full_result_img,
                                                                inference_parameters=self.inference_parameters)
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
-        self._create_vlayer_from_mask(full_result_img)
+        result_img = self.limit_extended_extent_image_to_base_extent_with_polygons(full_result_img)
+        self._create_vlayer_from_mask_for_base_extent(result_img)
         return True
+
+    def limit_extended_extent_image_to_base_extent_with_polygons(self, full_img):
+        """
+        Limit an image which is for extended_extent to the base_extent image.
+        If a limiting polygon was used for processing, it will be also applied.
+        :param full_img:
+        :return:
+        """
+        base_extent = self.base_extent
+        extended_extent = self.extended_extent
+        rlayer_units_per_pixel = self.rlayer_units_per_pixel
+
+        y_pixels = full_img.shape[0]
+
+        # should round without a rest anyway, as extends are aligned to rlayer grid
+        base_extent_bbox_in_full_image = [
+            round((base_extent.xMinimum() - extended_extent.xMinimum()) / rlayer_units_per_pixel),
+            y_pixels - 1 - round((base_extent.yMaximum() - extended_extent.yMinimum()) / rlayer_units_per_pixel - 1),
+            round((base_extent.xMaximum() - extended_extent.xMinimum()) / rlayer_units_per_pixel) - 1,
+            y_pixels - 1 - round((base_extent.yMinimum() - extended_extent.yMinimum()) / rlayer_units_per_pixel),
+        ]
+        b = base_extent_bbox_in_full_image
+        result_img = full_img[b[1]:b[3]+1, b[0]:b[2]+1]
+        return result_img
 
     def _set_mask_on_full_img(self, full_result_img, tile_result, tile_params: TileParams):
         roi_slice_on_full_image = tile_params.get_slice_on_full_image_for_copying()
         roi_slice_on_tile_image = tile_params.get_slice_on_tile_image_for_copying(roi_slice_on_full_image)
         full_result_img[roi_slice_on_full_image] = tile_result[roi_slice_on_tile_image]
 
-    def _create_vlayer_from_mask(self, mask_img):
+    def _create_vlayer_from_mask_for_base_extent(self, mask_img):
         # create vector layer with polygons from the mask image
         contours, hierarchy = cv2.findContours(mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        contours = self.transform_contours_yx_pixels_to_target_crs(contours)
+        contours = processing_utils.transform_contours_yx_pixels_to_target_crs(
+            contours=contours,
+            extent=self.base_extent,
+            rlayer_units_per_pixel=self.rlayer_units_per_pixel)
         features = []
 
         if len(contours):
@@ -171,24 +200,6 @@ class MapProcessor(QgsTask):
         prov.addFeatures(features)
         vlayer.updateExtents()
         QgsProject.instance().addMapLayer(vlayer)
-
-    def transform_contours_yx_pixels_to_target_crs(self, polygons):
-        x_left = self.extended_extent.xMinimum()
-        y_upper = self.extended_extent.yMaximum()
-
-        polygons_crs = []
-        for polygon_3d in polygons:
-            # https://stackoverflow.com/questions/33458362/opencv-findcontours-why-do-we-need-a-vectorvectorpoint-to-store-the-cont
-            polygon = polygon_3d.squeeze(axis=1)
-
-            polygon_crs = []
-            for i in range(len(polygon)):
-                yx_px = polygon[i]
-                x_crs = yx_px[0] * self.rlayer_units_per_pixel + x_left
-                y_crs = -(yx_px[1] * self.rlayer_units_per_pixel - y_upper)
-                polygon_crs.append(QgsPointXY(x_crs, y_crs))
-            polygons_crs.append(polygon_crs)
-        return polygons_crs
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
         # TODO - create proper mapping for channels (layer channels to model channels)

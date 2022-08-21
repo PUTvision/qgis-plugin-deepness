@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+from qgis.core import QgsRectangle
 
 from qgis.core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsPointXY
 from qgis.core import QgsUnitTypes
@@ -146,3 +147,24 @@ def convert_cv_contours_to_features(features,
         current_contour_index = hierarchy[current_contour_index][0]
         if current_contour_index == -1:
             break
+
+
+def transform_contours_yx_pixels_to_target_crs(contours,
+                                               extent: QgsRectangle,
+                                               rlayer_units_per_pixel: float):
+    x_left = extent.xMinimum()
+    y_upper = extent.yMaximum()
+
+    polygons_crs = []
+    for polygon_3d in contours:
+        # https://stackoverflow.com/questions/33458362/opencv-findcontours-why-do-we-need-a-vectorvectorpoint-to-store-the-cont
+        polygon = polygon_3d.squeeze(axis=1)
+
+        polygon_crs = []
+        for i in range(len(polygon)):
+            yx_px = polygon[i]
+            x_crs = yx_px[0] * rlayer_units_per_pixel + x_left
+            y_crs = -(yx_px[1] * rlayer_units_per_pixel - y_upper)
+            polygon_crs.append(QgsPointXY(x_crs, y_crs))
+        polygons_crs.append(polygon_crs)
+    return polygons_crs
