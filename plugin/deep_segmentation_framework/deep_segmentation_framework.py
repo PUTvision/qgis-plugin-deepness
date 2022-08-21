@@ -304,7 +304,13 @@ class DeepSegmentationFramework:
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
             return
 
+        vlayer = None
+        if inference_parameters.processed_area_type == ProcessedAreaType.FROM_POLYGONS:
+            vlayer = QgsProject.instance().mapLayers()[inference_parameters.mask_layer_id]  # TODO change to id
+            vlayer.setCrs(rlayer.crs())
+
         self._map_processor = MapProcessor(rlayer=rlayer,
+                                           vlayer_mask=vlayer,
                                            map_canvas=self.iface.mapCanvas(),
                                            inference_parameters=inference_parameters)
         self._map_processor.finished_signal.connect(self._map_processor_finished)

@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import numpy as np
 import cv2
 from qgis.core import QgsRectangle
@@ -168,3 +170,21 @@ def transform_contours_yx_pixels_to_target_crs(contours,
             polygon_crs.append(QgsPointXY(x_crs, y_crs))
         polygons_crs.append(polygon_crs)
     return polygons_crs
+
+
+@dataclass
+class BoundingBox:
+    """
+    Describes a bounding box rectangle.
+    Similar to cv2.Rect
+    """
+    x_min: int
+    x_max: int
+    y_min: int
+    y_max: int
+
+    def get_shape(self):
+        return [
+            self.y_max - self.y_min + 1,
+            self.x_max - self.x_min + 1
+        ]

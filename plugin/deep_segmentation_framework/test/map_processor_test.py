@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from qgis.PyQt.QtWidgets import QApplication
+from qgis._core import QgsVectorLayer
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsApplication
 from qgis.core import QgsRasterLayer
 
@@ -21,6 +22,10 @@ from deep_segmentation_framework.processing.map_processor import MapProcessor
 RASTER_FILE_PATH = '/home/przemek/Desktop/corn/borecko/fotomapa.tif'
 RASTER_FILE_PATH = '/home/przemek/Desktop/corn/borecko/fake_fotomap.tif'
 # RASTER_FILE_PATH = '/home/przemek/Desktop/corn/10ha_copy/fotomapa.tif'
+
+VLAYER_MASK_FILE_PATH = '/home/przemek/Desktop/corn/xxx_vlayer.gpkg'
+VLAYER_MASK_FILE_PATH = '/home/przemek/Desktop/corn/borecko/red_area.gpkg'
+
 
 PROCESSED_EXTENT_1 = QgsRectangle(  # big part of the field (15 tiles with 512px)
         638895.87214042595587671, 5802472.81716971844434738,
@@ -40,10 +45,23 @@ def dummy_test():
     assert 1 + 1 == 2
 
 
-def generic_processing_test():
+def get_rlayer():
+    rlayer = QgsRasterLayer(RASTER_FILE_PATH, 'fotomap')
+    if rlayer.width() == 0:
+        raise Exception("0 width - rlayer not loaded properly. Probably invalid file path?")
+    rlayer.setCrs(QgsCoordinateReferenceSystem("EPSG:32633"))
+    return rlayer
+
+
+def init_qgis():
     qgs = QgsApplication([b''], False)
     qgs.setPrefixPath('/usr/bin/qgis', True)
     qgs.initQgis()
+    return qgs
+
+
+def generic_processing_test__specified_extent():
+    qgs = init_qgis()
 
     dockwidget = DeepSegmentationFrameworkDockWidget(iface=None)
     inference_parameters = dockwidget.get_inference_parameters()
@@ -58,15 +76,35 @@ def generic_processing_test():
     map_canvas.extent = lambda: processed_extent
     map_canvas.mapSettings().destinationCrs = lambda: QgsCoordinateReferenceSystem("EPSG:32633")
 
-    rlayer = QgsRasterLayer(RASTER_FILE_PATH, 'fotomap')
-    if rlayer.width() == 0:
-        raise Exception("0 width - rlayer not loaded properly. Probably invalid file path?")
-
-    rlayer.setCrs(QgsCoordinateReferenceSystem("EPSG:32633"))
+    rlayer = get_rlayer()
 
     map_processor = MapProcessor(
         rlayer=rlayer,
+        vlayer_mask=None,
         map_canvas=map_canvas,
+        inference_parameters=inference_parameters,
+    )
+
+    map_processor.run()
+
+
+def generic_processing_test__specified_vlayer_mask():
+    qgs = init_qgis()
+
+    dockwidget = DeepSegmentationFrameworkDockWidget(iface=None)
+    inference_parameters = dockwidget.get_inference_parameters()
+    inference_parameters.model_file_path = '/home/przemek/Desktop/corn/model/corn_segmentation_model.onnx'
+    MapProcessor.ModelWrapper = MagicMock()
+
+    inference_parameters.processed_area_type = ProcessedAreaType.FROM_POLYGONS
+
+    rlayer = get_rlayer()
+    vlayer_mask = QgsVectorLayer(VLAYER_MASK_FILE_PATH)
+
+    map_processor = MapProcessor(
+        rlayer=rlayer,
+        vlayer_mask=vlayer_mask,
+        map_canvas=None,
         inference_parameters=inference_parameters,
     )
 
@@ -75,5 +113,6 @@ def generic_processing_test():
 
 if __name__ == '__main__':
     dummy_test()
-    generic_processing_test()
+    # generic_processing_test__specified_extent()
+    generic_processing_test__specified_vlayer_mask()
     print('Done')

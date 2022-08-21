@@ -73,6 +73,7 @@ def calculate_extended_processing_extent(base_extent: QgsRectangle,
 
 def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
                                                    rlayer: QgsRasterLayer,
+                                                   vlayer_mask: QgsVectorLayer,
                                                    inference_parameters: InferenceParameters) -> QgsRectangle:
     """
     Determine the Base Extent of processing (Extent (rectangle) in which the actual required area is contained)
@@ -86,17 +87,10 @@ def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
     if processed_area_type == ProcessedAreaType.ENTIRE_LAYER:
         expected_extent = rlayer_extent
     elif processed_area_type == ProcessedAreaType.FROM_POLYGONS:
-        mask_layer_name = inference_parameters.mask_layer_name
-        assert mask_layer_name is not None
-        active_extent_in_mask_layer_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
-        active_extent = active_extent_in_mask_layer_crs.getGeometry(0)
-        active_extent.convertToSingleType()
-        active_extent = active_extent.boundingBox()
-
-        t = QgsCoordinateTransform()
-        t.setSourceCrs(active_extent_in_mask_layer_crs.sourceCrs())
-        t.setDestinationCrs(rlayer.crs())
-        expected_extent = t.transform(active_extent)
+        expected_extent = vlayer_mask.extent()
+        # x = vlayer_mask.getGeometry(0)  # TODO check getting extent
+        # x.convertToSingleType()
+        # active_extent = x.boundingBox()
     elif processed_area_type == ProcessedAreaType.VISIBLE_PART:
         # transform visible extent from mapCanvas CRS to layer CRS
         active_extent_in_canvas_crs = map_canvas.extent()

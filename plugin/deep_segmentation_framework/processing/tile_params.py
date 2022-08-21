@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 
 from qgis.core import QgsRectangle
 
@@ -81,7 +82,25 @@ class TileParams:
 
         r = roi_slice_on_full_image
         roi_slice_on_tile = np.s_[
-                            r[0].start - self.start_pixel_y : r[0].stop - self.start_pixel_y,
-                            r[1].start - self.start_pixel_x : r[1].stop - self.start_pixel_x
+                            r[0].start - self.start_pixel_y:r[0].stop - self.start_pixel_y,
+                            r[1].start - self.start_pixel_x:r[1].stop - self.start_pixel_x
                             ]
         return roi_slice_on_tile
+
+    def is_tile_within_mask(self, mask_img: np.ndarray):
+        """
+        To check if tile
+        :param mask_img:
+        :return:
+        """
+        if mask_img is None:
+            return True  # if we don't have a mask, we are going to process all tiles
+
+        roi_slice = self.get_slice_on_full_image_for_copying()
+        mask_roi = mask_img[roi_slice]
+        # check corners first
+        if mask_roi[0, 0] and mask_roi[1, -1] and mask_roi[-1, 0] and mask_roi[-1, -1]:
+            return True  # all corners in mask, almost for sure a good tile
+
+        coverage_percentage = cv2.countNonZero(mask_roi) / (mask_roi.shape[0] * mask_roi.shape[1]) * 100
+        return coverage_percentage > 0  # TODO - for training we can use tiles with higher coverage only

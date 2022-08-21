@@ -26,7 +26,7 @@ class InferenceParameters:
     model_file_path: str  # path to the model file
 
     input_layer_id: str
-    mask_layer_name: str  # Processing of masked layer - if processed_area_type is FROM_POLYGONS
+    mask_layer_id: str  # Processing of masked layer - if processed_area_type is FROM_POLYGONS    # TODO change to id
 
     processing_overlap_percentage: float = 15.0  # aka stride - overlap of neighbouring tiles while processing
 

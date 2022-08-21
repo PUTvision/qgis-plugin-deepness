@@ -167,20 +167,20 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             return None
         return list(self._available_input_layers.keys())[index]
 
-    def get_mask_layer_name(self):
+    def get_mask_layer_id(self):
         if not self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS:
             return None
 
         qid = QInputDialog()
-        vals = [layer.name() for layer in QgsProject.instance().mapLayers().values()
+        vals = [layer.id() for layer in QgsProject.instance().mapLayers().values()
                 if isinstance(layer, QgsVectorLayer)]
-        mask_layer_name, ok = QInputDialog.getItem(qid, "Select layer", "Select mask layer to processing", vals, 0, False)
+        mask_layer_id, ok = QInputDialog.getItem(qid, "Select layer", "Select mask layer to processing", vals, 0, False)
 
         if not ok:
             msg = "Error! Layer not selected! Try again."
             raise OperationFailedException(msg)
 
-        return mask_layer_name
+        return mask_layer_id
 
     def get_inference_parameters(self) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
@@ -193,7 +193,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
             processed_area_type=processed_area_type,
-            mask_layer_name=self.get_mask_layer_name(),
+            mask_layer_id=self.get_mask_layer_id(),
             input_layer_id=self._get_input_layer_selected_id(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
             model_file_path=model_file_path,
