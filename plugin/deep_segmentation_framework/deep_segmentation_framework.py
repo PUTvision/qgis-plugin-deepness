@@ -23,8 +23,11 @@
 """
 import copy
 import time
+import os
 
 import numpy as np
+
+os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2
 import cv2
 
 from PyQt5.QtCore import QByteArray
@@ -46,14 +49,14 @@ from qgis.core import Qgis
 import qgis
 
 # Initialize Qt resources from file resources.py
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
+from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessAreaType
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.resources import *
 
 
 # Import the code for the DockWidget
-from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget, InferenceInput
+from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
 import os.path
 
 
@@ -68,6 +71,7 @@ class DeepSegmentationFramework:
             application at run time.
         :type iface: QgsInterface
         """
+        print('1) __init__')
         # Save reference to the QGIS interface
         self.iface = iface
 
@@ -113,7 +117,6 @@ class DeepSegmentationFramework:
         """
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('DeepSegmentationFramework', message)
-
 
     def add_action(
         self,
@@ -188,9 +191,9 @@ class DeepSegmentationFramework:
 
         return action
 
-
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
+        print('2) initGui')
 
         icon_path = ':/plugins/deep_segmentation_framework/icon.png'
         self.add_action(
@@ -199,10 +202,14 @@ class DeepSegmentationFramework:
             callback=self.run,
             parent=self.iface.mainWindow())
 
+        if IS_DEBUG:
+            self.run()
+
     #--------------------------------------------------------------------------
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
+        print('3) onClosePlugin')
 
         #print "** CLOSING DeepSegmentationFramework"
 
@@ -217,9 +224,9 @@ class DeepSegmentationFramework:
 
         self.pluginIsActive = False
 
-
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
+        print('4) unload')
 
         #print "** UNLOAD DeepSegmentationFramework"
 
@@ -238,6 +245,7 @@ class DeepSegmentationFramework:
 
     def run(self):
         """Run method that loads and starts the plugin"""
+        print(f'5) run. {self.dockwidget = }')
 
         if not self.pluginIsActive:
             self.pluginIsActive = True
@@ -249,7 +257,7 @@ class DeepSegmentationFramework:
             #    removed on close (see self.onClosePlugin method)
             if self.dockwidget is None:
                 # Create the dockwidget (after translation) and keep reference
-                self.dockwidget = DeepSegmentationFrameworkDockWidget()
+                self.dockwidget = DeepSegmentationFrameworkDockWidget(self.iface)
                 self._layers_changed(None)
                 QgsProject.instance().layersAdded.connect(self._layers_changed)
                 QgsProject.instance().layersRemoved.connect(self._layers_changed)
@@ -275,31 +283,30 @@ class DeepSegmentationFramework:
         extent.setYMaximum(y_max)
         return extent
 
-    def _get_extent_for_processing(self, rlayer, use_entire_field: bool, mask_layer_name: str = None):
-        """
-        :param use_entire_field: Whether extent for the entire field should be given.
-        Otherwise, only active map area will be used
-        """
-        if use_entire_field:
+    def _get_extent_for_processing(self, rlayer, processed_area_type: ProcessAreaType, mask_layer_name: str = None):
+        if processed_area_type == ProcessAreaType.ENTIRE_LAYER:
             active_extent = rlayer.extent()
-        elif mask_layer_name is not None:
-            active_extent_canvas_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
-            active_extent = active_extent_canvas_crs.getGeometry(0)
+        elif processed_area_type == ProcessAreaType.FROM_POLYGONS:
+            assert mask_layer_name is not None
+            active_extent_in_mask_layer_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
+            active_extent = active_extent_in_mask_layer_crs.getGeometry(0)
             active_extent.convertToSingleType()
             active_extent = active_extent.boundingBox()
 
             t = QgsCoordinateTransform()
-            t.setSourceCrs(active_extent_canvas_crs.sourceCrs())
+            t.setSourceCrs(active_extent_in_mask_layer_crs.sourceCrs())
             t.setDestinationCrs(rlayer.crs())
             active_extent = t.transform(active_extent)
-        else:
+        elif processed_area_type == ProcessAreaType.VISIBLE_PART:
             # transform visible extent from mapCanvas CRS to layer CRS
-            active_extent_canvas_crs = self.iface.mapCanvas().extent()
+            active_extent_in_canvas_crs = self.iface.mapCanvas().extent()
             canvas_crs = self.iface.mapCanvas().mapSettings().destinationCrs()
             t = QgsCoordinateTransform()
             t.setSourceCrs(canvas_crs)
             t.setDestinationCrs(rlayer.crs())
-            active_extent = t.transform(active_extent_canvas_crs)
+            active_extent = t.transform(active_extent_in_canvas_crs)
+        else:
+            raise Exception("Invalid processed are type!")
 
         return active_extent
 
@@ -325,22 +332,20 @@ class DeepSegmentationFramework:
         rlayer_units_per_pixel = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
 
         active_extent = self._get_extent_for_processing(rlayer=rlayer,
-                                                        use_entire_field=inference_parameters.entire_field,
+                                                        processed_area_type=inference_parameters.processed_area_type,
                                                         mask_layer_name=inference_parameters.mask_layer_name)
 
         active_extent_intersect = active_extent.intersect(rlayer_extent)
         active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
         return active_extent_rounded
 
-    def _run_inference(self, inference_input : InferenceInput):
-        inference_parameters = inference_input.inference_parameters
-
+    def _run_inference(self, inference_parameters):
         if self._map_processor and self._map_processor.is_busy():
             msg = "Error! Processing already in progress! Please wait or cancel previous task."
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
             return
 
-        rlayer = QgsProject.instance().mapLayers()[inference_input.input_layer_id]
+        rlayer = QgsProject.instance().mapLayers()[inference_parameters.input_layer_id]
         if rlayer is None:
             msg = "Error! Please select the layer to process first!"
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
@@ -361,10 +366,11 @@ class DeepSegmentationFramework:
         QgsApplication.taskManager().addTask(self._map_processor)
 
     @staticmethod
-    def _show_img(img, window_name):
+    def _show_img(img_rgb, window_name):
+        img_bgr = img_rgb[..., ::-1]
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(window_name, 800, 800)
-        cv2.imshow(window_name, img)
+        cv2.imshow(window_name, img_bgr)
         cv2.waitKey(1)
 
     def _map_processor_finished(self, error_msg):

@@ -21,9 +21,11 @@
  *                                                                         *
  ***************************************************************************/
 """
+import enum
 import logging
 import os
 from dataclasses import dataclass
+import onnxruntime as ort
 
 from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtGui, QtWidgets, uic
@@ -34,41 +36,92 @@ from qgis.core import QgsMessageLog
 from qgis.core import QgsProject
 from qgis.core import QgsVectorLayer
 from qgis.core import Qgis
-from PyQt5.QtWidgets import QInputDialog, QLineEdit
+from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit, QFileDialog
 
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
+from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessAreaType
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
 
 
-@dataclass
-class InferenceInput:
-    inference_parameters: InferenceParameters
-    input_layer_id: str
+class OperationFailedException(Exception):
+    pass
 
 
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
     do_something_signal = pyqtSignal()  # signal used for quick testing
-    run_inference_signal = pyqtSignal(InferenceInput)
+    run_inference_signal = pyqtSignal(InferenceParameters)
 
-    def __init__(self, parent=None):
+    def __init__(self, iface, parent=None):
         """Constructor."""
         super(DeepSegmentationFrameworkDockWidget, self).__init__(parent)
+        self.iface = iface
         self.setupUi(self)
         self._create_connections()
         QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
         self._available_input_layers = {}  # type: Dict[str, str]  # id, name
+        self._setup_misc_ui()
+
+    def _setup_misc_ui(self):
+        combobox = self.comboBox_processedAreaSelection
+        for name in ProcessAreaType.get_all_names():
+            combobox.addItem(name)
+
+        model_path = ConfigEntryKey.MODEL_FILE_PATH.get()
+        self.lineEdit_modelPath.setText(model_path)
+        self._load_model_and_display_info(model_path)
+
+    def get_selected_processed_area_type(self) -> ProcessAreaType:
+        combobox = self.comboBox_processedAreaSelection  # type: QComboBox
+        txt = combobox.currentText()
+        return ProcessAreaType(txt)
 
     def _create_connections(self):
         self.pushButton_doSomething.clicked.connect(self._do_something)
         self.pushButton_run_inference.clicked.connect(self._run_inference)
+        self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
 
     def _do_something(self):
         self.do_something_signal.emit()
+
+    def _browse_model_path(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            'Select Model ONNX file...',
+            os.path.expanduser('~'),
+            'All files (*.*);; ONNX files (*.onnx)')
+        if file_path:
+            self.lineEdit_modelPath.setText(file_path)
+            ConfigEntryKey.MODEL_FILE_PATH.set(file_path)
+            self._load_model_and_display_info(file_path)
+
+    def _load_model_and_display_info(self, file_path):
+        """
+        Tries to load the model and display its message.
+        """
+
+        input_size_px = 1
+        txt = ''
+        if file_path:
+            try:
+                sess = ort.InferenceSession(file_path)
+                input_0 = sess.get_inputs()[0]
+                txt += f'Input shape: {input_0.shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
+                input_size_px = input_0.shape[-1]
+
+                # TODO idk how variable input will be handled
+                self.spinBox_tileSize_px.setValue(input_size_px)
+                self.spinBox_tileSize_px.setEnabled(False)
+            except:
+                txt = "Error! Failed to load the model!\nModel may be not usable"
+                logging.exception(txt)
+                self.spinBox_tileSize_px.setEnabled(True)
+
+        self.label_modelInfo.setText(txt)
+
 
     def update_input_layer_selection(self, all_layers):
         combobox = self.comboBox_inputLayer  # type: QComboBox
@@ -110,40 +163,52 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _get_input_layer_selected_id(self):
         combobox = self.comboBox_inputLayer  # type: QComboBox
         index = combobox.currentIndex()
+        if index == -1:
+            return None
         return list(self._available_input_layers.keys())[index]
 
-    def get_inference_parameters(self, mask_layer_name:str) -> InferenceParameters:
+    def get_mask_layer_name(self):
+        if not self.get_selected_processed_area_type() == ProcessAreaType.FROM_POLYGONS:
+            return None
+
+        qid = QInputDialog()
+        vals = [layer.name() for layer in QgsProject.instance().mapLayers().values()
+                if isinstance(layer, QgsVectorLayer)]
+        mask_layer_name, ok = QInputDialog.getItem(qid, "Select layer", "Select mask layer to processing", vals, 0, False)
+
+        if not ok:
+            msg = "Error! Layer not selected! Try again."
+            raise OperationFailedException(msg)
+
+        return mask_layer_name
+
+    def get_inference_parameters(self) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
+        processed_area_type = self.get_selected_processed_area_type()
+        model_file_path = self.lineEdit_modelPath.text()
+        self._load_model_and_display_info(model_file_path)
 
         inference_parameters = InferenceParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
-            entire_field=self.radioButton_inferenceEntireField.isChecked(),
-            mask_layer_name=mask_layer_name,
+            processed_area_type=processed_area_type,
+            mask_layer_name=self.get_mask_layer_name(),
+            input_layer_id=self._get_input_layer_selected_id(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
+            model_file_path=model_file_path,
         )
         return inference_parameters
 
     def _run_inference(self):
-        if self.radioButton_inferencePolygonPart.isChecked():
-            qid = QInputDialog()
-            vals = [layer.name() for layer in QgsProject.instance().mapLayers().values() if isinstance(layer, QgsVectorLayer)]
-            mask_layer_name, ok = QInputDialog.getItem( qid, "Select layer", "Select mask layer to processing", vals, 0, False)
+        try:
+            inference_parameters = self.get_inference_parameters()
+        except OperationFailedException as e:
+            msg = str(e)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
+            return
 
-            if not ok:
-                msg = "Error! Layer not selected! Try again."
-                QgsMessageLog.logMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
-                return
-        else:
-            mask_layer_name = None
-
-        inference_parameters = self.get_inference_parameters(mask_layer_name=mask_layer_name)
-        inference_input = InferenceInput(
-            inference_parameters=inference_parameters,
-            input_layer_id=self._get_input_layer_selected_id(),
-        )
-        self.run_inference_signal.emit(inference_input)
+        self.run_inference_signal.emit(inference_parameters)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()
