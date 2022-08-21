@@ -36,6 +36,7 @@ class ModelWrapper:
         if len(inputs) > 1:
             raise Exception("ONNX model: unsupported number of inputs")
         input_0 = inputs[0]
+        self.output_0_name = self.sess.get_outputs()[0].name  # We expect only the first output
         self.input_shape = input_0.shape
         self.input_name = input_0.name
 
@@ -58,8 +59,11 @@ class ModelWrapper:
         input_batch = input_batch.transpose(2, 0, 1)
         input_batch = np.expand_dims(input_batch, axis=0)
 
-        model_output = self.sess.run(None, {self.input_name: input_batch})
-        # TODO - add support for multiple output classes
+        model_output = self.sess.run(
+            output_names=[self.output_0_name],
+            input_feed={self.input_name: input_batch})
+
+        # TODO - add support for multiple output classes. For now just take 0 layer
         damaged_area_onnx = model_output[0][0][1] * 255
         return damaged_area_onnx
 
