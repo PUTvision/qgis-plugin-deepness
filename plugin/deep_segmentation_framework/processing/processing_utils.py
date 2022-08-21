@@ -1,7 +1,10 @@
+import logging
 from dataclasses import dataclass
+from typing import Optional, List, Tuple
 
 import numpy as np
 import cv2
+from qgis.core import QgsWkbTypes
 from qgis.core import QgsRectangle
 
 from qgis.core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsPointXY
@@ -188,3 +191,86 @@ class BoundingBox:
             self.y_max - self.y_min + 1,
             self.x_max - self.x_min + 1
         ]
+
+
+def transform_polygon_with_rings_epsg_to_extended_xy_pixels(
+        polygons: List[List[QgsPointXY]],
+        extended_extent: QgsRectangle,
+        img_size_y_pixels: int,
+        rlayer_units_per_pixel: float) -> List[List[Tuple]]:
+    """
+    Transform coordinates polygons to pixels contours (with cv2 format), in base_extent pixels system
+    :param polygons: List of tuples with two lists each (x and y points respoectively)
+    :param extended_extent:
+    :param img_size_y_pixels:
+    :param rlayer_units_per_pixel:
+    :return: 2D contours list
+    """
+    xy_pixel_contours = []
+    for polygon in polygons:
+        xy_pixel_contour = []
+
+        x_min_epsg = extended_extent.xMinimum()
+        y_min_epsg = extended_extent.yMinimum()
+        y_max_pixel = img_size_y_pixels - 1  # -1 to have the max pixel, not shape
+        for point_epsg in polygon:
+            x_epsg, y_epsg = point_epsg
+            x = round((x_epsg - x_min_epsg) / rlayer_units_per_pixel)
+            y = y_max_pixel - round((y_epsg - y_min_epsg) / rlayer_units_per_pixel)
+            # NOTE: here we can get pixels +-1 values, because we operate on already rounded bounding boxes
+            xy_pixel_contour.append((x, y))
+
+        # Values:
+        # extended_extent.height() / rlayer_units_per_pixel, extended_extent.width() / rlayer_units_per_pixel
+        # are not integers, because extents are aligned to grid, not pixels resolution
+
+        xy_pixel_contours.append(np.asarray(xy_pixel_contour))
+    return xy_pixel_contours
+
+
+def create_area_mask_image(vlayer_mask,
+                           extended_extent: QgsRectangle,
+                           rlayer_units_per_pixel: float,
+                           image_shape_yx) -> Optional[np.ndarray]:
+    """
+    Mask determining area to process (within extended_extent coordinates)
+    None if no mask layer provided.
+    """
+
+    if vlayer_mask is None:
+        return None
+    img = np.zeros(shape=image_shape_yx, dtype=np.uint8)
+    features = vlayer_mask.getFeatures()
+
+    # see https://docs.qgis.org/3.22/en/docs/pyqgis_developer_cookbook/vector.html#iterating-over-vector-layer
+    for feature in features:
+        print("Feature ID: ", feature.id())
+        geom = feature.geometry()
+        geom_single_type = QgsWkbTypes.isSingleType(geom.wkbType())
+
+        if geom.type() == QgsWkbTypes.PointGeometry:
+            logging.warning("Point geometry not supported!")
+        elif geom.type() == QgsWkbTypes.LineGeometry:
+            logging.warning("Line geometry not supported!")
+        elif geom.type() == QgsWkbTypes.PolygonGeometry:
+            polygons = []
+            if geom_single_type:
+                polygon = geom.asPolygon()  # polygon with rings
+                polygons.append(polygon)
+            else:
+                polygons = geom.asMultiPolygon()
+
+            for polygon_with_rings in polygons:
+                polygon_with_rings_xy = transform_polygon_with_rings_epsg_to_extended_xy_pixels(
+                    polygons=polygon_with_rings,
+                    extended_extent=extended_extent,
+                    img_size_y_pixels=image_shape_yx[0],
+                    rlayer_units_per_pixel=rlayer_units_per_pixel)
+                # first polygon is actual polygon
+                cv2.fillPoly(img, pts=polygon_with_rings_xy[:1], color=255)
+                if len(polygon_with_rings_xy) > 1:  # further polygons are rings
+                    cv2.fillPoly(img, pts=polygon_with_rings_xy[1:], color=0)
+        else:
+            print("Unknown or invalid geometry")
+
+    return img

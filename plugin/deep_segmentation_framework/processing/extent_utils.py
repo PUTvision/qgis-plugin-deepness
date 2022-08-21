@@ -5,6 +5,7 @@ from qgis.core import QgsRasterLayer
 from qgis.core import QgsRectangle
 
 from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
+from deep_segmentation_framework.processing.processing_utils import BoundingBox
 
 
 def round_extent_to_rlayer_grid(extent: QgsRectangle, rlayer: QgsRasterLayer) -> QgsRectangle:
@@ -106,3 +107,29 @@ def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
     base_extent = expected_extent.intersect(rlayer_extent)
 
     return base_extent
+
+
+def calculate_base_extent_bbox_in_full_image(image_size_y: int,
+                                             base_extent: QgsRectangle,
+                                             extended_extent: QgsRectangle,
+                                             rlayer_units_per_pixel) -> BoundingBox:
+    """
+    Calculate how base extent fits in extended_extent in terms of pixel position
+    :param image_size_y:
+    :param int:
+    :param base_extent:
+    :param extended_extent:
+    :param rlayer_units_per_pixel:
+    :return:
+    """
+    base_extent = base_extent
+    extended_extent = extended_extent
+
+    # should round without a rest anyway, as extends are aligned to rlayer grid
+    base_extent_bbox_in_full_image = BoundingBox(
+        x_min=round((base_extent.xMinimum() - extended_extent.xMinimum()) / rlayer_units_per_pixel),
+        y_min=image_size_y - 1 - round((base_extent.yMaximum() - extended_extent.yMinimum()) / rlayer_units_per_pixel - 1),
+        x_max=round((base_extent.xMaximum() - extended_extent.xMinimum()) / rlayer_units_per_pixel) - 1,
+        y_max=image_size_y - 1 - round((base_extent.yMinimum() - extended_extent.yMinimum()) / rlayer_units_per_pixel),
+    )
+    return base_extent_bbox_in_full_image

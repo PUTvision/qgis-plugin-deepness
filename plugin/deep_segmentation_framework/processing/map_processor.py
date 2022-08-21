@@ -80,7 +80,11 @@ class MapProcessor(QgsTask):
         self.img_size_y_pixels = round(self.extended_extent.height() / self.rlayer_units_per_pixel)  # how many rows (y)
 
         # Coordinate of base image withing extended image (images for base_extent and extended_extent)
-        self.base_extent_bbox_in_full_image = self._calculate_base_extent_bbox_in_full_image(self.img_size_y_pixels)
+        self.base_extent_bbox_in_full_image = extent_utils.calculate_base_extent_bbox_in_full_image(
+            image_size_y=self.img_size_y_pixels,
+            base_extent=self.base_extent,
+            extended_extent=self.extended_extent,
+            rlayer_units_per_pixel=self.rlayer_units_per_pixel)
 
         # Number of tiles in x and y dimensions which will be used during processing
         # As we are using "extended_extent" this should divide without any rest
@@ -109,78 +113,15 @@ class MapProcessor(QgsTask):
     def _show_image(self, img, window_name='img'):
         self.show_img_signal.emit(img, window_name)
 
-    def transform_polygon_with_rings_epsg_to_extended_xy_pixels(self, polygons: List[List[QgsPointXY]]) -> List[List[Tuple]]:
-        """
-        Transform coordinates polygons to pixels contours (with cv2 format), in base_extent pixels system
-        :param polygons: List of tuples with two lists each (x and y points respoectively)
-        :return: 2D contours list
-        """
-        xy_pixel_contours = []
-        for polygon in polygons:
-            xy_pixel_contour = []
-
-            x_min_epsg = self.extended_extent.xMinimum()
-            y_min_epsg = self.extended_extent.yMinimum()
-            y_max_pixel = self.img_size_y_pixels - 1  # -1 to have the max pixel, not shape
-            for point_epsg in polygon:
-                x_epsg, y_epsg = point_epsg
-                x = round((x_epsg - x_min_epsg) / self.rlayer_units_per_pixel)
-                y = y_max_pixel - round((y_epsg - y_min_epsg) / self.rlayer_units_per_pixel)
-                # NOTE: here we can get pixels +-1 values, because we operate on already rounded bounding boxes
-                xy_pixel_contour.append((x, y))
-
-            # Values:
-            # self.base_extent.height() / self.rlayer_units_per_pixel, self.base_extent.width() / self.rlayer_units_per_pixel
-            # are not integers, because extents are aligned to grid, not pixels resolution
-
-            xy_pixel_contours.append(np.asarray(xy_pixel_contour))
-        return xy_pixel_contours
-
-    def _create_area_mask_image(self, vlayer_mask) -> Optional[np.ndarray]:
-        """
-        Mask determining area to process (within extended_extent coordinates)
-        None if no mask layer provided.
-        """
-
-        if vlayer_mask is None:
-            return None
-        img = np.zeros(shape=[self.img_size_y_pixels, self.img_size_x_pixels], dtype=np.uint8)
-        features = vlayer_mask.getFeatures()
-
-        # see https://docs.qgis.org/3.22/en/docs/pyqgis_developer_cookbook/vector.html#iterating-over-vector-layer
-        for feature in features:
-            print("Feature ID: ", feature.id())
-            geom = feature.geometry()
-            geom_single_type = QgsWkbTypes.isSingleType(geom.wkbType())
-
-            if geom.type() == QgsWkbTypes.PointGeometry:
-                logging.warning("Point geometry not supported!")
-            elif geom.type() == QgsWkbTypes.LineGeometry:
-                logging.warning("Line geometry not supported!")
-            elif geom.type() == QgsWkbTypes.PolygonGeometry:
-                polygons = []
-                if geom_single_type:
-                    polygon = geom.asPolygon()  # polygon with rings
-                    polygons.append(polygon)
-                else:
-                    polygons = geom.asMultiPolygon()
-
-                for polygon_with_rings in polygons:
-                    polygon_with_rings_xy = self.transform_polygon_with_rings_epsg_to_extended_xy_pixels(polygon_with_rings)
-                    # first polygon is actual polygon
-                    cv2.fillPoly(img, pts=polygon_with_rings_xy[:1], color=255)
-                    if len(polygon_with_rings_xy) > 1:  # further polygons are rings
-                        cv2.fillPoly(img, pts=polygon_with_rings_xy[1:], color=0)
-            else:
-                print("Unknown or invalid geometry")
-
-        return img
-
     def _process(self):
         total_tiles = self.x_bins_number * self.y_bins_number
         final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
         full_result_img = np.zeros(final_shape_px, np.uint8)
-        mask_img = self._create_area_mask_image(self.vlayer_mask)
+        mask_img = processing_utils.create_area_mask_image(
+            vlayer_mask=self.vlayer_mask,
+            extended_extent=self.extended_extent,
+            rlayer_units_per_pixel=self.rlayer_units_per_pixel,
+            image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])
 
         for y_bin_number in range(self.y_bins_number):
             for x_bin_number in range(self.x_bins_number):
@@ -220,25 +161,6 @@ class MapProcessor(QgsTask):
         self._create_vlayer_from_mask_for_base_extent(result_img)
         return True
 
-    def _calculate_base_extent_bbox_in_full_image(self, image_size_y) -> BoundingBox:
-        """
-
-        :param image_size_y: Number of y pixels (rows)
-        :return:
-        """
-        base_extent = self.base_extent
-        extended_extent = self.extended_extent
-        rlayer_units_per_pixel = self.rlayer_units_per_pixel
-
-        # should round without a rest anyway, as extends are aligned to rlayer grid
-        base_extent_bbox_in_full_image = BoundingBox(
-            x_min=round((base_extent.xMinimum() - extended_extent.xMinimum()) / rlayer_units_per_pixel),
-            y_min=image_size_y - 1 - round((base_extent.yMaximum() - extended_extent.yMinimum()) / rlayer_units_per_pixel - 1),
-            x_max=round((base_extent.xMaximum() - extended_extent.xMinimum()) / rlayer_units_per_pixel) - 1,
-            y_max=image_size_y - 1 - round((base_extent.yMinimum() - extended_extent.yMinimum()) / rlayer_units_per_pixel),
-        )
-        return base_extent_bbox_in_full_image
-
     def limit_extended_extent_image_to_base_extent_with_mask(self, full_img, mask_img: Optional[np.ndarray]):
         """
         Limit an image which is for extended_extent to the base_extent image.
@@ -247,7 +169,6 @@ class MapProcessor(QgsTask):
         :param mask_img: Image with processed area mask (if a constrained area used)
         :return:
         """
-
         # TODO look for some inplace operation to save memory
         # cv2.copyTo(src=full_img, mask=mask_img, dst=full_img)  # this doesn't work due to implementation details
         full_img = cv2.copyTo(src=full_img, mask=mask_img)
@@ -308,13 +229,12 @@ class MapProcessor(QgsTask):
         # result = tile_img
 
         # thresholding on Red channel (max value - with manually drawn dots on fotomap)
-        tile_img = copy.copy(tile_img)
-        tile_img = tile_img[:, :, 0]
-        tile_img[tile_img < 255] = 0
-        tile_img[tile_img >= 255] = 255
-        result = tile_img
-        return result
+        # tile_img = copy.copy(tile_img)
+        # tile_img = tile_img[:, :, 0]
+        # tile_img[tile_img < 255] = 0
+        # tile_img[tile_img >= 255] = 255
+        # result = tile_img
+        # return result
 
         result = self.model_wrapper.process(tile_img)
         return result
-
