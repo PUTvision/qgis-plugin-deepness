@@ -76,7 +76,7 @@ class TileParams:
                  y_bins_number,
                  inference_parameters: InferenceParameters,
                  rlayer_units_per_pixel,
-                 file_extent):
+                 processing_extent):
         self.x_bin_number = x_bin_number
         self.y_bin_number = y_bin_number
         self.x_bins_number = x_bins_number
@@ -87,12 +87,12 @@ class TileParams:
         self.inference_parameters = inference_parameters
         self.rlayer_units_per_pixel = rlayer_units_per_pixel
 
-        self.extent = self._calculate_extent(file_extent)  # type: QgsRectangle  # tile extent in CRS cordinates
+        self.extent = self._calculate_extent(processing_extent)  # type: QgsRectangle  # tile extent in CRS cordinates
 
-    def _calculate_extent(self, file_extent):
-        tile_extent = QgsRectangle(file_extent)  # copy
-        x_min = file_extent.xMinimum() + self.start_pixel_x * self.rlayer_units_per_pixel
-        y_max = file_extent.yMaximum() - self.start_pixel_y * self.rlayer_units_per_pixel
+    def _calculate_extent(self, processing_extent):
+        tile_extent = QgsRectangle(processing_extent)  # copy
+        x_min = processing_extent.xMinimum() + self.start_pixel_x * self.rlayer_units_per_pixel
+        y_max = processing_extent.yMaximum() - self.start_pixel_y * self.rlayer_units_per_pixel
         tile_extent.setXMinimum(x_min)
         # extent needs to be on the further edge (so including the corner pixel, hence we do not subtract 1)
         tile_extent.setXMaximum(x_min + self.inference_parameters.tile_size_px * self.rlayer_units_per_pixel)
@@ -163,20 +163,29 @@ class MapProcessor(QgsTask):
         self.rlayer = rlayer
         self.inference_parameters = inference_parameters
 
-        self.stride_px = self.inference_parameters.processing_stride_px
+        self.stride_px = self.inference_parameters.processing_stride_px  # stride in pixels
         self.rlayer_units_per_pixel = self.convert_meters_to_rlayer_units(
             self.rlayer, self.inference_parameters.resolution_m_per_px)  # number of rlayer units for one tile pixel
 
+        # exntent in which the actual required area is contained, without additional extensions
         self.base_extent = self._calculate_base_processing_extent_in_rlayer_crs(
             map_canvas=map_canvas
         )  # type: QgsRectangle
 
-        # processed rlayer dimensions
-        self.img_size_x_pixels = round(self.base_extent.width() / self.rlayer_units_per_pixel)
-        self.img_size_y_pixels = round(self.base_extent.height() / self.rlayer_units_per_pixel)
+        # extent which should be used during model inference, as it includes extra margins to have full tiles
+        self.extended_extent = self._calculate_extended_processing_extent(
+            base_extent=self.base_extent)
 
-        self.x_bins_number = (self.img_size_x_pixels - self.inference_parameters.tile_size_px) // self.stride_px + 1  # use int casting instead of // to have always at least 1
-        self.y_bins_number = (self.img_size_y_pixels - self.inference_parameters.tile_size_px) // self.stride_px + 1
+        # processed rlayer dimensions (for extended_extent)
+        self.img_size_x_pixels = round(self.extended_extent.width() / self.rlayer_units_per_pixel)
+        self.img_size_y_pixels = round(self.extended_extent.height() / self.rlayer_units_per_pixel)
+
+        # Number of tiles in x and y dimensions which will be used during processing
+        # As we are using "extended_extent" this should divide without any rest
+        self.x_bins_number = round((self.img_size_x_pixels - self.inference_parameters.tile_size_px)
+                                   / self.stride_px) + 1
+        self.y_bins_number = round((self.img_size_y_pixels - self.inference_parameters.tile_size_px)
+                                   / self.stride_px) + 1
 
         self.model_wrapper = ModelWrapper(model_file_path=inference_parameters.model_file_path)
 
@@ -300,7 +309,7 @@ class MapProcessor(QgsTask):
                 tile_params = TileParams(x_bin_number=x_bin_number, y_bin_number=y_bin_number,
                                          x_bins_number=self.x_bins_number, y_bins_number=self.y_bins_number,
                                          inference_parameters=self.inference_parameters,
-                                         file_extent=self.base_extent,
+                                         processing_extent=self.extended_extent,
                                          rlayer_units_per_pixel=self.rlayer_units_per_pixel)
                 tile_img = self._get_image(self.rlayer, tile_params.extent, self.inference_parameters)
 
@@ -314,7 +323,7 @@ class MapProcessor(QgsTask):
                                            tile_params=tile_params)
 
         full_result_img = self._erode_dilate_image(full_result_img)
-        # plt.figure(); plt.imshow(full_result_img); plt.show()
+        # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
         self._create_vlayer_from_mask(full_result_img)
         return True
 
@@ -393,8 +402,8 @@ class MapProcessor(QgsTask):
         QgsProject.instance().addMapLayer(vlayer)
 
     def transform_contours_yx_pixels_to_target_crs(self, polygons):
-        x_left = self.base_extent.xMinimum()
-        y_upper = self.base_extent.yMaximum()
+        x_left = self.extended_extent.xMinimum()
+        y_upper = self.extended_extent.yMaximum()
 
         polygons_crs = []
         for polygon_3d in polygons:
@@ -443,10 +452,49 @@ class MapProcessor(QgsTask):
         else:
             raise Exception("Invalid processed are type!")
 
-        expected_extent_intersect = expected_extent.intersect(rlayer_extent)
-        base_extent = self.round_extent_to_rlayer_grid(extent=expected_extent_intersect, rlayer=self.rlayer)
+        expected_extent = self.round_extent_to_rlayer_grid(extent=expected_extent, rlayer=self.rlayer)
+        base_extent = expected_extent.intersect(rlayer_extent)
 
         return base_extent
+
+    def _calculate_extended_processing_extent(self, base_extent: QgsRectangle):
+        # first try to add pixels at every border - same as half-overlap for other tiles
+        additional_pixels = self.inference_parameters.processing_overlap_px // 2
+        additional_pixels_in_units = additional_pixels * self.rlayer_units_per_pixel
+
+        tmp_extent = QgsRectangle(
+            base_extent.xMinimum() - additional_pixels_in_units,
+            base_extent.yMinimum() - additional_pixels_in_units,
+            base_extent.xMaximum() + additional_pixels_in_units,
+            base_extent.yMaximum() + additional_pixels_in_units,
+        )
+        tmp_extent = tmp_extent.intersect(self.rlayer.extent())
+
+        # then add borders to have the extent be equal to  N * stride + tile_size, where N is a natural number
+        tile_size_px = self.inference_parameters.tile_size_px
+        stride_px = self.stride_px  # stride in pixels
+
+        current_x_pixels = round(tmp_extent.width() / self.rlayer_units_per_pixel)
+        if current_x_pixels <= tile_size_px:
+            missing_pixels_x = tile_size_px - current_x_pixels  # just one tile
+        else:
+            pixels_in_last_stride_x = (current_x_pixels - tile_size_px) % stride_px
+            missing_pixels_x = (stride_px - pixels_in_last_stride_x) % stride_px
+
+        current_y_pixels = round(tmp_extent.height() / self.rlayer_units_per_pixel)
+        if current_y_pixels <= tile_size_px:
+            missing_pixels_y = tile_size_px - current_y_pixels  # just one tile
+        else:
+            pixels_in_last_stride_y = (current_y_pixels - tile_size_px) % stride_px
+            missing_pixels_y = (stride_px - pixels_in_last_stride_y) % stride_px
+
+        missing_pixels_x_in_units = missing_pixels_x * self.rlayer_units_per_pixel
+        missing_pixels_y_in_units = missing_pixels_y * self.rlayer_units_per_pixel
+        tmp_extent.setXMaximum(tmp_extent.xMaximum() + missing_pixels_x_in_units)
+        tmp_extent.setYMaximum(tmp_extent.yMaximum() + missing_pixels_y_in_units)
+
+        extended_extent = tmp_extent
+        return extended_extent
 
     @staticmethod
     def round_extent_to_rlayer_grid(extent: QgsRectangle, rlayer: QgsRasterLayer) -> QgsRectangle:

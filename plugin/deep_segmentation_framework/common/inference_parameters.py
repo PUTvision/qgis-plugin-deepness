@@ -28,7 +28,7 @@ class InferenceParameters:
     input_layer_id: str
     mask_layer_name: str  # Processing of masked layer - if processed_area_type is FROM_POLYGONS
 
-    processing_overlap_percentage: float = 10.0  # aka stride - overlap of neighbouring tiles while processing
+    processing_overlap_percentage: float = 15.0  # aka stride - overlap of neighbouring tiles while processing
 
     @property
     def tile_size_m(self):
