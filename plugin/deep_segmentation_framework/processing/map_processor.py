@@ -1,14 +1,13 @@
 import copy
 import time
 
-from matplotlib import pyplot as plt
 import numpy as np
 import cv2
 import onnxruntime as ort
 
 from qgis.PyQt.QtCore import pyqtSignal
-from qgis._core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsPointXY
-from qgis._gui import QgsMapCanvas
+from qgis.core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsPointXY
+from qgis.gui import QgsMapCanvas
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsUnitTypes
 from qgis.core import QgsRectangle
@@ -21,128 +20,14 @@ from qgis.gui import QgisInterface
 from qgis.core import Qgis
 import qgis
 
-from ..common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
-from ..common.inference_parameters import InferenceParameters, ProcessedAreaType
+from deep_segmentation_framework.processing import processing_utils, extent_utils
+from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
+from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
+from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.processing.tile_params import TileParams
 
 if IS_DEBUG:
     from matplotlib import pyplot as plt
-
-
-class ModelWrapper:
-    def __init__(self, model_file_path):
-        self.model_file_path = model_file_path
-        self.sess = ort.InferenceSession(self.model_file_path)
-        inputs = self.sess.get_inputs()
-        if len(inputs) > 1:
-            raise Exception("ONNX model: unsupported number of inputs")
-        input_0 = inputs[0]
-        self.output_0_name = self.sess.get_outputs()[0].name  # We expect only the first output
-        self.input_shape = input_0.shape
-        self.input_name = input_0.name
-
-    def get_number_of_channels(self):
-        return self.input_shape[-3]
-
-    def process(self, img):
-        """
-
-        :param img: RGB img [TILE_SIZE x TILE_SIZE x channels], type uint8, values 0 to 255
-        :return: single prediction mask
-        """
-
-        # TODO add support for channels mapping
-
-        img = img[:, :, :self.get_number_of_channels()]
-
-        input_batch = img.astype('float32')
-        input_batch /= 255
-        input_batch = input_batch.transpose(2, 0, 1)
-        input_batch = np.expand_dims(input_batch, axis=0)
-
-        model_output = self.sess.run(
-            output_names=[self.output_0_name],
-            input_feed={self.input_name: input_batch})
-
-        # TODO - add support for multiple output classes. For now just take 0 layer
-        damaged_area_onnx = model_output[0][0][1] * 255
-        return damaged_area_onnx
-
-
-class TileParams:
-    def __init__(self,
-                 x_bin_number,
-                 y_bin_number,
-                 x_bins_number,
-                 y_bins_number,
-                 inference_parameters: InferenceParameters,
-                 rlayer_units_per_pixel,
-                 processing_extent):
-        self.x_bin_number = x_bin_number
-        self.y_bin_number = y_bin_number
-        self.x_bins_number = x_bins_number
-        self.y_bins_number = y_bins_number
-        self.stride_px = inference_parameters.processing_stride_px
-        self.start_pixel_x = x_bin_number * self.stride_px
-        self.start_pixel_y = y_bin_number * self.stride_px
-        self.inference_parameters = inference_parameters
-        self.rlayer_units_per_pixel = rlayer_units_per_pixel
-
-        self.extent = self._calculate_extent(processing_extent)  # type: QgsRectangle  # tile extent in CRS cordinates
-
-    def _calculate_extent(self, processing_extent):
-        tile_extent = QgsRectangle(processing_extent)  # copy
-        x_min = processing_extent.xMinimum() + self.start_pixel_x * self.rlayer_units_per_pixel
-        y_max = processing_extent.yMaximum() - self.start_pixel_y * self.rlayer_units_per_pixel
-        tile_extent.setXMinimum(x_min)
-        # extent needs to be on the further edge (so including the corner pixel, hence we do not subtract 1)
-        tile_extent.setXMaximum(x_min + self.inference_parameters.tile_size_px * self.rlayer_units_per_pixel)
-        tile_extent.setYMaximum(y_max)
-        y_min = y_max - self.inference_parameters.tile_size_px * self.rlayer_units_per_pixel
-        tile_extent.setYMinimum(y_min)
-        return tile_extent
-
-    def get_slice_on_full_image_for_copying(self):
-        """
-        As we are doing processing with overlap, we are not going to copy the entire tile result to final image,
-        but only the part that is not overlapping with the neighbouring tiles.
-        Edge tiles have special handling too.
-
-        :return Slice to be used on the full image
-        """
-        half_overlap = (self.inference_parameters.tile_size_px - self.stride_px) // 2
-
-        # 'core' part of the tile (not overlapping with other tiles), for sure copied for each tile
-        x_min = self.start_pixel_x + half_overlap
-        x_max = self.start_pixel_x + self.inference_parameters.tile_size_px - half_overlap - 1
-        y_min = self.start_pixel_y + half_overlap
-        y_max = self.start_pixel_y + self.inference_parameters.tile_size_px - half_overlap - 1
-
-        # edge tiles handling
-        if self.x_bin_number == 0:
-            x_min -= half_overlap
-        if self.y_bin_number == 0:
-            y_min -= half_overlap
-        if self.x_bin_number == self.x_bins_number-1:
-            x_max += half_overlap
-        if self.y_bin_number == self.y_bins_number-1:
-            y_max += half_overlap
-
-        roi_slice = np.s_[y_min:y_max + 1, x_min:x_max + 1]
-        return roi_slice
-
-    def get_slice_on_tile_image_for_copying(self, roi_slice_on_full_image = None):
-        """
-        Similar to _get_slice_on_full_image_for_copying, but ROI is a slice on the tile
-        """
-        if not roi_slice_on_full_image:
-            roi_slice_on_full_image = self.get_slice_on_full_image_for_copying()
-
-        r = roi_slice_on_full_image
-        roi_slice_on_tile = np.s_[
-                            r[0].start - self.start_pixel_y : r[0].stop - self.start_pixel_y,
-                            r[1].start - self.start_pixel_x : r[1].stop - self.start_pixel_x
-                            ]
-        return roi_slice_on_tile
 
 
 class MapProcessor(QgsTask):
@@ -164,10 +49,10 @@ class MapProcessor(QgsTask):
         self.inference_parameters = inference_parameters
 
         self.stride_px = self.inference_parameters.processing_stride_px  # stride in pixels
-        self.rlayer_units_per_pixel = self.convert_meters_to_rlayer_units(
+        self.rlayer_units_per_pixel = processing_utils.convert_meters_to_rlayer_units(
             self.rlayer, self.inference_parameters.resolution_m_per_px)  # number of rlayer units for one tile pixel
 
-        # exntent in which the actual required area is contained, without additional extensions
+        # extent in which the actual required area is contained, without additional extensions
         self.base_extent = self._calculate_base_processing_extent_in_rlayer_crs(
             map_canvas=map_canvas
         )  # type: QgsRectangle
@@ -193,14 +78,6 @@ class MapProcessor(QgsTask):
         print('run...')
         return self._process()
 
-    @staticmethod
-    def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
-        """ How many map units are there in one meter """
-        # TODO - potentially implement conversions from other units
-        if rlayer.crs().mapUnits() != QgsUnitTypes.DistanceUnit.DistanceMeters:
-            raise Exception("Unsupported layer units")
-        return distance_m
-
     def finished(self, result):
         print(f'finished. Res: {result = }')
         if result:
@@ -211,81 +88,8 @@ class MapProcessor(QgsTask):
     def is_busy(self):
         return True
 
-    def _get_image(self, rlayer, extent, inference_parameters: InferenceParameters) -> np.ndarray:
-        """
-
-        :param rlayer: raster layer from which the image will be extracted
-        :param extent: extent of the image to extract
-        :return: extracted image [SIZE x SIZE x CHANNELS]. Probably RGBA channels
-        """
-
-        expected_meters_per_pixel = inference_parameters.resolution_cm_per_px / 100
-        expected_units_per_pixel = self.convert_meters_to_rlayer_units(rlayer, expected_meters_per_pixel)
-        expected_units_per_pixel_2d = expected_units_per_pixel, expected_units_per_pixel
-        # to get all pixels - use the 'rlayer.rasterUnitsPerPixelX()' instead of 'expected_units_per_pixel_2d'
-        image_size = round((extent.width()) / expected_units_per_pixel_2d[0]), \
-                     round((extent.height()) / expected_units_per_pixel_2d[1])
-
-        # sanity check, that we gave proper extent as parameter
-        assert image_size[0] == inference_parameters.tile_size_px
-        assert image_size[1] == inference_parameters.tile_size_px
-
-        band_count = rlayer.bandCount()
-        band_data = []
-
-        # enable resampling
-        data_provider = rlayer.dataProvider()
-        data_provider.enableProviderResampling(True)
-        original_resampling_method = data_provider.zoomedInResamplingMethod()
-        data_provider.setZoomedInResamplingMethod(data_provider.ResamplingMethod.Bilinear)
-        data_provider.setZoomedOutResamplingMethod(data_provider.ResamplingMethod.Bilinear)
-
-        for band_number in range(1, band_count + 1):
-            raster_block = rlayer.dataProvider().block(
-                band_number,
-                extent,
-                image_size[0], image_size[1])
-            rb = raster_block
-            block_height, block_width = rb.height(), rb.width()
-            if block_width == 0 or block_width == 0:
-                raise Exception("No data on layer within the expected extent!")
-
-            raw_data = rb.data()
-            bytes_array = bytes(raw_data)
-            dt = rb.dataType()
-            if dt == dt.__class__.Byte:
-                number_of_channels = 1
-            elif dt == dt.__class__.ARGB32:
-                number_of_channels = 4
-            else:
-                raise Exception("Invalid input layer data type!")
-
-            a = np.frombuffer(bytes_array, dtype=np.uint8)
-            b = a.reshape((image_size[1], image_size[0], number_of_channels))
-            band_data.append(b)
-
-        data_provider.setZoomedInResamplingMethod(original_resampling_method)  # restore old resampling method
-
-        # TODO - add analysis of band names, to properly set RGBA channels
-        if band_count == 4:
-            band_data = [band_data[0], band_data[1], band_data[2], band_data[3]]  # RGBA probably
-
-        img = np.concatenate(band_data, axis=2)
-        return img
-
     def _show_image(self, img, window_name='img'):
         self.show_img_signal.emit(img, window_name)
-
-    def _erode_dilate_image(self, img):
-        # self._show_image(img)
-        if self.inference_parameters.postprocessing_dilate_erode_size:
-            print('Opening...')
-            size = (self.inference_parameters.postprocessing_dilate_erode_size // 2) ** 2 + 1
-            kernel = np.ones((size, size), np.uint8)
-            img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
-            img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
-            # self._show_image(img, 'opened')
-        return img
 
     def _process(self):
         total_tiles = self.x_bins_number * self.y_bins_number
@@ -311,7 +115,7 @@ class MapProcessor(QgsTask):
                                          inference_parameters=self.inference_parameters,
                                          processing_extent=self.extended_extent,
                                          rlayer_units_per_pixel=self.rlayer_units_per_pixel)
-                tile_img = self._get_image(self.rlayer, tile_params.extent, self.inference_parameters)
+                tile_img = processing_utils.get_tile_image(self.rlayer, tile_params.extent, self.inference_parameters)
 
                 # TODO add support for smaller
 
@@ -322,7 +126,8 @@ class MapProcessor(QgsTask):
                                            full_result_img=full_result_img,
                                            tile_params=tile_params)
 
-        full_result_img = self._erode_dilate_image(full_result_img)
+        full_result_img = processing_utils.erode_dilate_image(img=full_result_img,
+                                                               inference_parameters=self.inference_parameters)
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
         self._create_vlayer_from_mask(full_result_img)
         return True
@@ -332,43 +137,6 @@ class MapProcessor(QgsTask):
         roi_slice_on_tile_image = tile_params.get_slice_on_tile_image_for_copying(roi_slice_on_full_image)
         full_result_img[roi_slice_on_full_image] = tile_result[roi_slice_on_tile_image]
 
-
-    def _convert_cv_contours_to_features(self, features, cv_contours, hierarchy,
-                                         current_contour_index, is_hole, current_holes):
-        if current_contour_index == -1:
-            return
-
-        while True:
-            contour = cv_contours[current_contour_index]
-            if len(contour) >= 3:
-                first_child = hierarchy[current_contour_index][2]
-                internal_holes = []
-                self._convert_cv_contours_to_features(
-                    features=features,
-                    cv_contours=cv_contours,
-                    hierarchy=hierarchy,
-                    current_contour_index=first_child,
-                    is_hole=not is_hole,
-                    current_holes=internal_holes)
-
-                if is_hole:
-                    current_holes.append(contour)
-                else:
-                    feature = QgsFeature()
-                    polygon_xy_vec_vec = [
-                        contour,
-                        *internal_holes
-                    ]
-                    geometry = QgsGeometry.fromPolygonXY(polygon_xy_vec_vec)
-                    feature.setGeometry(geometry)
-
-                    # polygon = shapely.geometry.Polygon(contour, holes=internal_holes)
-                    features.append(feature)
-
-            current_contour_index = hierarchy[current_contour_index][0]
-            if current_contour_index == -1:
-                break
-
     def _create_vlayer_from_mask(self, mask_img):
         # create vector layer with polygons from the mask image
         contours, hierarchy = cv2.findContours(mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -376,14 +144,13 @@ class MapProcessor(QgsTask):
         features = []
 
         if len(contours):
-            self._convert_cv_contours_to_features(
+            processing_utils.convert_cv_contours_to_features(
                 features=features,
                 cv_contours=contours,
                 hierarchy=hierarchy[0],
                 is_hole=False,
                 current_holes=[],
-                current_contour_index=0,
-            )
+                current_contour_index=0)
         else:
             pass  # just nothing, we already have an empty list of features
 
@@ -452,7 +219,7 @@ class MapProcessor(QgsTask):
         else:
             raise Exception("Invalid processed are type!")
 
-        expected_extent = self.round_extent_to_rlayer_grid(extent=expected_extent, rlayer=self.rlayer)
+        expected_extent = extent_utils.round_extent_to_rlayer_grid(extent=expected_extent, rlayer=self.rlayer)
         base_extent = expected_extent.intersect(rlayer_extent)
 
         return base_extent
@@ -495,27 +262,6 @@ class MapProcessor(QgsTask):
 
         extended_extent = tmp_extent
         return extended_extent
-
-    @staticmethod
-    def round_extent_to_rlayer_grid(extent: QgsRectangle, rlayer: QgsRasterLayer) -> QgsRectangle:
-        """
-        Round to rlayer "grid" for pixels.
-        Grid starts at rlayer_extent.xMinimum & yMinimum
-        with resolution of rlayer_units_per_pixel
-
-        :param extent: Extent to round, needs to be in rlayer CRS units
-        :param rlayer: layer detemining the grid
-        """
-        grid_spacing = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
-        grid_start = rlayer.extent().xMinimum(), rlayer.extent().yMinimum()
-
-        x_min = grid_start[0] + int((extent.xMinimum() - grid_start[0]) / grid_spacing[0]) * grid_spacing[0]
-        x_max = grid_start[0] + int((extent.xMaximum() - grid_start[0]) / grid_spacing[0]) * grid_spacing[0]
-        y_min = grid_start[1] + int((extent.yMinimum() - grid_start[1]) / grid_spacing[1]) * grid_spacing[1]
-        y_max = grid_start[1] + int((extent.yMaximum() - grid_start[1]) / grid_spacing[1]) * grid_spacing[1]
-
-        new_extent = QgsRectangle(x_min, y_min, x_max, y_max)
-        return new_extent
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
         # TODO - create proper mapping for channels (layer channels to model channels)
