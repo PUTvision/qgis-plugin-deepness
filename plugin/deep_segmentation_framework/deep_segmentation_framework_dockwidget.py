@@ -39,7 +39,7 @@ from qgis.core import Qgis
 from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit, QFileDialog
 
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessAreaType
+from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
@@ -67,17 +67,17 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def _setup_misc_ui(self):
         combobox = self.comboBox_processedAreaSelection
-        for name in ProcessAreaType.get_all_names():
+        for name in ProcessedAreaType.get_all_names():
             combobox.addItem(name)
 
         model_path = ConfigEntryKey.MODEL_FILE_PATH.get()
         self.lineEdit_modelPath.setText(model_path)
         self._load_model_and_display_info(model_path)
 
-    def get_selected_processed_area_type(self) -> ProcessAreaType:
+    def get_selected_processed_area_type(self) -> ProcessedAreaType:
         combobox = self.comboBox_processedAreaSelection  # type: QComboBox
         txt = combobox.currentText()
-        return ProcessAreaType(txt)
+        return ProcessedAreaType(txt)
 
     def _create_connections(self):
         self.pushButton_doSomething.clicked.connect(self._do_something)
@@ -168,7 +168,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return list(self._available_input_layers.keys())[index]
 
     def get_mask_layer_name(self):
-        if not self.get_selected_processed_area_type() == ProcessAreaType.FROM_POLYGONS:
+        if not self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS:
             return None
 
         qid = QInputDialog()

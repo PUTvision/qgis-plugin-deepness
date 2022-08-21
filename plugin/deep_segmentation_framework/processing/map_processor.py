@@ -8,6 +8,7 @@ import onnxruntime as ort
 
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis._core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsPointXY
+from qgis._gui import QgsMapCanvas
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsUnitTypes
 from qgis.core import QgsRectangle
@@ -21,7 +22,7 @@ from qgis.core import Qgis
 import qgis
 
 from ..common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
-from ..common.inference_parameters import InferenceParameters
+from ..common.inference_parameters import InferenceParameters, ProcessedAreaType
 
 if IS_DEBUG:
     from matplotlib import pyplot as plt
@@ -70,7 +71,7 @@ class TileParams:
                  x_bins_number,
                  y_bins_number,
                  inference_parameters: InferenceParameters,
-                 px_in_rlayer_units,
+                 rlayer_units_per_pixel,
                  file_extent):
         self.x_bin_number = x_bin_number
         self.y_bin_number = y_bin_number
@@ -80,19 +81,19 @@ class TileParams:
         self.start_pixel_x = x_bin_number * self.stride_px
         self.start_pixel_y = y_bin_number * self.stride_px
         self.inference_parameters = inference_parameters
-        self.px_in_rlayer_units = px_in_rlayer_units
+        self.rlayer_units_per_pixel = rlayer_units_per_pixel
 
         self.extent = self._calculate_extent(file_extent)  # type: QgsRectangle  # tile extent in CRS cordinates
 
     def _calculate_extent(self, file_extent):
         tile_extent = QgsRectangle(file_extent)  # copy
-        x_min = file_extent.xMinimum() + self.start_pixel_x * self.px_in_rlayer_units
-        y_max = file_extent.yMaximum() - self.start_pixel_y * self.px_in_rlayer_units
+        x_min = file_extent.xMinimum() + self.start_pixel_x * self.rlayer_units_per_pixel
+        y_max = file_extent.yMaximum() - self.start_pixel_y * self.rlayer_units_per_pixel
         tile_extent.setXMinimum(x_min)
         # extent needs to be on the further edge (so including the corner pixel, hence we do not subtract 1)
-        tile_extent.setXMaximum(x_min + self.inference_parameters.tile_size_px * self.px_in_rlayer_units)
+        tile_extent.setXMaximum(x_min + self.inference_parameters.tile_size_px * self.rlayer_units_per_pixel)
         tile_extent.setYMaximum(y_max)
-        y_min = y_max - self.inference_parameters.tile_size_px * self.px_in_rlayer_units
+        y_min = y_max - self.inference_parameters.tile_size_px * self.rlayer_units_per_pixel
         tile_extent.setYMinimum(y_min)
         return tile_extent
 
@@ -146,24 +147,33 @@ class MapProcessor(QgsTask):
 
     def __init__(self,
                  rlayer: QgsRasterLayer,
-                 processed_extent: QgsRectangle,  # in fotomap CRS
+                 map_canvas: QgsMapCanvas,
                  inference_parameters: InferenceParameters):
-        print(processed_extent)
+        """
+
+        :param rlayer: Raster layer whihc is being processed
+        :param map_canvas: active map canvas (in the GUI), required if processing visible map area
+        :param inference_parameters: see InferenceParameters
+        """
         QgsTask.__init__(self, self.__class__.__name__)
         self.rlayer = rlayer
-        self.processed_extent = processed_extent
         self.inference_parameters = inference_parameters
 
         self.stride_px = self.inference_parameters.processing_stride_px
-        self.px_in_rlayer_units = self.convert_meters_to_rlayer_units(
+        self.rlayer_units_per_pixel = self.convert_meters_to_rlayer_units(
             self.rlayer, self.inference_parameters.resolution_m_per_px)  # number of rlayer units for one tile pixel
 
+        self.base_extent = self._calculate_base_processing_extent_in_rlayer_crs(
+            map_canvas=map_canvas
+        )  # type: QgsRectangle
+
         # processed rlayer dimensions
-        self.img_size_x_pixels = round(self.processed_extent.width() / self.px_in_rlayer_units)
-        self.img_size_y_pixels = round(self.processed_extent.height() / self.px_in_rlayer_units)
+        self.img_size_x_pixels = round(self.base_extent.width() / self.rlayer_units_per_pixel)
+        self.img_size_y_pixels = round(self.base_extent.height() / self.rlayer_units_per_pixel)
 
         self.x_bins_number = (self.img_size_x_pixels - self.inference_parameters.tile_size_px) // self.stride_px + 1  # use int casting instead of // to have always at least 1
         self.y_bins_number = (self.img_size_y_pixels - self.inference_parameters.tile_size_px) // self.stride_px + 1
+
         self.model_wrapper = ModelWrapper(model_file_path=inference_parameters.model_file_path)
 
     def run(self):
@@ -286,8 +296,8 @@ class MapProcessor(QgsTask):
                 tile_params = TileParams(x_bin_number=x_bin_number, y_bin_number=y_bin_number,
                                          x_bins_number=self.x_bins_number, y_bins_number=self.y_bins_number,
                                          inference_parameters=self.inference_parameters,
-                                         file_extent=self.processed_extent,
-                                         px_in_rlayer_units=self.px_in_rlayer_units)
+                                         file_extent=self.base_extent,
+                                         rlayer_units_per_pixel=self.rlayer_units_per_pixel)
                 tile_img = self._get_image(self.rlayer, tile_params.extent, self.inference_parameters)
 
                 # TODO add support for smaller
@@ -300,7 +310,7 @@ class MapProcessor(QgsTask):
                                            tile_params=tile_params)
 
         full_result_img = self._erode_dilate_image(full_result_img)
-        # plt.figure(); plt.imshow(full_result_img)
+        # plt.figure(); plt.imshow(full_result_img); plt.show()
         self._create_vlayer_from_mask(full_result_img)
         return True
 
@@ -379,8 +389,8 @@ class MapProcessor(QgsTask):
         QgsProject.instance().addMapLayer(vlayer)
 
     def transform_contours_yx_pixels_to_target_crs(self, polygons):
-        x_left = self.processed_extent.xMinimum()
-        y_upper = self.processed_extent.yMaximum()
+        x_left = self.base_extent.xMinimum()
+        y_upper = self.base_extent.yMaximum()
 
         polygons_crs = []
         for polygon_3d in polygons:
@@ -390,11 +400,70 @@ class MapProcessor(QgsTask):
             polygon_crs = []
             for i in range(len(polygon)):
                 yx_px = polygon[i]
-                x_crs = yx_px[0] * self.px_in_rlayer_units + x_left
-                y_crs = -(yx_px[1] * self.px_in_rlayer_units - y_upper)
+                x_crs = yx_px[0] * self.rlayer_units_per_pixel + x_left
+                y_crs = -(yx_px[1] * self.rlayer_units_per_pixel - y_upper)
                 polygon_crs.append(QgsPointXY(x_crs, y_crs))
             polygons_crs.append(polygon_crs)
         return polygons_crs
+
+    def _calculate_base_processing_extent_in_rlayer_crs(self, map_canvas: QgsMapCanvas):
+        """
+        Determine the Base Extent of processing (Extent (rectangle) in which the actual required area is contained)
+        :param map_canvas: active map canvas (in the GUI), required if processing visible map area
+        """
+        rlayer_extent = self.rlayer.extent()
+        processed_area_type = self.inference_parameters.processed_area_type
+
+        if processed_area_type == ProcessedAreaType.ENTIRE_LAYER:
+            expected_extent = rlayer_extent
+        elif processed_area_type == ProcessedAreaType.FROM_POLYGONS:
+            mask_layer_name = self.inference_parameters.mask_layer_name
+            assert mask_layer_name is not None
+            active_extent_in_mask_layer_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
+            active_extent = active_extent_in_mask_layer_crs.getGeometry(0)
+            active_extent.convertToSingleType()
+            active_extent = active_extent.boundingBox()
+
+            t = QgsCoordinateTransform()
+            t.setSourceCrs(active_extent_in_mask_layer_crs.sourceCrs())
+            t.setDestinationCrs(self.rlayer.crs())
+            expected_extent = t.transform(active_extent)
+        elif processed_area_type == ProcessedAreaType.VISIBLE_PART:
+            # transform visible extent from mapCanvas CRS to layer CRS
+            active_extent_in_canvas_crs = map_canvas.extent()
+            canvas_crs = map_canvas.mapSettings().destinationCrs()
+            t = QgsCoordinateTransform()
+            t.setSourceCrs(canvas_crs)
+            t.setDestinationCrs(self.rlayer.crs())
+            expected_extent = t.transform(active_extent_in_canvas_crs)
+        else:
+            raise Exception("Invalid processed are type!")
+
+        expected_extent_intersect = expected_extent.intersect(rlayer_extent)
+        base_extent = self.round_extent_to_rlayer_grid(extent=expected_extent_intersect, rlayer=self.rlayer)
+
+        return base_extent
+
+    @staticmethod
+    def round_extent_to_rlayer_grid(extent: QgsRectangle, rlayer: QgsRasterLayer) -> QgsRectangle:
+        """
+        Round to rlayer "grid" for pixels.
+        Grid starts at rlayer_extent.xMinimum & yMinimum
+        with resolution of rlayer_units_per_pixel
+
+        :param extent: Extent to round, needs to be in rlayer CRS units
+        :param rlayer: layer detemining the grid
+        """
+        grid_spacing = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
+        grid_start = rlayer.extent().xMinimum(), rlayer.extent().yMinimum()
+
+        x_min = grid_start[0] + int((extent.xMinimum() - grid_start[0]) / grid_spacing[0]) * grid_spacing[0]
+        x_max = grid_start[0] + int((extent.xMaximum() - grid_start[0]) / grid_spacing[0]) * grid_spacing[0]
+        y_min = grid_start[1] + int((extent.yMinimum() - grid_start[1]) / grid_spacing[1]) * grid_spacing[1]
+        y_max = grid_start[1] + int((extent.yMaximum() - grid_start[1]) / grid_spacing[1]) * grid_spacing[1]
+
+        new_extent = QgsRectangle(x_min, y_min, x_max, y_max)
+        return new_extent
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
         # TODO - create proper mapping for channels (layer channels to model channels)
@@ -409,11 +478,12 @@ class MapProcessor(QgsTask):
         # result = tile_img
 
         # thresholding on Red channel (max value - with manually drawn dots on fotomap)
-        # tile_img = copy.copy(tile_img)
-        # tile_img = tile_img[:, :, 0]
-        # tile_img[tile_img < 255] = 0
-        # tile_img[tile_img >= 255] = 255
-        # result = tile_img
+        tile_img = copy.copy(tile_img)
+        tile_img = tile_img[:, :, 0]
+        tile_img[tile_img < 255] = 0
+        tile_img[tile_img >= 255] = 255
+        result = tile_img
+        return result
 
         result = self.model_wrapper.process(tile_img)
         return result

@@ -50,7 +50,7 @@ import qgis
 
 # Initialize Qt resources from file resources.py
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessAreaType
+from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.resources import *
 
@@ -270,46 +270,6 @@ class DeepSegmentationFramework:
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
 
-    def round_extent(self, extent, units_per_pixel_xy: tuple):
-        # rounded to layer "grid" for pixels. Grid starts at rlayer_extent.xMinimum
-        # with resolution of rlayer_units_per_pixel
-        x_min = int(extent.xMinimum() / units_per_pixel_xy[0]) * units_per_pixel_xy[0]
-        x_max = int(extent.xMaximum() / units_per_pixel_xy[0]) * units_per_pixel_xy[0]
-        y_min = int(extent.yMinimum() / units_per_pixel_xy[1]) * units_per_pixel_xy[1]
-        y_max = int(extent.yMaximum() / units_per_pixel_xy[1]) * units_per_pixel_xy[1]
-        extent.setXMinimum(x_min)
-        extent.setXMaximum(x_max)
-        extent.setYMinimum(y_min)
-        extent.setYMaximum(y_max)
-        return extent
-
-    def _get_extent_for_processing(self, rlayer, processed_area_type: ProcessAreaType, mask_layer_name: str = None):
-        if processed_area_type == ProcessAreaType.ENTIRE_LAYER:
-            active_extent = rlayer.extent()
-        elif processed_area_type == ProcessAreaType.FROM_POLYGONS:
-            assert mask_layer_name is not None
-            active_extent_in_mask_layer_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
-            active_extent = active_extent_in_mask_layer_crs.getGeometry(0)
-            active_extent.convertToSingleType()
-            active_extent = active_extent.boundingBox()
-
-            t = QgsCoordinateTransform()
-            t.setSourceCrs(active_extent_in_mask_layer_crs.sourceCrs())
-            t.setDestinationCrs(rlayer.crs())
-            active_extent = t.transform(active_extent)
-        elif processed_area_type == ProcessAreaType.VISIBLE_PART:
-            # transform visible extent from mapCanvas CRS to layer CRS
-            active_extent_in_canvas_crs = self.iface.mapCanvas().extent()
-            canvas_crs = self.iface.mapCanvas().mapSettings().destinationCrs()
-            t = QgsCoordinateTransform()
-            t.setSourceCrs(canvas_crs)
-            t.setDestinationCrs(rlayer.crs())
-            active_extent = t.transform(active_extent_in_canvas_crs)
-        else:
-            raise Exception("Invalid processed are type!")
-
-        return active_extent
-
     def _do_something(self):
         # After pressing 'do_something' button
         print('Doing something...')
@@ -326,18 +286,6 @@ class DeepSegmentationFramework:
         # QgsApplication.taskManager().addTask(task)
         # QgsMessageLog.logMessage("doing something...", LOG_TAB_NAME, level=Qgis.Info)
         # print(f'{value = }')
-
-    def _get_active_extent_rounded(self, rlayer, inference_parameters: InferenceParameters) -> QgsRectangle:
-        rlayer_extent = rlayer.extent()
-        rlayer_units_per_pixel = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
-
-        active_extent = self._get_extent_for_processing(rlayer=rlayer,
-                                                        processed_area_type=inference_parameters.processed_area_type,
-                                                        mask_layer_name=inference_parameters.mask_layer_name)
-
-        active_extent_intersect = active_extent.intersect(rlayer_extent)
-        active_extent_rounded = self.round_extent(active_extent_intersect, rlayer_units_per_pixel)
-        return active_extent_rounded
 
     def _run_inference(self, inference_parameters):
         if self._map_processor and self._map_processor.is_busy():
@@ -356,10 +304,8 @@ class DeepSegmentationFramework:
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
             return
 
-        processed_extent = self._get_active_extent_rounded(rlayer, inference_parameters)
-
         self._map_processor = MapProcessor(rlayer=rlayer,
-                                           processed_extent=processed_extent,
+                                           map_canvas=self.iface.mapCanvas(),
                                            inference_parameters=inference_parameters)
         self._map_processor.finished_signal.connect(self._map_processor_finished)
         self._map_processor.show_img_signal.connect(self._show_img)
