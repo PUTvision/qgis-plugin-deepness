@@ -53,13 +53,17 @@ class MapProcessor(QgsTask):
             self.rlayer, self.inference_parameters.resolution_m_per_px)  # number of rlayer units for one tile pixel
 
         # extent in which the actual required area is contained, without additional extensions
-        self.base_extent = self._calculate_base_processing_extent_in_rlayer_crs(
-            map_canvas=map_canvas
-        )  # type: QgsRectangle
+        self.base_extent = extent_utils.calculate_base_processing_extent_in_rlayer_crs(
+            map_canvas=map_canvas,
+            rlayer=self.rlayer,
+            inference_parameters=self.inference_parameters)
 
         # extent which should be used during model inference, as it includes extra margins to have full tiles
-        self.extended_extent = self._calculate_extended_processing_extent(
-            base_extent=self.base_extent)
+        self.extended_extent = extent_utils.calculate_extended_processing_extent(
+            base_extent=self.base_extent,
+            rlayer=self.rlayer,
+            inference_parameters=self.inference_parameters,
+            rlayer_units_per_pixel=self.rlayer_units_per_pixel)
 
         # processed rlayer dimensions (for extended_extent)
         self.img_size_x_pixels = round(self.extended_extent.width() / self.rlayer_units_per_pixel)
@@ -185,83 +189,6 @@ class MapProcessor(QgsTask):
                 polygon_crs.append(QgsPointXY(x_crs, y_crs))
             polygons_crs.append(polygon_crs)
         return polygons_crs
-
-    def _calculate_base_processing_extent_in_rlayer_crs(self, map_canvas: QgsMapCanvas):
-        """
-        Determine the Base Extent of processing (Extent (rectangle) in which the actual required area is contained)
-        :param map_canvas: active map canvas (in the GUI), required if processing visible map area
-        """
-        rlayer_extent = self.rlayer.extent()
-        processed_area_type = self.inference_parameters.processed_area_type
-
-        if processed_area_type == ProcessedAreaType.ENTIRE_LAYER:
-            expected_extent = rlayer_extent
-        elif processed_area_type == ProcessedAreaType.FROM_POLYGONS:
-            mask_layer_name = self.inference_parameters.mask_layer_name
-            assert mask_layer_name is not None
-            active_extent_in_mask_layer_crs = QgsProject.instance().mapLayersByName(mask_layer_name)[0]
-            active_extent = active_extent_in_mask_layer_crs.getGeometry(0)
-            active_extent.convertToSingleType()
-            active_extent = active_extent.boundingBox()
-
-            t = QgsCoordinateTransform()
-            t.setSourceCrs(active_extent_in_mask_layer_crs.sourceCrs())
-            t.setDestinationCrs(self.rlayer.crs())
-            expected_extent = t.transform(active_extent)
-        elif processed_area_type == ProcessedAreaType.VISIBLE_PART:
-            # transform visible extent from mapCanvas CRS to layer CRS
-            active_extent_in_canvas_crs = map_canvas.extent()
-            canvas_crs = map_canvas.mapSettings().destinationCrs()
-            t = QgsCoordinateTransform()
-            t.setSourceCrs(canvas_crs)
-            t.setDestinationCrs(self.rlayer.crs())
-            expected_extent = t.transform(active_extent_in_canvas_crs)
-        else:
-            raise Exception("Invalid processed are type!")
-
-        expected_extent = extent_utils.round_extent_to_rlayer_grid(extent=expected_extent, rlayer=self.rlayer)
-        base_extent = expected_extent.intersect(rlayer_extent)
-
-        return base_extent
-
-    def _calculate_extended_processing_extent(self, base_extent: QgsRectangle):
-        # first try to add pixels at every border - same as half-overlap for other tiles
-        additional_pixels = self.inference_parameters.processing_overlap_px // 2
-        additional_pixels_in_units = additional_pixels * self.rlayer_units_per_pixel
-
-        tmp_extent = QgsRectangle(
-            base_extent.xMinimum() - additional_pixels_in_units,
-            base_extent.yMinimum() - additional_pixels_in_units,
-            base_extent.xMaximum() + additional_pixels_in_units,
-            base_extent.yMaximum() + additional_pixels_in_units,
-        )
-        tmp_extent = tmp_extent.intersect(self.rlayer.extent())
-
-        # then add borders to have the extent be equal to  N * stride + tile_size, where N is a natural number
-        tile_size_px = self.inference_parameters.tile_size_px
-        stride_px = self.stride_px  # stride in pixels
-
-        current_x_pixels = round(tmp_extent.width() / self.rlayer_units_per_pixel)
-        if current_x_pixels <= tile_size_px:
-            missing_pixels_x = tile_size_px - current_x_pixels  # just one tile
-        else:
-            pixels_in_last_stride_x = (current_x_pixels - tile_size_px) % stride_px
-            missing_pixels_x = (stride_px - pixels_in_last_stride_x) % stride_px
-
-        current_y_pixels = round(tmp_extent.height() / self.rlayer_units_per_pixel)
-        if current_y_pixels <= tile_size_px:
-            missing_pixels_y = tile_size_px - current_y_pixels  # just one tile
-        else:
-            pixels_in_last_stride_y = (current_y_pixels - tile_size_px) % stride_px
-            missing_pixels_y = (stride_px - pixels_in_last_stride_y) % stride_px
-
-        missing_pixels_x_in_units = missing_pixels_x * self.rlayer_units_per_pixel
-        missing_pixels_y_in_units = missing_pixels_y * self.rlayer_units_per_pixel
-        tmp_extent.setXMaximum(tmp_extent.xMaximum() + missing_pixels_x_in_units)
-        tmp_extent.setYMaximum(tmp_extent.yMaximum() + missing_pixels_y_in_units)
-
-        extended_extent = tmp_extent
-        return extended_extent
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
         # TODO - create proper mapping for channels (layer channels to model channels)
