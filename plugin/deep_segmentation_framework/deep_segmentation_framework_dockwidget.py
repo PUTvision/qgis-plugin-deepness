@@ -56,7 +56,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     run_inference_signal = pyqtSignal(InferenceParameters)
 
     def __init__(self, iface, parent=None):
-        """Constructor."""
         super(DeepSegmentationFrameworkDockWidget, self).__init__(parent)
         self.iface = iface
         self.setupUi(self)
@@ -80,6 +79,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _set_processed_area_mask_options(self):
         show_mask_combobox = (self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS)
         self.mMapLayerComboBox_areaMaskLayer.setVisible(show_mask_combobox)
+        self.label_areaMaskLayer.setVisible(show_mask_combobox)
 
     def get_selected_processed_area_type(self) -> ProcessedAreaType:
         combobox = self.comboBox_processedAreaSelection  # type: QComboBox
