@@ -24,3 +24,12 @@ qgis
  - Install and enable plugin to reload plugins: `Plugin reloader` and to print stack errors: `first aid` plugin
 
 Every time plugin code is modified, use the `Plugin reloader` to reload our plugin.
+
+
+# Model requirements
+ONNX models are supported.
+Model should have one input of size (BATCH_SIZE, CHANNELS, SIZE_PX, SIZE_PX).
+Size of processed images in pixel is model defined, but needs to be equal in x and y axes.
+Currently, BATCH_SIZE is always equal to 1.
+If processed image needs to be padded (e.g. on map borders) it will be padded with 0 values.
+Model output number 0 should be an image with size (BATCH_SIZE, NUM_CLASSES, SIZE_PX, SIZE_PX).

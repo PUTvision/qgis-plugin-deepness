@@ -2,7 +2,7 @@ import enum
 from dataclasses import dataclass
 
 
-class ProcessAreaType(enum.Enum):
+class ProcessedAreaType(enum.Enum):
     VISIBLE_PART = 'Visible part'
     ENTIRE_LAYER = 'Entire layer'
     FROM_POLYGONS = 'From polygons'
@@ -14,17 +14,21 @@ class ProcessAreaType(enum.Enum):
 
 @dataclass
 class InferenceParameters:
+    """
+    Parameters for Inference of model (including pre/post processing) obtained from UI
+    """
+
     resolution_cm_per_px: float  # image resolution to used during processing
-    processed_area_type: ProcessAreaType  # whether to perform operation on the entire field or part
+    processed_area_type: ProcessedAreaType  # whether to perform operation on the entire field or part
     tile_size_px: int  # Tile size for processing (model input size)
     postprocessing_dilate_erode_size: int  # dilate/erode operation size, once we have a single class map. 0 if inactive
 
     model_file_path: str  # path to the model file
 
     input_layer_id: str
-    mask_layer_name: str  # Processing of masked layer - if processed_area_type is FROM_POLYGONS
+    mask_layer_id: str  # Processing of masked layer - if processed_area_type is FROM_POLYGONS    # TODO change to id
 
-    processing_overlap_percentage: float = 10.0  # aka stride - overlap of neighbouring tiles while processing
+    processing_overlap_percentage: float = 15.0  # aka stride - overlap of neighbouring tiles while processing
 
     @property
     def tile_size_m(self):
