@@ -241,7 +241,7 @@ class DeepSegmentationFramework:
     #--------------------------------------------------------------------------
 
     def _layers_changed(self, _):
-        self.dockwidget.update_input_layer_selection(QgsProject.instance().mapLayers())
+        pass
 
     def run(self):
         """Run method that loads and starts the plugin"""
@@ -264,28 +264,10 @@ class DeepSegmentationFramework:
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
-            self.dockwidget.do_something_signal.connect(self._do_something)
             self.dockwidget.run_inference_signal.connect(self._run_inference)
 
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
-
-    def _do_something(self):
-        # After pressing 'do_something' button
-        print('Doing something...')
-
-        # proj = QgsProject.instance()
-        # value, _ = proj.readNumEntry(PLUGIN_NAME, 'testcounter', 0)
-        # value += 1
-        # proj.writeEntry(PLUGIN_NAME, 'testcounter', value)
-        # self._show_active_raster_as_image()
-
-        # self.iface.messageBar().pushMessage("Info", "hello", level=Qgis.Critical)
-        # self.iface.messageBar().pushMessage("Info", f"hello {value}", level=Qgis.Success)
-        # task = TestTask('my task', 10)
-        # QgsApplication.taskManager().addTask(task)
-        # QgsMessageLog.logMessage("doing something...", LOG_TAB_NAME, level=Qgis.Info)
-        # print(f'{value = }')
 
     def _run_inference(self, inference_parameters):
         if self._map_processor and self._map_processor.is_busy():

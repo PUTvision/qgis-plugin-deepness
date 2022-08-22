@@ -30,6 +30,7 @@ import onnxruntime as ort
 from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
+from qgis._core import QgsMapLayerProxyModel
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsMessageLog
@@ -52,7 +53,6 @@ class OperationFailedException(Exception):
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
-    do_something_signal = pyqtSignal()  # signal used for quick testing
     run_inference_signal = pyqtSignal(InferenceParameters)
 
     def __init__(self, iface, parent=None):
@@ -62,7 +62,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.setupUi(self)
         self._create_connections()
         QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
-        self._available_input_layers = {}  # type: Dict[str, str]  # id, name
         self._setup_misc_ui()
 
     def _setup_misc_ui(self):
@@ -74,18 +73,23 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.lineEdit_modelPath.setText(model_path)
         self._load_model_and_display_info(model_path)
 
+        self.mMapLayerComboBox_inputLayer.setFilters(QgsMapLayerProxyModel.RasterLayer)
+        self.mMapLayerComboBox_areaMaskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        self._set_processed_area_mask_options()
+
+    def _set_processed_area_mask_options(self):
+        show_mask_combobox = (self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS)
+        self.mMapLayerComboBox_areaMaskLayer.setVisible(show_mask_combobox)
+
     def get_selected_processed_area_type(self) -> ProcessedAreaType:
         combobox = self.comboBox_processedAreaSelection  # type: QComboBox
         txt = combobox.currentText()
         return ProcessedAreaType(txt)
 
     def _create_connections(self):
-        self.pushButton_doSomething.clicked.connect(self._do_something)
         self.pushButton_run_inference.clicked.connect(self._run_inference)
         self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
-
-    def _do_something(self):
-        self.do_something_signal.emit()
+        self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
 
     def _browse_model_path(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -122,64 +126,11 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.label_modelInfo.setText(txt)
 
-
-    def update_input_layer_selection(self, all_layers):
-        combobox = self.comboBox_inputLayer  # type: QComboBox
-        if combobox.count() > 0:
-            selected_item_index = combobox.currentIndex()
-            selected_item_id = list(self._available_input_layers.keys())[selected_item_index]
-        else:
-            selected_item_id = None
-
-        self._available_input_layers = {}
-        for layer_id, layer in all_layers.items():
-            if not isinstance(layer, QgsRasterLayer):
-                continue  # not a vector layer - ignore
-            name = layer.name()
-            self._available_input_layers[layer_id] = name
-
-        combobox.clear()
-        for name in self._available_input_layers.values():
-            combobox.addItem(name)
-
-        # discard previously selected item, if it is no longer available:
-        if selected_item_id not in self._available_input_layers:
-            selected_item_id = None
-
-        if not selected_item_id:
-            # if none item is selected, and 'fotomapa' is available, select it,
-            # as it is usually the layer we are looking for
-            for layer_id, name in self._available_input_layers.items():
-                if 'fotomapa' in name:
-                    selected_item_id = layer_id
-                    break
-
-        if selected_item_id:
-            index_of_selected_item_id = list(self._available_input_layers.keys()).index(selected_item_id)
-            combobox.setCurrentIndex(index_of_selected_item_id)
-            #  TODO: save selected_item as project plugin parameter the last selection
-            #  (so it will be selected next time project starts)
-
-    def _get_input_layer_selected_id(self):
-        combobox = self.comboBox_inputLayer  # type: QComboBox
-        index = combobox.currentIndex()
-        if index == -1:
-            return None
-        return list(self._available_input_layers.keys())[index]
-
     def get_mask_layer_id(self):
         if not self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS:
             return None
 
-        qid = QInputDialog()
-        vals = [layer.id() for layer in QgsProject.instance().mapLayers().values()
-                if isinstance(layer, QgsVectorLayer)]
-        mask_layer_id, ok = QInputDialog.getItem(qid, "Select layer", "Select mask layer to processing", vals, 0, False)
-
-        if not ok:
-            msg = "Error! Layer not selected! Try again."
-            raise OperationFailedException(msg)
-
+        mask_layer_id = self.mMapLayerComboBox_areaMaskLayer.currentLayer().id()
         return mask_layer_id
 
     def get_inference_parameters(self) -> InferenceParameters:
@@ -194,7 +145,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             tile_size_px=self.spinBox_tileSize_px.value(),
             processed_area_type=processed_area_type,
             mask_layer_id=self.get_mask_layer_id(),
-            input_layer_id=self._get_input_layer_selected_id(),
+            input_layer_id=self.mMapLayerComboBox_inputLayer.currentLayer().id(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
             model_file_path=model_file_path,
         )
