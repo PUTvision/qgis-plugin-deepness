@@ -96,7 +96,45 @@
            <string>ONNX Model</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_7">
-           <item row="2" column="0" colspan="4">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Model file path:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2">
+            <widget class="QPushButton" name="pushButton_browseModelPath">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>Browse...</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>Model info:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="lineEdit_modelPath">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0" colspan="3">
+            <widget class="QPushButton" name="pushButton_reloadModel">
+             <property name="text">
+              <string>Reload Model</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1" rowspan="2" colspan="2">
             <widget class="QLabel" name="label_modelInfo">
              <property name="font">
               <font>
@@ -107,73 +145,10 @@
               <string notr="true">color: rgb(135, 135, 133);</string>
              </property>
              <property name="text">
-              <string>Model not loaded! Click &quot;Load Model&quot; buttonabove first!</string>
+              <string>Model not loaded! Please select its path and click &quot;Load Model&quot; buttonabove first!</string>
              </property>
-            </widget>
-           </item>
-           <item row="6" column="0">
-            <widget class="QLabel" name="label_3">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Model file path:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="0">
-            <widget class="QLabel" name="label_5">
-             <property name="text">
-              <string>...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="3">
-            <widget class="QPushButton" name="pushButton_browseModelPath">
-             <property name="enabled">
+             <property name="wordWrap">
               <bool>true</bool>
-             </property>
-             <property name="text">
-              <string>Browse...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
-            <widget class="QLineEdit" name="lineEdit_modelPath">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0" colspan="4">
-            <widget class="Line" name="line">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0" colspan="4">
-            <widget class="QPushButton" name="pushButton">
-             <property name="text">
-              <string>Load Model</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="2">
-            <widget class="QLabel" name="label_6">
-             <property name="text">
-              <string>...</string>
-             </property>
-            </widget>
-           </item>
-           <item row="4" column="3">
-            <widget class="QLabel" name="label_7">
-             <property name="text">
-              <string>...</string>
              </property>
             </widget>
            </item>
@@ -261,6 +236,9 @@
            </item>
            <item row="1" column="1">
             <widget class="QSpinBox" name="spinBox_tileSize_px">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <property name="maximum">
               <number>99999</number>
              </property>
@@ -285,7 +263,7 @@ for some models</string>
             </widget>
            </item>
            <item row="2" column="1">
-            <widget class="QSpinBox" name="spinBox">
+            <widget class="QSpinBox" name="spinBox_processingTileOverlapPercentage">
              <property name="suffix">
               <string/>
              </property>

@@ -93,7 +93,7 @@ class MapProcessor(QgsTask):
         self.y_bins_number = round((self.img_size_y_pixels - self.inference_parameters.tile_size_px)
                                    / self.stride_px) + 1
 
-        self.model_wrapper = ModelWrapper(model_file_path=inference_parameters.model_file_path)
+        self.model_wrapper = self.inference_parameters.model
 
     def run(self):
         print('run...')

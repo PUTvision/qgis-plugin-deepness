@@ -65,9 +65,8 @@ def generic_processing_test__specified_extent():
 
     dockwidget = DeepSegmentationFrameworkDockWidget(iface=None)
     inference_parameters = dockwidget.get_inference_parameters()
-    inference_parameters.model_file_path = '/home/przemek/Desktop/corn/model/corn_segmentation_model.onnx'
+    inference_parameters.model = MagicMock()
     processed_extent = PROCESSED_EXTENT_4_FAKE_FOTOMAPA
-    MapProcessor.ModelWrapper = MagicMock()
 
     # we want to use a fake extent, which is the Visible Part of the map
     # and we need to mock it's function calls
@@ -93,8 +92,7 @@ def generic_processing_test__specified_vlayer_mask():
 
     dockwidget = DeepSegmentationFrameworkDockWidget(iface=None)
     inference_parameters = dockwidget.get_inference_parameters()
-    inference_parameters.model_file_path = '/home/przemek/Desktop/corn/model/corn_segmentation_model.onnx'
-    MapProcessor.ModelWrapper = MagicMock()
+    inference_parameters.model = MagicMock()
 
     inference_parameters.processed_area_type = ProcessedAreaType.FROM_POLYGONS
 

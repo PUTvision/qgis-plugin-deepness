@@ -25,6 +25,8 @@ import enum
 import logging
 import os
 from dataclasses import dataclass
+from typing import Optional
+
 import onnxruntime as ort
 
 from qgis.PyQt.QtWidgets import QComboBox
@@ -41,6 +43,7 @@ from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit, QFileDialog
 
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
 from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
+from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
@@ -62,6 +65,15 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self._create_connections()
         QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
         self._setup_misc_ui()
+        self._model_wrapper = None  # type: Optional[ModelWrapper]
+        self._set_default_input_layer()  # TODO: determine if needed in the future
+
+    def _set_default_input_layer(self):
+        layers = self.iface.mapCanvas().layers()
+        for layer in layers:
+            if 'fotomap' in layer.name():
+                self.mMapLayerComboBox_inputLayer.setLayer(layer)
+                break
 
     def _setup_misc_ui(self):
         combobox = self.comboBox_processedAreaSelection
@@ -70,7 +82,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         model_path = ConfigEntryKey.MODEL_FILE_PATH.get()
         self.lineEdit_modelPath.setText(model_path)
-        self._load_model_and_display_info(model_path)
+        self._load_model_and_display_info()
 
         self.mMapLayerComboBox_inputLayer.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.mMapLayerComboBox_areaMaskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
@@ -90,6 +102,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.pushButton_run_inference.clicked.connect(self._run_inference)
         self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
         self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
+        self.pushButton_reloadModel.clicked.connect(self._load_model_and_display_info)
 
     def _browse_model_path(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -100,18 +113,20 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if file_path:
             self.lineEdit_modelPath.setText(file_path)
             ConfigEntryKey.MODEL_FILE_PATH.set(file_path)
-            self._load_model_and_display_info(file_path)
+            self._load_model_and_display_info()
 
-    def _load_model_and_display_info(self, file_path):
+    def _load_model_and_display_info(self):
         """
         Tries to load the model and display its message.
         """
+        file_path = self.lineEdit_modelPath.text()
 
         input_size_px = 1
         txt = ''
         if file_path:
             try:
-                sess = ort.InferenceSession(file_path)
+                self._model_wrapper = ModelWrapper()
+                get from model
                 input_0 = sess.get_inputs()[0]
                 txt += f'Input shape: {input_0.shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
                 input_size_px = input_0.shape[-1]
@@ -140,6 +155,9 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         model_file_path = self.lineEdit_modelPath.text()
         self._load_model_and_display_info(model_file_path)
 
+        if self._model_wrapper is None:
+            raise OperationFailedException("Please select and load a model first!")
+
         inference_parameters = InferenceParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
@@ -147,7 +165,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             mask_layer_id=self.get_mask_layer_id(),
             input_layer_id=self.mMapLayerComboBox_inputLayer.currentLayer().id(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
-            model_file_path=model_file_path,
+            processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
+            model=self._model_wrapper,
         )
         return inference_parameters
 

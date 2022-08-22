@@ -1,6 +1,8 @@
 import enum
 from dataclasses import dataclass
 
+from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+
 
 class ProcessedAreaType(enum.Enum):
     VISIBLE_PART = 'Visible part'
@@ -23,12 +25,12 @@ class InferenceParameters:
     tile_size_px: int  # Tile size for processing (model input size)
     postprocessing_dilate_erode_size: int  # dilate/erode operation size, once we have a single class map. 0 if inactive
 
-    model_file_path: str  # path to the model file
+    model: ModelWrapper  # wrapper of the loaded model
 
     input_layer_id: str
     mask_layer_id: str  # Processing of masked layer - if processed_area_type is FROM_POLYGONS    # TODO change to id
 
-    processing_overlap_percentage: float = 15.0  # aka stride - overlap of neighbouring tiles while processing
+    processing_overlap_percentage: float  # aka stride - overlap of neighbouring tiles while processing
 
     @property
     def tile_size_m(self):
