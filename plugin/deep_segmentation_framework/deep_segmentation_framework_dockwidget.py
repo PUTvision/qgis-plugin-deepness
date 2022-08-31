@@ -126,8 +126,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if file_path:
             try:
                 self._model_wrapper = ModelWrapper()
-                get from model
-                input_0 = sess.get_inputs()[0]
+                input_0 = self._model_wrapper.get_input_shape()
                 txt += f'Input shape: {input_0.shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
                 input_size_px = input_0.shape[-1]
 
@@ -148,12 +147,14 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         mask_layer_id = self.mMapLayerComboBox_areaMaskLayer.currentLayer().id()
         return mask_layer_id
 
+    def _get_input_layer_id(self):
+        self.mMapLayerComboBox_inputLayer.currentLayer().id()
+
     def get_inference_parameters(self) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
         processed_area_type = self.get_selected_processed_area_type()
-        model_file_path = self.lineEdit_modelPath.text()
-        self._load_model_and_display_info(model_file_path)
+        self._load_model_and_display_info()
 
         if self._model_wrapper is None:
             raise OperationFailedException("Please select and load a model first!")
@@ -163,7 +164,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             tile_size_px=self.spinBox_tileSize_px.value(),
             processed_area_type=processed_area_type,
             mask_layer_id=self.get_mask_layer_id(),
-            input_layer_id=self.mMapLayerComboBox_inputLayer.currentLayer().id(),
+            input_layer_id=self._get_input_layer_id(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
             processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
             model=self._model_wrapper,

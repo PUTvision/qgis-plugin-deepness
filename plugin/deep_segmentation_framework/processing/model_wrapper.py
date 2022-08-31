@@ -18,11 +18,17 @@ class ModelWrapper:
         self.input_shape = input_0.shape
         self.input_name = input_0.name
 
+    def get_input_shape(self):
+        """
+        Get shape of the input for the model
+        """
+        return self.input_shape
+
     def get_input_size_in_pixels(self):
         """
         Get number of input pixels in x and y direction (the same value)
         """
-    todo return shape
+        return self.input_shape[-2:]
 
     def get_number_of_channels(self):
         return self.input_shape[-3]

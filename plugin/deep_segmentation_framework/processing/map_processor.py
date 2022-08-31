@@ -45,7 +45,8 @@ class MapProcessor(QgsTask):
                  inference_parameters: InferenceParameters):
         """
 
-        :param rlayer: Raster layer whihc is being processed
+        :param rlayer: Raster layer which is being processed
+        :param vlayer_mask: Vector layer with outline of area which should be processed (within rlayer)
         :param map_canvas: active map canvas (in the GUI), required if processing visible map area
         :param inference_parameters: see InferenceParameters
         """
