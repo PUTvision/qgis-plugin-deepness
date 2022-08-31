@@ -45,6 +45,8 @@ from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit, QFileDialog
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
 from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.widgets.input_channels_mapping.input_channels_mapping_widget import \
+    InputChannelsMappingWidget
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
@@ -63,6 +65,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         super(DeepSegmentationFrameworkDockWidget, self).__init__(parent)
         self.iface = iface
         self.setupUi(self)
+        self._input_channels_mapping_widget = InputChannelsMappingWidget(self)
         self._create_connections()
         QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
         self._setup_misc_ui()
@@ -76,10 +79,15 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 self.mMapLayerComboBox_inputLayer.setLayer(layer)
                 break
 
+    def _rlayer_updated(self):
+        self._input_channels_mapping_widget.set_rlayer(self._get_input_layer())
+
     def _setup_misc_ui(self):
         combobox = self.comboBox_processedAreaSelection
         for name in ProcessedAreaType.get_all_names():
             combobox.addItem(name)
+
+        self.verticalLayout_inputChannelsMapping.addWidget(self._input_channels_mapping_widget)
 
         model_path = ConfigEntryKey.MODEL_FILE_PATH.get()
         self.lineEdit_modelPath.setText(model_path)
@@ -104,6 +112,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
         self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
         self.pushButton_reloadModel.clicked.connect(self._load_model_and_display_info)
+        self.mMapLayerComboBox_inputLayer.layerChanged.connect(self._rlayer_updated)
 
     def _browse_model_path(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -135,6 +144,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             # TODO idk how variable input will be handled
             self.spinBox_tileSize_px.setValue(input_size_px)
             self.spinBox_tileSize_px.setEnabled(False)
+            self._input_channels_mapping_widget.set_model(self._model_wrapper)
         except Exception as e:
             txt = "Error! Failed to load the model!\n" \
                   "Model may be not usable."
@@ -154,8 +164,11 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         mask_layer_id = self.mMapLayerComboBox_areaMaskLayer.currentLayer().id()
         return mask_layer_id
 
+    def _get_input_layer(self):
+        return self.mMapLayerComboBox_inputLayer.currentLayer()
+
     def _get_input_layer_id(self):
-        self.mMapLayerComboBox_inputLayer.currentLayer().id()
+        self._get_input_layer().id()
 
     def get_inference_parameters(self) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \

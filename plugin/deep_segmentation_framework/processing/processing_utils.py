@@ -4,6 +4,7 @@ from typing import Optional, List, Tuple
 
 import numpy as np
 import cv2
+from qgis.core import Qgis
 from qgis.core import QgsWkbTypes
 from qgis.core import QgsRectangle
 
@@ -69,9 +70,9 @@ def get_tile_image(rlayer, extent, inference_parameters: InferenceParameters) ->
         raw_data = rb.data()
         bytes_array = bytes(raw_data)
         dt = rb.dataType()
-        if dt == dt.__class__.Byte:
+        if dt == Qgis.DataType.Byte:
             number_of_channels = 1
-        elif dt == dt.__class__.ARGB32:
+        elif dt == Qgis.DataType.ARGB32:
             number_of_channels = 4
         else:
             raise Exception("Invalid input layer data type!")
@@ -274,3 +275,5 @@ def create_area_mask_image(vlayer_mask,
             print("Unknown or invalid geometry")
 
     return img
+
+raster_block = rlayer.dataProvider().block(1, extent, 32, 32)
