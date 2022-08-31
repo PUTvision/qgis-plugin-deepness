@@ -66,6 +66,8 @@ def init_qgis():
 
 
 def generic_processing_test__specified_extent():
+    # TODO - prepare inference parameters manually
+
     qgs = init_qgis()
 
     rlayer = get_rlayer()
@@ -97,8 +99,10 @@ def generic_processing_test__specified_extent():
 
 
 def generic_processing_test__specified_vlayer_mask():
-    qgs = init_qgis()
+    # TODO - prepare inference parameters manually
 
+    qgs = init_qgis()
+    #
     rlayer = get_rlayer()
     vlayer_mask = get_vlayer()
     vlayer_mask.setCrs(rlayer.crs())

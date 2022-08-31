@@ -28,11 +28,12 @@ from dataclasses import dataclass
 from typing import Optional
 
 import onnxruntime as ort
+from PyQt5.QtWidgets import QMessageBox
 
 from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
-from qgis._core import QgsMapLayerProxyModel
+from qgis.core import QgsMapLayerProxyModel
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsMessageLog
@@ -82,7 +83,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         model_path = ConfigEntryKey.MODEL_FILE_PATH.get()
         self.lineEdit_modelPath.setText(model_path)
-        self._load_model_and_display_info()
+        self._load_model_and_display_info(abort_if_no_file_path=True)
 
         self.mMapLayerComboBox_inputLayer.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.mMapLayerComboBox_areaMaskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
@@ -115,28 +116,34 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             ConfigEntryKey.MODEL_FILE_PATH.set(file_path)
             self._load_model_and_display_info()
 
-    def _load_model_and_display_info(self):
+    def _load_model_and_display_info(self, abort_if_no_file_path: bool = False):
         """
         Tries to load the model and display its message.
         """
         file_path = self.lineEdit_modelPath.text()
 
-        input_size_px = 1
-        txt = ''
-        if file_path:
-            try:
-                self._model_wrapper = ModelWrapper()
-                input_0 = self._model_wrapper.get_input_shape()
-                txt += f'Input shape: {input_0.shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
-                input_size_px = input_0.shape[-1]
+        if not file_path and abort_if_no_file_path:
+            return
 
-                # TODO idk how variable input will be handled
-                self.spinBox_tileSize_px.setValue(input_size_px)
-                self.spinBox_tileSize_px.setEnabled(False)
-            except:
-                txt = "Error! Failed to load the model!\nModel may be not usable"
-                logging.exception(txt)
-                self.spinBox_tileSize_px.setEnabled(True)
+        txt = ''
+        try:
+            self._model_wrapper = ModelWrapper(file_path)
+            input_0_shape = self._model_wrapper.get_input_shape()
+            txt += f'Input shape: {input_0_shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
+            input_size_px = input_0_shape[-1]
+
+            # TODO idk how variable input will be handled
+            self.spinBox_tileSize_px.setValue(input_size_px)
+            self.spinBox_tileSize_px.setEnabled(False)
+        except Exception as e:
+            txt = "Error! Failed to load the model!\n" \
+                  "Model may be not usable."
+            logging.exception(txt)
+            self.spinBox_tileSize_px.setEnabled(True)
+            length_limit = 300
+            exception_msg = info = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
+            msg = txt + f'\n\nException: {exception_msg}'
+            QMessageBox.critical(self, "Error!", msg)
 
         self.label_modelInfo.setText(txt)
 
@@ -154,7 +161,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
         processed_area_type = self.get_selected_processed_area_type()
-        self._load_model_and_display_info()
 
         if self._model_wrapper is None:
             raise OperationFailedException("Please select and load a model first!")
@@ -177,6 +183,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
+            QMessageBox.critical(self, "Error!", msg)
             return
 
         self.run_inference_signal.emit(inference_parameters)
