@@ -7,17 +7,35 @@ class ImageChannel:
     def __init__(self, name):
         self.name = name
 
+    def get_band_number(self):
+        raise NotImplementedError
+
+    def get_byte_number(self):
+        raise NotImplementedError
+
 
 class ImageChannelStandaloneBand(ImageChannel):
-    def __init__(self, band_no: int, name: str):
+    def __init__(self, band_number: int, name: str):
         super().__init__(name)
-        self.band_no = band_no  # index within bands (counted from one)
+        self.band_number = band_number  # index within bands (counted from one)
+
+    def get_band_number(self):
+        return self.band_number
+
+    def get_byte_number(self):
+        raise NotImplementedError
 
 
 class ImageChannelCompositeByte(ImageChannel):
     def __init__(self, byte_number: int, name: str):
         super().__init__(name)
         self.byte_number = byte_number  # position in composite byte (byte number in ARGB32, counted from zero)
+
+    def get_band_number(self):
+        raise NotImplementedError
+
+    def get_byte_number(self):
+        return self.byte_number
 
 
 class ChannelsMapping:
@@ -33,6 +51,24 @@ class ChannelsMapping:
         # model_channel_number: image_channel_index (index in self._image_channels)
         self._mapping = {}  # type: Dict[int, int]
 
+    def are_all_inputs_standalone_bands(self):
+        """
+        Checks whether all image_channels are standalone bands (ImageChannelStandaloneBand)
+        """
+        for image_channel in self._image_channels:
+            if not isinstance(image_channel, ImageChannelStandaloneBand):
+                return False
+        return True
+
+    def are_all_inputs_composite_byte(self):
+        """
+        Checks whether all image_channels are composite byte (ImageChannelCompositeByte)
+        """
+        for image_channel in self._image_channels:
+            if not isinstance(image_channel, ImageChannelCompositeByte):
+                return False
+        return True
+
     def set_number_of_model_inputs(self, number_of_model_inputs):
         self._number_of_model_inputs = number_of_model_inputs
 
@@ -44,6 +80,8 @@ class ChannelsMapping:
 
     def set_image_channels(self, image_channels: List[ImageChannel]):
         self._image_channels = image_channels
+        if not self.are_all_inputs_standalone_bands() and not self.are_all_inputs_composite_byte():
+            raise Exception("Unsupported image channels composition!")
 
     def get_image_channels(self) -> List[ImageChannel]:
         return self._image_channels

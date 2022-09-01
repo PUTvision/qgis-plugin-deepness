@@ -1,6 +1,7 @@
 import enum
 from dataclasses import dataclass
 
+from deep_segmentation_framework.common.channels_mapping import ChannelsMapping
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 
 
@@ -29,6 +30,8 @@ class InferenceParameters:
 
     input_layer_id: str
     mask_layer_id: str  # Processing of masked layer - if processed_area_type is FROM_POLYGONS    # TODO change to id
+
+    input_channels_mapping: ChannelsMapping  # describes mapping of image channels to model inputs
 
     processing_overlap_percentage: float  # aka stride - overlap of neighbouring tiles while processing
 

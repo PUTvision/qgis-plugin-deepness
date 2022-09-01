@@ -168,7 +168,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return self.mMapLayerComboBox_inputLayer.currentLayer()
 
     def _get_input_layer_id(self):
-        self._get_input_layer().id()
+        return self._get_input_layer().id()
 
     def get_inference_parameters(self) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
@@ -184,6 +184,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             processed_area_type=processed_area_type,
             mask_layer_id=self.get_mask_layer_id(),
             input_layer_id=self._get_input_layer_id(),
+            input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
             processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
             model=self._model_wrapper,

@@ -50,6 +50,9 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
 
         self._selection_mode_changed()
 
+    def get_channels_mapping(self) -> ChannelsMapping:
+        return self._channels_mapping
+
     def _create_connections(self):
         self.radioButton_defaultMapping.clicked.connect(self._selection_mode_changed)
         self.radioButton_advancedMapping.clicked.connect(self._selection_mode_changed)
@@ -77,7 +80,7 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
             data_type = rlayer.dataProvider().dataType(1)
             if data_type == Qgis.DataType.Byte:
                 image_channel = ImageChannelStandaloneBand(
-                    band_no=1,
+                    band_number=1,
                     name=rlayer.bandName(1))
                 image_channels.append(image_channel)
             elif data_type == Qgis.DataType.ARGB32:
@@ -99,10 +102,10 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
             else:
                 raise Exception("Invalid input layer data type!")
         else:
-            for band_no in range(1, number_of_image_bands + 1):  # counted from 1
+            for band_number in range(1, number_of_image_bands + 1):  # counted from 1
                 image_channel = ImageChannelStandaloneBand(
-                    band_no=band_no,
-                    name=rlayer.bandName(band_no))
+                    band_number=band_number,
+                    name=rlayer.bandName(band_number))
                 image_channels.append(image_channel)
 
         self._channels_mapping.set_image_channels(image_channels)
