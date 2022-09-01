@@ -275,5 +275,3 @@ def create_area_mask_image(vlayer_mask,
             print("Unknown or invalid geometry")
 
     return img
-
-raster_block = rlayer.dataProvider().block(1, extent, 32, 32)
