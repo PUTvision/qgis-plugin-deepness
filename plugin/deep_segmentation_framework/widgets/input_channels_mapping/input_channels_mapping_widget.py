@@ -34,7 +34,6 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
     """
     Widget responsible for mapping image channels to model input channels.
-    Can be skipped for the defau
     """
 
     def __init__(self, rlayer, parent=None):
@@ -111,6 +110,14 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
         self._channels_mapping.set_image_channels(image_channels)
         self.regenerate_mapping()
 
+    def _combobox_index_changed(self, model_input_channel_number):
+        combobox = self._channels_mapping_comboboxes[model_input_channel_number]  # type: QComboBox
+        image_channel_index = combobox.currentIndex()
+        # print(f'Combobox {model_input_channel_number} changed to {current_index}')
+        self._channels_mapping.set_image_channel_for_model_input(
+            model_input_number=model_input_channel_number,
+            image_channel_index=image_channel_index)
+
     def regenerate_mapping(self):
         for combobox in self._channels_mapping_comboboxes:
             self.gridLayout_mapping.removeWidget(combobox)
@@ -131,6 +138,9 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
                 image_channel_index = self._channels_mapping.get_image_channel_index_for_model_input(
                     model_input_channel_number)
                 combobox.setCurrentIndex(image_channel_index)
+
+            combobox.currentIndexChanged.connect(
+                lambda _, v=model_input_channel_number: self._combobox_index_changed(v))
 
             self.gridLayout_mapping.addWidget(label, model_input_channel_number, 0)
             self.gridLayout_mapping.addWidget(combobox, model_input_channel_number, 1, 1, 2)
