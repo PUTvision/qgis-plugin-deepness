@@ -71,10 +71,12 @@ def generic_processing_test__specified_extent():
     qgs = init_qgis()
 
     rlayer = get_rlayer()
-
     dockwidget = DeepSegmentationFrameworkDockWidget(iface=MagicMock())
     dockwidget._model_wrapper = MagicMock()
     dockwidget._model_wrapper.process = lambda x: x[:, :, 0]
+    dockwidget._model_wrapper.get_number_of_channels = lambda: 3
+    dockwidget._input_channels_mapping_widget.set_model(dockwidget._model_wrapper)
+    dockwidget._rlayer_updated()
 
     inference_parameters = dockwidget.get_inference_parameters()
     processed_extent = PROCESSED_EXTENT_4_FAKE_FOTOMAPA
@@ -102,7 +104,7 @@ def generic_processing_test__specified_vlayer_mask():
     # TODO - prepare inference parameters manually
 
     qgs = init_qgis()
-    #
+
     rlayer = get_rlayer()
     vlayer_mask = get_vlayer()
     vlayer_mask.setCrs(rlayer.crs())
@@ -110,6 +112,9 @@ def generic_processing_test__specified_vlayer_mask():
     dockwidget = DeepSegmentationFrameworkDockWidget(iface=MagicMock())
     dockwidget._model_wrapper = MagicMock()
     dockwidget._model_wrapper.process = lambda x: x[:, :, 0]
+    dockwidget._model_wrapper.get_number_of_channels = lambda: 3
+    dockwidget._input_channels_mapping_widget.set_model(dockwidget._model_wrapper)
+    dockwidget._rlayer_updated()
 
     inference_parameters = dockwidget.get_inference_parameters()
     inference_parameters.processed_area_type = ProcessedAreaType.FROM_POLYGONS

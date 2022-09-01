@@ -126,10 +126,11 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
             for image_channel in self._channels_mapping.get_image_channels():
                 combobox.addItem(image_channel.name)
 
-            # image channel witch is currently assigned to the current model channel
-            image_channel_index = self._channels_mapping.get_image_channel_index_for_model_input(
-                model_input_channel_number)
-            combobox.setCurrentIndex(image_channel_index)
+            if self._channels_mapping.get_number_of_image_channels() > 0:
+                # image channel witch is currently assigned to the current model channel
+                image_channel_index = self._channels_mapping.get_image_channel_index_for_model_input(
+                    model_input_channel_number)
+                combobox.setCurrentIndex(image_channel_index)
 
             self.gridLayout_mapping.addWidget(label, model_input_channel_number, 0)
             self.gridLayout_mapping.addWidget(combobox, model_input_channel_number, 1, 1, 2)

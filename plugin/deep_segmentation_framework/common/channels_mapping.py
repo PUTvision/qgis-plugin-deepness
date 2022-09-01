@@ -91,6 +91,9 @@ class ChannelsMapping:
         Similar to 'get_image_channel_for_model_input', but return an index in array of inputs,
         instead of ImageChannel
         """
+        if len(self._image_channels) == 0:
+            raise Exception("No image channels!")
+
         image_channel_index = self._mapping.get(model_input_number, model_input_number)
         image_channel_index = min(image_channel_index, len(self._image_channels) - 1)
         return image_channel_index
