@@ -19,7 +19,9 @@ class ProcessedAreaType(enum.Enum):
 @dataclass
 class InferenceParameters:
     """
-    Parameters for Inference of model (including pre/post processing) obtained from UI
+    Parameters for Inference of model (including pre/post processing) obtained from UI.
+
+    TODO: Add default values here, to later set them in UI at startup
     """
 
     resolution_cm_per_px: float  # image resolution to used during processing
@@ -35,6 +37,9 @@ class InferenceParameters:
     input_channels_mapping: ChannelsMapping  # describes mapping of image channels to model inputs
 
     processing_overlap_percentage: float  # aka stride - overlap of neighbouring tiles while processing
+
+    pixel_classification__enable_argmax: float  # Only most probable class will be segmented
+    pixel_classification__probability_threshold: float  # Minimum required class probability for pixel. 0 if disabled
 
     @property
     def tile_size_m(self):

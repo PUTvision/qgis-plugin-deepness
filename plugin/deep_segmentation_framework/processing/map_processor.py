@@ -225,4 +225,8 @@ class MapProcessor(QgsTask):
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
         # TODO - create proper mapping for output channels
         result = self.model_wrapper.process(tile_img)
-        return result
+
+        # TODO - apply argmax classification and thresholding
+        result_threshold = result > (self.inference_parameters.pixel_classification__probability_threshold * 255)
+
+        return result_threshold

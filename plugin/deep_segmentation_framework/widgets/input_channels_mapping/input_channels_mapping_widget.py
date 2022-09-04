@@ -50,7 +50,14 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
         self._selection_mode_changed()
 
     def get_channels_mapping(self) -> ChannelsMapping:
-        return self._channels_mapping
+        print(self._channels_mapping._mapping)
+        print(self._channels_mapping._image_channels)
+        print(self._channels_mapping._number_of_model_inputs)
+
+        if self.radioButton_defaultMapping.isChecked():
+            return self._channels_mapping.get_as_default_mapping()
+        else:  # advanced mapping
+            return self._channels_mapping
 
     def _create_connections(self):
         self.radioButton_defaultMapping.clicked.connect(self._selection_mode_changed)

@@ -1,3 +1,4 @@
+import copy
 import enum
 from typing import Dict
 from typing import List
@@ -50,6 +51,13 @@ class ChannelsMapping:
         # maps model channels to input image channels
         # model_channel_number: image_channel_index (index in self._image_channels)
         self._mapping = {}  # type: Dict[int, int]
+
+    def get_as_default_mapping(self):
+        # get same channels mapping as we have right now, but without the mapping itself
+        # (so just a definition of inputs and outputs)
+        default_channels_mapping = copy.deepcopy(self)
+        default_channels_mapping._mapping = {}
+        return default_channels_mapping
 
     def are_all_inputs_standalone_bands(self):
         """
@@ -112,5 +120,5 @@ class ChannelsMapping:
         """
         if image_channel_index >= len(self._image_channels):
             raise Exception("Invalid image channel index!")
-        image_channel = self._image_channels[image_channel_index]
-        self._mapping[model_input_number] = image_channel
+        # image_channel = self._image_channels[image_channel_index]
+        self._mapping[model_input_number] = image_channel_index

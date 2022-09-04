@@ -170,6 +170,11 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _get_input_layer_id(self):
         return self._get_input_layer().id()
 
+    def _get_pixel_classification_threshold(self):
+        if not self.checkBox_pixelClassEnableThreshold.isChecked():
+            return 0
+        return self.doubleSpinBox_probabilityThreshold.value()
+
     def get_inference_parameters(self) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
@@ -187,6 +192,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
             processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
+            pixel_classification__enable_argmax=self.checkBox_pixelClassArgmaxEnabled.isChecked(),
+            pixel_classification__probability_threshold=self._get_pixel_classification_threshold(),
             model=self._model_wrapper,
         )
         return inference_parameters
