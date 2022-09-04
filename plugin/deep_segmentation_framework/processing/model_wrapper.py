@@ -35,12 +35,10 @@ class ModelWrapper:
 
     def process(self, img):
         """
-
+        Process a single tile image
         :param img: RGB img [TILE_SIZE x TILE_SIZE x channels], type uint8, values 0 to 255
         :return: single prediction mask
         """
-
-        # TODO add support for channels mapping
 
         img = img[:, :, :self.get_number_of_channels()]
 
@@ -53,6 +51,6 @@ class ModelWrapper:
             output_names=[self.output_0_name],
             input_feed={self.input_name: input_batch})
 
-        # TODO - add support for multiple output classes. For now just take 0 layer
+        # TODO - add support for multiple output classes. For now just take 1 layer
         damaged_area_onnx = model_output[0][0][1] * 255
         return damaged_area_onnx

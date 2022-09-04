@@ -1,5 +1,6 @@
 import enum
 from dataclasses import dataclass
+from typing import Optional
 
 from deep_segmentation_framework.common.channels_mapping import ChannelsMapping
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
@@ -29,7 +30,7 @@ class InferenceParameters:
     model: ModelWrapper  # wrapper of the loaded model
 
     input_layer_id: str
-    mask_layer_id: str  # Processing of masked layer - if processed_area_type is FROM_POLYGONS    # TODO change to id
+    mask_layer_id: Optional[str]  # Processing of masked layer - if processed_area_type is FROM_POLYGONS
 
     input_channels_mapping: ChannelsMapping  # describes mapping of image channels to model inputs
 

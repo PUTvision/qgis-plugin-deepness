@@ -1,7 +1,8 @@
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.test.test_utils import get_dummy_model_path
 
 
-MODEL_FILE_PATH = '/home/przemek/Desktop/corn_segmentation_model.onnx'
+MODEL_FILE_PATH = get_dummy_model_path()
 
 
 def load_and_validate_metadata_test():
