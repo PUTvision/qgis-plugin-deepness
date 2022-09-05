@@ -25,6 +25,7 @@ import os
 
 from .common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from .common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
+from .processing.inference_map_processor import MapProcessorInference
 
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2
 import cv2
@@ -41,7 +42,7 @@ from qgis.core import Qgis
 # Initialize Qt resources from file resources.py
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
-from deep_segmentation_framework.processing.map_processor import MapProcessor, MapProcessorInference
+from deep_segmentation_framework.processing.map_processor import MapProcessor
 
 # Import the code for the DockWidget
 from deep_segmentation_framework.deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
