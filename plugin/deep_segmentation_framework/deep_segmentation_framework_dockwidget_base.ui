@@ -25,8 +25,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>350</width>
-         <height>1308</height>
+         <width>393</width>
+         <height>1282</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -212,6 +212,9 @@
             <widget class="QDoubleSpinBox" name="doubleSpinBox_resolution_cm_px">
              <property name="decimals">
               <number>3</number>
+             </property>
+             <property name="minimum">
+              <double>0.001000000000000</double>
              </property>
              <property name="maximum">
               <double>999999.000000000000000</double>

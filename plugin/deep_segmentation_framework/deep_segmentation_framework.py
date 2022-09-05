@@ -25,7 +25,8 @@ import os
 
 from .common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from .common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
-from .processing.inference_map_processor import MapProcessorInference
+from .processing.map_processor_inference import MapProcessorInference
+from .processing.map_processor_training_data_export import MapProcessorTrainingDataExport
 
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2
 import cv2
@@ -285,7 +286,14 @@ class DeepSegmentationFramework:
             vlayer = QgsProject.instance().mapLayers()[training_data_export_parameters.mask_layer_id]
             vlayer.setCrs(rlayer.crs())
 
-        ...  # TODO
+        self._map_processor = MapProcessorTrainingDataExport(
+            rlayer=rlayer,
+            vlayer_mask=vlayer,
+            map_canvas=self.iface.mapCanvas(),
+            params=training_data_export_parameters)
+        self._map_processor.finished_signal.connect(self._map_processor_finished)
+        self._map_processor.show_img_signal.connect(self._show_img)
+        QgsApplication.taskManager().addTask(self._map_processor)
 
     def _run_inference(self, inference_parameters: InferenceParameters):
         self._check_if_map_processing_parameters_are_correct(inference_parameters)
