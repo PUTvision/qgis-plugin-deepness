@@ -1,10 +1,11 @@
-from qgis._core import QgsProject, QgsCoordinateTransform
+from qgis._core import QgsCoordinateTransform
 from qgis._gui import QgsMapCanvas
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsRectangle
 
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
+from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deep_segmentation_framework.processing.processing_utils import BoundingBox
 
 

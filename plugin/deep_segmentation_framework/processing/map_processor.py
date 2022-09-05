@@ -1,33 +1,18 @@
-import copy
-import logging
-import time
-from typing import Optional, List, Tuple
+from typing import Optional
 
 import numpy as np
 import cv2
-import onnxruntime as ort
 
 from qgis.PyQt.QtCore import pyqtSignal
-from qgis.core import QgsWkbTypes
-from qgis.core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsPointXY
+from qgis.core import QgsVectorLayer
 from qgis.gui import QgsMapCanvas
 from qgis.core import QgsRasterLayer
-from qgis.core import QgsUnitTypes
-from qgis.core import QgsRectangle
-from qgis.core import QgsMessageLog
-from qgis.core import QgsApplication
 from qgis.core import QgsTask
 from qgis.core import QgsProject
-from qgis.core import QgsCoordinateTransform
-from qgis.gui import QgisInterface
-from qgis.core import Qgis
-import qgis
 
 from deep_segmentation_framework.processing import processing_utils, extent_utils
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
-from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
-from deep_segmentation_framework.processing.processing_utils import BoundingBox
+from deep_segmentation_framework.common.defines import IS_DEBUG
+from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
 from deep_segmentation_framework.processing.tile_params import TileParams
 
 if IS_DEBUG:

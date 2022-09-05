@@ -21,39 +21,27 @@
  *                                                                         *
  ***************************************************************************/
 """
-import copy
-import time
 import os
 
-import numpy as np
+from .common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
+from .common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2
 import cv2
 
-from PyQt5.QtCore import QByteArray
-from PyQt5.QtGui import QPixmap
-from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsVectorLayer
-from qgis.core import QgsUnitTypes
-from qgis.core import QgsRectangle
-from qgis.core import QgsMessageLog
 from qgis.core import QgsApplication
-from qgis.core import QgsTask
 from qgis.core import QgsProject
-from qgis.core import QgsCoordinateTransform
 from qgis.gui import QgisInterface
 from qgis.core import Qgis
-import qgis
 
 # Initialize Qt resources from file resources.py
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
+from deep_segmentation_framework.common.defines import PLUGIN_NAME, IS_DEBUG
+from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
 from deep_segmentation_framework.processing.map_processor import MapProcessor
-from deep_segmentation_framework.resources import *
-
 
 # Import the code for the DockWidget
 from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
@@ -265,17 +253,18 @@ class DeepSegmentationFramework:
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
             self.dockwidget.run_inference_signal.connect(self._run_inference)
+            self.dockwidget.run_training_data_export_signal.connect(self._run_training_data_export)
 
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
 
-    def _run_inference(self, inference_parameters):
+    def _check_if_map_processing_parameters_are_correct(self, params: MapProcessingParameters):
         if self._map_processor and self._map_processor.is_busy():
             msg = "Error! Processing already in progress! Please wait or cancel previous task."
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
             return
 
-        rlayer = QgsProject.instance().mapLayers()[inference_parameters.input_layer_id]
+        rlayer = QgsProject.instance().mapLayers()[params.input_layer_id]
         if rlayer is None:
             msg = "Error! Please select the layer to process first!"
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
@@ -286,9 +275,17 @@ class DeepSegmentationFramework:
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
             return
 
+    def _run_training_data_export(self, training_data_export_parameters: TrainingDataExportParameters):
+        self._check_if_map_processing_parameters_are_correct(training_data_export_parameters)
+        ...  # TODO - create map processor as below, but with refactored parameters
+
+    def _run_inference(self, inference_parameters: InferenceParameters):
+        self._check_if_map_processing_parameters_are_correct(inference_parameters)
         vlayer = None
+
+        rlayer = QgsProject.instance().mapLayers()[inference_parameters.input_layer_id]
         if inference_parameters.processed_area_type == ProcessedAreaType.FROM_POLYGONS:
-            vlayer = QgsProject.instance().mapLayers()[inference_parameters.mask_layer_id]  # TODO change to id
+            vlayer = QgsProject.instance().mapLayers()[inference_parameters.mask_layer_id]
             vlayer.setCrs(rlayer.crs())
 
         self._map_processor = MapProcessor(rlayer=rlayer,

@@ -1,15 +1,9 @@
-import sys
 from unittest.mock import MagicMock
 
-import pytest
-from qgis.PyQt.QtWidgets import QApplication
-from qgis.core import QgsVectorLayer, QgsProject
-from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsApplication
-from qgis.core import QgsRasterLayer
+from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
-from deep_segmentation_framework.common.channels_mapping import ChannelsMapping
-from deep_segmentation_framework.common.inference_parameters import ProcessedAreaType, InferenceParameters
-from deep_segmentation_framework.deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
+from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \

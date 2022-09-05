@@ -1,30 +1,15 @@
-import enum
-import logging
 import os
-from dataclasses import dataclass
 from typing import Optional
 
-import onnxruntime as ort
 from qgis.PyQt.QtWidgets import QLabel
-from qgis.PyQt.QtWidgets import QMessageBox
 
 from qgis.PyQt.QtWidgets import QComboBox
-from qgis.PyQt import QtGui, QtWidgets, uic
-from qgis.PyQt.QtCore import pyqtSignal
-from qgis.core import QgsMapLayerProxyModel
-from qgis.core import QgsVectorLayer
-from qgis.core import QgsRasterLayer
-from qgis.core import QgsMessageLog
-from qgis.core import QgsProject
-from qgis.core import QgsVectorLayer
+from qgis.PyQt import QtWidgets, uic
 from qgis.core import Qgis
-from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit, QFileDialog
 
 from deep_segmentation_framework.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
     ImageChannelCompositeByte
 from deep_segmentation_framework.common.channels_mapping import ImageChannel
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -50,10 +35,6 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
         self._selection_mode_changed()
 
     def get_channels_mapping(self) -> ChannelsMapping:
-        print(self._channels_mapping._mapping)
-        print(self._channels_mapping._image_channels)
-        print(self._channels_mapping._number_of_model_inputs)
-
         if self.radioButton_defaultMapping.isChecked():
             return self._channels_mapping.get_as_default_mapping()
         else:  # advanced mapping

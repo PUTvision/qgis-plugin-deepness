@@ -9,15 +9,15 @@ from qgis.core import Qgis
 from qgis.core import QgsWkbTypes
 from qgis.core import QgsRectangle
 
-from qgis.core import QgsFeature, QgsGeometry, QgsVectorLayer, QgsPointXY
+from qgis.core import QgsFeature, QgsGeometry, QgsPointXY
 from qgis.core import QgsUnitTypes
 
 
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
+from deep_segmentation_framework.common.defines import IS_DEBUG
+from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
 
 if IS_DEBUG:
-    from matplotlib import pyplot as plt
+    pass
 
 
 def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
