@@ -15,6 +15,7 @@ from qgis.core import QgsUnitTypes
 
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 
 if IS_DEBUG:
     pass
@@ -31,16 +32,16 @@ def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
 def get_tile_image(
         rlayer: QgsRasterLayer,
         extent: QgsRectangle,
-        inference_parameters: InferenceParameters) -> np.ndarray:
+        params: MapProcessingParameters) -> np.ndarray:
     """
 
     :param rlayer: raster layer from which the image will be extracted
     :param extent: extent of the image to extract
-    :param inference_parameters:
+    :param params:
     :return: extracted image [SIZE x SIZE x CHANNELS]. Probably RGBA channels
     """
 
-    expected_meters_per_pixel = inference_parameters.resolution_cm_per_px / 100
+    expected_meters_per_pixel = params.resolution_cm_per_px / 100
     expected_units_per_pixel = convert_meters_to_rlayer_units(rlayer, expected_meters_per_pixel)
     expected_units_per_pixel_2d = expected_units_per_pixel, expected_units_per_pixel
     # to get all pixels - use the 'rlayer.rasterUnitsPerPixelX()' instead of 'expected_units_per_pixel_2d'
@@ -48,8 +49,8 @@ def get_tile_image(
                  round((extent.height()) / expected_units_per_pixel_2d[1])
 
     # sanity check, that we gave proper extent as parameter
-    assert image_size[0] == inference_parameters.tile_size_px
-    assert image_size[1] == inference_parameters.tile_size_px
+    assert image_size[0] == params.tile_size_px
+    assert image_size[1] == params.tile_size_px
 
     # enable resampling
     data_provider = rlayer.dataProvider()
@@ -68,7 +69,7 @@ def get_tile_image(
             raise Exception("No data on layer within the expected extent!")
         return raster_block
 
-    input_channels_mapping = inference_parameters.input_channels_mapping
+    input_channels_mapping = params.input_channels_mapping
     number_of_model_inputs = input_channels_mapping.get_number_of_model_inputs()
     tile_data = []
 
@@ -115,7 +116,7 @@ def get_tile_image(
     return img
 
 
-def erode_dilate_image(img, inference_parameters):
+def erode_dilate_image(img, inference_parameters: InferenceParameters):
     # self._show_image(img)
     if inference_parameters.postprocessing_dilate_erode_size:
         print('Opening...')

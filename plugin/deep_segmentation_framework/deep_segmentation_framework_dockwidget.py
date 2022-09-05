@@ -187,7 +187,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         inference_parameters = InferenceParameters(
             **map_processing_parameters.__dict__,
-            input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
             pixel_classification__enable_argmax=self.checkBox_pixelClassArgmaxEnabled.isChecked(),
             pixel_classification__probability_threshold=self._get_pixel_classification_threshold(),
@@ -207,6 +206,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             mask_layer_id=self.get_mask_layer_id(),
             input_layer_id=self._get_input_layer_id(),
             processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
+            input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
         )
         return inference_parameters
 

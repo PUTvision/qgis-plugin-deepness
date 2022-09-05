@@ -1,11 +1,11 @@
-from qgis._core import QgsCoordinateTransform
-from qgis._gui import QgsMapCanvas
+from qgis.core import QgsCoordinateTransform
+from qgis.gui import QgsMapCanvas
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsRectangle
 
-from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
-from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
+    MapProcessingParameters
 from deep_segmentation_framework.processing.processing_utils import BoundingBox
 
 
@@ -31,11 +31,11 @@ def round_extent_to_rlayer_grid(extent: QgsRectangle, rlayer: QgsRasterLayer) ->
 
 
 def calculate_extended_processing_extent(base_extent: QgsRectangle,
-                                         inference_parameters: InferenceParameters,
+                                         params: MapProcessingParameters,
                                          rlayer: QgsVectorLayer,
                                          rlayer_units_per_pixel: float) -> QgsRectangle:
     # first try to add pixels at every border - same as half-overlap for other tiles
-    additional_pixels = inference_parameters.processing_overlap_px // 2
+    additional_pixels = params.processing_overlap_px // 2
     additional_pixels_in_units = additional_pixels * rlayer_units_per_pixel
 
     tmp_extent = QgsRectangle(
@@ -47,8 +47,8 @@ def calculate_extended_processing_extent(base_extent: QgsRectangle,
     tmp_extent = tmp_extent.intersect(rlayer.extent())
 
     # then add borders to have the extent be equal to  N * stride + tile_size, where N is a natural number
-    tile_size_px = inference_parameters.tile_size_px
-    stride_px = inference_parameters.processing_stride_px  # stride in pixels
+    tile_size_px = params.tile_size_px
+    stride_px = params.processing_stride_px  # stride in pixels
 
     current_x_pixels = round(tmp_extent.width() / rlayer_units_per_pixel)
     if current_x_pixels <= tile_size_px:
@@ -76,15 +76,16 @@ def calculate_extended_processing_extent(base_extent: QgsRectangle,
 def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
                                                    rlayer: QgsRasterLayer,
                                                    vlayer_mask: QgsVectorLayer,
-                                                   inference_parameters: InferenceParameters) -> QgsRectangle:
+                                                   params: MapProcessingParameters) -> QgsRectangle:
     """
     Determine the Base Extent of processing (Extent (rectangle) in which the actual required area is contained)
     :param map_canvas: active map canvas (in the GUI), required if processing visible map area
     :param rlayer:
-    :param inference_parameters:
+    :param vlayer_mask:
+    :param params:
     """
     rlayer_extent = rlayer.extent()
-    processed_area_type = inference_parameters.processed_area_type
+    processed_area_type = params.processed_area_type
 
     if processed_area_type == ProcessedAreaType.ENTIRE_LAYER:
         expected_extent = rlayer_extent

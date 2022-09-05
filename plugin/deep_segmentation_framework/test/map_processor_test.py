@@ -4,7 +4,7 @@ from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
 from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
-from deep_segmentation_framework.processing.map_processor import MapProcessor
+from deep_segmentation_framework.processing.map_processor import MapProcessor, MapProcessorInference
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
     create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, get_dummy_model_path, \
@@ -43,7 +43,7 @@ def dummy_model_processing__entire_file():
         model=model_wrapper,
     )
 
-    map_processor = MapProcessor(
+    map_processor = MapProcessorInference(
         rlayer=rlayer,
         vlayer_mask=None,
         map_canvas=MagicMock(),
@@ -80,7 +80,7 @@ def generic_processing_test__specified_extent_from_vlayer():
         pixel_classification__probability_threshold=0.5,
         model=model_wrapper,
     )
-    map_processor = MapProcessor(
+    map_processor = MapProcessorInference(
         rlayer=rlayer,
         vlayer_mask=vlayer_mask,
         map_canvas=MagicMock(),
@@ -121,7 +121,7 @@ def generic_processing_test__specified_extent_from_active_map_extent():
     map_canvas.extent = lambda: processed_extent
     map_canvas.mapSettings().destinationCrs = lambda: QgsCoordinateReferenceSystem("EPSG:32633")
 
-    map_processor = MapProcessor(
+    map_processor = MapProcessorInference(
         rlayer=rlayer,
         vlayer_mask=None,
         map_canvas=map_canvas,

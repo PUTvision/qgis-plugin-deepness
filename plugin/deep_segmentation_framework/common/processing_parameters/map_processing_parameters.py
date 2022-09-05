@@ -2,6 +2,8 @@ import enum
 from dataclasses import dataclass
 from typing import Optional
 
+from deep_segmentation_framework.common.channels_mapping import ChannelsMapping
+
 
 class ProcessedAreaType(enum.Enum):
     VISIBLE_PART = 'Visible part'
@@ -29,6 +31,8 @@ class MapProcessingParameters:
     mask_layer_id: Optional[str]  # Processing of masked layer - if processed_area_type is FROM_POLYGONS
 
     processing_overlap_percentage: float  # aka stride - overlap of neighbouring tiles while processing
+
+    input_channels_mapping: ChannelsMapping  # describes mapping of image channels to model inputs
 
     @property
     def tile_size_m(self):

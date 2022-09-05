@@ -3,9 +3,8 @@ import cv2
 
 from qgis.core import QgsRectangle
 
-from ..common.defines import IS_DEBUG
-from ..common.inference_parameters import InferenceParameters
-
+from deep_segmentation_framework.common.defines import IS_DEBUG
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 
 if IS_DEBUG:
     from matplotlib import pyplot as plt
@@ -17,17 +16,17 @@ class TileParams:
                  y_bin_number,
                  x_bins_number,
                  y_bins_number,
-                 inference_parameters: InferenceParameters,
+                 params: MapProcessingParameters,
                  rlayer_units_per_pixel,
                  processing_extent):
         self.x_bin_number = x_bin_number
         self.y_bin_number = y_bin_number
         self.x_bins_number = x_bins_number
         self.y_bins_number = y_bins_number
-        self.stride_px = inference_parameters.processing_stride_px
+        self.stride_px = params.processing_stride_px
         self.start_pixel_x = x_bin_number * self.stride_px
         self.start_pixel_y = y_bin_number * self.stride_px
-        self.inference_parameters = inference_parameters
+        self.params = params
         self.rlayer_units_per_pixel = rlayer_units_per_pixel
 
         self.extent = self._calculate_extent(processing_extent)  # type: QgsRectangle  # tile extent in CRS cordinates
@@ -38,9 +37,9 @@ class TileParams:
         y_max = processing_extent.yMaximum() - self.start_pixel_y * self.rlayer_units_per_pixel
         tile_extent.setXMinimum(x_min)
         # extent needs to be on the further edge (so including the corner pixel, hence we do not subtract 1)
-        tile_extent.setXMaximum(x_min + self.inference_parameters.tile_size_px * self.rlayer_units_per_pixel)
+        tile_extent.setXMaximum(x_min + self.params.tile_size_px * self.rlayer_units_per_pixel)
         tile_extent.setYMaximum(y_max)
-        y_min = y_max - self.inference_parameters.tile_size_px * self.rlayer_units_per_pixel
+        y_min = y_max - self.params.tile_size_px * self.rlayer_units_per_pixel
         tile_extent.setYMinimum(y_min)
         return tile_extent
 
@@ -52,13 +51,13 @@ class TileParams:
 
         :return Slice to be used on the full image
         """
-        half_overlap = (self.inference_parameters.tile_size_px - self.stride_px) // 2
+        half_overlap = (self.params.tile_size_px - self.stride_px) // 2
 
         # 'core' part of the tile (not overlapping with other tiles), for sure copied for each tile
         x_min = self.start_pixel_x + half_overlap
-        x_max = self.start_pixel_x + self.inference_parameters.tile_size_px - half_overlap - 1
+        x_max = self.start_pixel_x + self.params.tile_size_px - half_overlap - 1
         y_min = self.start_pixel_y + half_overlap
-        y_max = self.start_pixel_y + self.inference_parameters.tile_size_px - half_overlap - 1
+        y_max = self.start_pixel_y + self.params.tile_size_px - half_overlap - 1
 
         # edge tiles handling
         if self.x_bin_number == 0:
@@ -104,3 +103,8 @@ class TileParams:
 
         coverage_percentage = cv2.countNonZero(mask_roi) / (mask_roi.shape[0] * mask_roi.shape[1]) * 100
         return coverage_percentage > 0  # TODO - for training we can use tiles with higher coverage only
+
+    def set_mask_on_full_img(self, full_result_img, tile_result):
+        roi_slice_on_full_image = self.get_slice_on_full_image_for_copying()
+        roi_slice_on_tile_image = self.get_slice_on_tile_image_for_copying(roi_slice_on_full_image)
+        full_result_img[roi_slice_on_full_image] = tile_result[roi_slice_on_tile_image]

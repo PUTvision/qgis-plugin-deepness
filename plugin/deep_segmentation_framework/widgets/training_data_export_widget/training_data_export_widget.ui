@@ -34,6 +34,9 @@
        <property name="text">
         <string>Export image tiles:</string>
        </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item row="0" column="2">

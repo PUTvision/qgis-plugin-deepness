@@ -41,10 +41,10 @@ from qgis.core import Qgis
 # Initialize Qt resources from file resources.py
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
-from deep_segmentation_framework.processing.map_processor import MapProcessor
+from deep_segmentation_framework.processing.map_processor import MapProcessor, MapProcessorInference
 
 # Import the code for the DockWidget
-from .deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
+from deep_segmentation_framework.deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
 import os.path
 
 
@@ -277,7 +277,14 @@ class DeepSegmentationFramework:
 
     def _run_training_data_export(self, training_data_export_parameters: TrainingDataExportParameters):
         self._check_if_map_processing_parameters_are_correct(training_data_export_parameters)
-        ...  # TODO - create map processor as below, but with refactored parameters
+        vlayer = None
+
+        rlayer = QgsProject.instance().mapLayers()[training_data_export_parameters.input_layer_id]
+        if training_data_export_parameters.processed_area_type == ProcessedAreaType.FROM_POLYGONS:
+            vlayer = QgsProject.instance().mapLayers()[training_data_export_parameters.mask_layer_id]
+            vlayer.setCrs(rlayer.crs())
+
+        ...  # TODO
 
     def _run_inference(self, inference_parameters: InferenceParameters):
         self._check_if_map_processing_parameters_are_correct(inference_parameters)
@@ -288,10 +295,11 @@ class DeepSegmentationFramework:
             vlayer = QgsProject.instance().mapLayers()[inference_parameters.mask_layer_id]
             vlayer.setCrs(rlayer.crs())
 
-        self._map_processor = MapProcessor(rlayer=rlayer,
-                                           vlayer_mask=vlayer,
-                                           map_canvas=self.iface.mapCanvas(),
-                                           inference_parameters=inference_parameters)
+        self._map_processor = MapProcessorInference(
+            rlayer=rlayer,
+            vlayer_mask=vlayer,
+            map_canvas=self.iface.mapCanvas(),
+            inference_parameters=inference_parameters)
         self._map_processor.finished_signal.connect(self._map_processor_finished)
         self._map_processor.show_img_signal.connect(self._show_img)
         QgsApplication.taskManager().addTask(self._map_processor)
