@@ -12,5 +12,5 @@ class TrainingDataExportParameters(MapProcessingParameters):
     """
 
     export_image_tiles: bool  # whether to export input image tiles
-    segmentation_mask_layer_id: str  # id for mask, to be exported as separate tiles
+    segmentation_mask_layer_id: Optional[str]  # id for mask, to be exported as separate tiles
     output_directory_path: str  # path where the output files will be saved

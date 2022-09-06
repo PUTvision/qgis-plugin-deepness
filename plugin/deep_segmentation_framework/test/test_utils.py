@@ -4,7 +4,8 @@ from qgis.core import QgsVectorLayer, QgsProject
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsApplication
 from qgis.core import QgsRasterLayer
 
-from deep_segmentation_framework.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand
+from deep_segmentation_framework.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
+    ImageChannelCompositeByte
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_DATA_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, 'data'))
@@ -57,6 +58,8 @@ def create_vlayer_from_file(file_path):
 
 
 def create_default_input_channels_mapping_for_rgba_bands():
+    # as in 'set_rlayer' function in 'input_channels_mapping_widget'
+
     channels_mapping = ChannelsMapping()
     channels_mapping.set_number_of_model_inputs(3)
     channels_mapping.set_image_channels(
@@ -65,6 +68,22 @@ def create_default_input_channels_mapping_for_rgba_bands():
             ImageChannelStandaloneBand(band_number=2, name='green'),
             ImageChannelStandaloneBand(band_number=3, name='blue'),
             ImageChannelStandaloneBand(band_number=0, name='alpha'),
+        ]
+    )
+    return channels_mapping
+
+
+def create_default_input_channels_mapping_for_google_satellite_bands():
+    # as in 'set_rlayer' function in 'input_channels_mapping_widget'
+
+    channels_mapping = ChannelsMapping()
+    channels_mapping.set_number_of_model_inputs(3)
+    channels_mapping.set_image_channels(
+        [
+            ImageChannelCompositeByte(byte_number=2, name='red'),
+            ImageChannelCompositeByte(byte_number=1, name='green'),
+            ImageChannelCompositeByte(byte_number=0, name='blue'),
+            ImageChannelCompositeByte(byte_number=3, name='alpha'),
         ]
     )
     return channels_mapping

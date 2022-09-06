@@ -38,7 +38,6 @@ class MapProcessor(QgsTask):
         """
         QgsTask.__init__(self, self.__class__.__name__)
         self._processing_finished = False
-        self._result_img = None
         self.rlayer = rlayer
         self.vlayer_mask = vlayer_mask
         if vlayer_mask:

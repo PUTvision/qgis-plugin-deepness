@@ -6,6 +6,7 @@ from qgis.core import QgsRectangle
 
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
     MapProcessingParameters
+from deep_segmentation_framework.deep_segmentation_framework_dockwidget import OperationFailedException
 from deep_segmentation_framework.processing.processing_utils import BoundingBox
 
 
@@ -44,7 +45,10 @@ def calculate_extended_processing_extent(base_extent: QgsRectangle,
         base_extent.xMaximum() + additional_pixels_in_units,
         base_extent.yMaximum() + additional_pixels_in_units,
     )
-    tmp_extent = tmp_extent.intersect(rlayer.extent())
+
+    rlayer_extent_infinite = rlayer.extent().isEmpty()  # empty extent for infinite layers
+    if not rlayer_extent_infinite:
+        tmp_extent = tmp_extent.intersect(rlayer.extent())
 
     # then add borders to have the extent be equal to  N * stride + tile_size, where N is a natural number
     tile_size_px = params.tile_size_px
@@ -86,9 +90,12 @@ def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
     """
     rlayer_extent = rlayer.extent()
     processed_area_type = params.processed_area_type
+    rlayer_extent_infinite = rlayer_extent.isEmpty()  # empty extent for infinite layers
 
     if processed_area_type == ProcessedAreaType.ENTIRE_LAYER:
         expected_extent = rlayer_extent
+        if rlayer_extent_infinite:
+            raise OperationFailedException("Cannot process entire layer - layer extent is not defined!")
     elif processed_area_type == ProcessedAreaType.FROM_POLYGONS:
         expected_extent = vlayer_mask.extent()
         # x = vlayer_mask.getGeometry(0)  # TODO check getting extent
@@ -106,7 +113,11 @@ def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
         raise Exception("Invalid processed are type!")
 
     expected_extent = round_extent_to_rlayer_grid(extent=expected_extent, rlayer=rlayer)
-    base_extent = expected_extent.intersect(rlayer_extent)
+
+    if rlayer_extent_infinite:
+        base_extent = expected_extent
+    else:
+        base_extent = expected_extent.intersect(rlayer_extent)
 
     return base_extent
 

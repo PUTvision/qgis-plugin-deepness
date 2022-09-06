@@ -227,6 +227,11 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             map_processing_parameters = self._get_map_processing_parameters()
             training_data_export_parameters = self._training_data_export_widget.get_training_data_export_parameters(
                 map_processing_parameters)
+
+            # Overwrite common parameter - we don't want channels mapping as for the model,
+            # but just to take all channels
+            training_data_export_parameters.input_channels_mapping = \
+                self._input_channels_mapping_widget.get_channels_mapping_for_training_data_export()
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)

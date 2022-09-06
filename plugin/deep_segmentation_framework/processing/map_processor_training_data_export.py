@@ -48,7 +48,9 @@ class MapProcessorTrainingDataExport(MapProcessor):
             tile_params = tile_params  # type: TileParams
             file_name = f'tile_img_{tile_params.x_bin_number}_{tile_params.y_bin_number}.png'
             file_path = os.path.join(self.output_dir_path, file_name)
-            cv2.imwrite(file_path, tile_img)
+
+            tile_img_converted = cv2.cvtColor(tile_img, cv2.COLOR_RGBA2BGRA)
+            cv2.imwrite(file_path, tile_img_converted)
 
             # TODO: save mask
         return True

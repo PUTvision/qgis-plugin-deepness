@@ -30,6 +30,7 @@ class MapProcessorInference(MapProcessor):
             **kwargs)
         self.inference_parameters = inference_parameters
         self.model_wrapper = inference_parameters.model
+        self._result_img = None
 
     def get_result_img(self):
         return self._result_img

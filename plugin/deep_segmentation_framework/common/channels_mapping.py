@@ -80,6 +80,9 @@ class ChannelsMapping:
     def set_number_of_model_inputs(self, number_of_model_inputs):
         self._number_of_model_inputs = number_of_model_inputs
 
+    def set_number_of_model_inputs_same_as_image_channels(self):
+        self._number_of_model_inputs = len(self._image_channels)
+
     def get_number_of_model_inputs(self):
         return self._number_of_model_inputs
 
