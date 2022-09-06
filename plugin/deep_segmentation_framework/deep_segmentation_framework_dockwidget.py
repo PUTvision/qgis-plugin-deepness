@@ -25,11 +25,15 @@ import enum
 import logging
 import os
 from dataclasses import dataclass
+from typing import Optional
+
 import onnxruntime as ort
+from PyQt5.QtWidgets import QMessageBox
 
 from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtGui, QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
+from qgis.core import QgsMapLayerProxyModel
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsMessageLog
@@ -40,6 +44,9 @@ from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit, QFileDialog
 
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
 from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
+from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.widgets.input_channels_mapping.input_channels_mapping_widget import \
+    InputChannelsMappingWidget
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
@@ -52,27 +59,48 @@ class OperationFailedException(Exception):
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
-    do_something_signal = pyqtSignal()  # signal used for quick testing
     run_inference_signal = pyqtSignal(InferenceParameters)
 
     def __init__(self, iface, parent=None):
-        """Constructor."""
         super(DeepSegmentationFrameworkDockWidget, self).__init__(parent)
         self.iface = iface
         self.setupUi(self)
+        self._input_channels_mapping_widget = InputChannelsMappingWidget(self)
         self._create_connections()
         QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
-        self._available_input_layers = {}  # type: Dict[str, str]  # id, name
         self._setup_misc_ui()
+        self._model_wrapper = None  # type: Optional[ModelWrapper]
+        self._set_default_input_layer()  # TODO: determine if needed in the future
+
+    def _set_default_input_layer(self):
+        layers = self.iface.mapCanvas().layers()
+        for layer in layers:
+            if 'fotomap' in layer.name():
+                self.mMapLayerComboBox_inputLayer.setLayer(layer)
+                break
+
+    def _rlayer_updated(self):
+        self._input_channels_mapping_widget.set_rlayer(self._get_input_layer())
 
     def _setup_misc_ui(self):
         combobox = self.comboBox_processedAreaSelection
         for name in ProcessedAreaType.get_all_names():
             combobox.addItem(name)
 
+        self.verticalLayout_inputChannelsMapping.addWidget(self._input_channels_mapping_widget)
+
         model_path = ConfigEntryKey.MODEL_FILE_PATH.get()
         self.lineEdit_modelPath.setText(model_path)
-        self._load_model_and_display_info(model_path)
+        self._load_model_and_display_info(abort_if_no_file_path=True)
+
+        self.mMapLayerComboBox_inputLayer.setFilters(QgsMapLayerProxyModel.RasterLayer)
+        self.mMapLayerComboBox_areaMaskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        self._set_processed_area_mask_options()
+
+    def _set_processed_area_mask_options(self):
+        show_mask_combobox = (self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS)
+        self.mMapLayerComboBox_areaMaskLayer.setVisible(show_mask_combobox)
+        self.label_areaMaskLayer.setVisible(show_mask_combobox)
 
     def get_selected_processed_area_type(self) -> ProcessedAreaType:
         combobox = self.comboBox_processedAreaSelection  # type: QComboBox
@@ -80,12 +108,11 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return ProcessedAreaType(txt)
 
     def _create_connections(self):
-        self.pushButton_doSomething.clicked.connect(self._do_something)
         self.pushButton_run_inference.clicked.connect(self._run_inference)
         self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
-
-    def _do_something(self):
-        self.do_something_signal.emit()
+        self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
+        self.pushButton_reloadModel.clicked.connect(self._load_model_and_display_info)
+        self.mMapLayerComboBox_inputLayer.layerChanged.connect(self._rlayer_updated)
 
     def _browse_model_path(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -96,107 +123,78 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if file_path:
             self.lineEdit_modelPath.setText(file_path)
             ConfigEntryKey.MODEL_FILE_PATH.set(file_path)
-            self._load_model_and_display_info(file_path)
+            self._load_model_and_display_info()
 
-    def _load_model_and_display_info(self, file_path):
+    def _load_model_and_display_info(self, abort_if_no_file_path: bool = False):
         """
         Tries to load the model and display its message.
         """
+        file_path = self.lineEdit_modelPath.text()
 
-        input_size_px = 1
+        if not file_path and abort_if_no_file_path:
+            return
+
         txt = ''
-        if file_path:
-            try:
-                sess = ort.InferenceSession(file_path)
-                input_0 = sess.get_inputs()[0]
-                txt += f'Input shape: {input_0.shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
-                input_size_px = input_0.shape[-1]
+        try:
+            self._model_wrapper = ModelWrapper(file_path)
+            input_0_shape = self._model_wrapper.get_input_shape()
+            txt += f'Input shape: {input_0_shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
+            input_size_px = input_0_shape[-1]
 
-                # TODO idk how variable input will be handled
-                self.spinBox_tileSize_px.setValue(input_size_px)
-                self.spinBox_tileSize_px.setEnabled(False)
-            except:
-                txt = "Error! Failed to load the model!\nModel may be not usable"
-                logging.exception(txt)
-                self.spinBox_tileSize_px.setEnabled(True)
+            # TODO idk how variable input will be handled
+            self.spinBox_tileSize_px.setValue(input_size_px)
+            self.spinBox_tileSize_px.setEnabled(False)
+            self._input_channels_mapping_widget.set_model(self._model_wrapper)
+        except Exception as e:
+            txt = "Error! Failed to load the model!\n" \
+                  "Model may be not usable."
+            logging.exception(txt)
+            self.spinBox_tileSize_px.setEnabled(True)
+            length_limit = 300
+            exception_msg = info = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
+            msg = txt + f'\n\nException: {exception_msg}'
+            QMessageBox.critical(self, "Error!", msg)
 
         self.label_modelInfo.setText(txt)
-
-
-    def update_input_layer_selection(self, all_layers):
-        combobox = self.comboBox_inputLayer  # type: QComboBox
-        if combobox.count() > 0:
-            selected_item_index = combobox.currentIndex()
-            selected_item_id = list(self._available_input_layers.keys())[selected_item_index]
-        else:
-            selected_item_id = None
-
-        self._available_input_layers = {}
-        for layer_id, layer in all_layers.items():
-            if not isinstance(layer, QgsRasterLayer):
-                continue  # not a vector layer - ignore
-            name = layer.name()
-            self._available_input_layers[layer_id] = name
-
-        combobox.clear()
-        for name in self._available_input_layers.values():
-            combobox.addItem(name)
-
-        # discard previously selected item, if it is no longer available:
-        if selected_item_id not in self._available_input_layers:
-            selected_item_id = None
-
-        if not selected_item_id:
-            # if none item is selected, and 'fotomapa' is available, select it,
-            # as it is usually the layer we are looking for
-            for layer_id, name in self._available_input_layers.items():
-                if 'fotomapa' in name:
-                    selected_item_id = layer_id
-                    break
-
-        if selected_item_id:
-            index_of_selected_item_id = list(self._available_input_layers.keys()).index(selected_item_id)
-            combobox.setCurrentIndex(index_of_selected_item_id)
-            #  TODO: save selected_item as project plugin parameter the last selection
-            #  (so it will be selected next time project starts)
-
-    def _get_input_layer_selected_id(self):
-        combobox = self.comboBox_inputLayer  # type: QComboBox
-        index = combobox.currentIndex()
-        if index == -1:
-            return None
-        return list(self._available_input_layers.keys())[index]
 
     def get_mask_layer_id(self):
         if not self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS:
             return None
 
-        qid = QInputDialog()
-        vals = [layer.id() for layer in QgsProject.instance().mapLayers().values()
-                if isinstance(layer, QgsVectorLayer)]
-        mask_layer_id, ok = QInputDialog.getItem(qid, "Select layer", "Select mask layer to processing", vals, 0, False)
-
-        if not ok:
-            msg = "Error! Layer not selected! Try again."
-            raise OperationFailedException(msg)
-
+        mask_layer_id = self.mMapLayerComboBox_areaMaskLayer.currentLayer().id()
         return mask_layer_id
+
+    def _get_input_layer(self):
+        return self.mMapLayerComboBox_inputLayer.currentLayer()
+
+    def _get_input_layer_id(self):
+        return self._get_input_layer().id()
+
+    def _get_pixel_classification_threshold(self):
+        if not self.checkBox_pixelClassEnableThreshold.isChecked():
+            return 0
+        return self.doubleSpinBox_probabilityThreshold.value()
 
     def get_inference_parameters(self) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
         processed_area_type = self.get_selected_processed_area_type()
-        model_file_path = self.lineEdit_modelPath.text()
-        self._load_model_and_display_info(model_file_path)
+
+        if self._model_wrapper is None:
+            raise OperationFailedException("Please select and load a model first!")
 
         inference_parameters = InferenceParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
             processed_area_type=processed_area_type,
             mask_layer_id=self.get_mask_layer_id(),
-            input_layer_id=self._get_input_layer_selected_id(),
+            input_layer_id=self._get_input_layer_id(),
+            input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
-            model_file_path=model_file_path,
+            processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
+            pixel_classification__enable_argmax=self.checkBox_pixelClassArgmaxEnabled.isChecked(),
+            pixel_classification__probability_threshold=self._get_pixel_classification_threshold(),
+            model=self._model_wrapper,
         )
         return inference_parameters
 
@@ -206,6 +204,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
+            QMessageBox.critical(self, "Error!", msg)
             return
 
         self.run_inference_signal.emit(inference_parameters)

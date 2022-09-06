@@ -1,5 +1,9 @@
 import enum
 from dataclasses import dataclass
+from typing import Optional
+
+from deep_segmentation_framework.common.channels_mapping import ChannelsMapping
+from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 
 
 class ProcessedAreaType(enum.Enum):
@@ -15,7 +19,9 @@ class ProcessedAreaType(enum.Enum):
 @dataclass
 class InferenceParameters:
     """
-    Parameters for Inference of model (including pre/post processing) obtained from UI
+    Parameters for Inference of model (including pre/post processing) obtained from UI.
+
+    TODO: Add default values here, to later set them in UI at startup
     """
 
     resolution_cm_per_px: float  # image resolution to used during processing
@@ -23,12 +29,17 @@ class InferenceParameters:
     tile_size_px: int  # Tile size for processing (model input size)
     postprocessing_dilate_erode_size: int  # dilate/erode operation size, once we have a single class map. 0 if inactive
 
-    model_file_path: str  # path to the model file
+    model: ModelWrapper  # wrapper of the loaded model
 
     input_layer_id: str
-    mask_layer_id: str  # Processing of masked layer - if processed_area_type is FROM_POLYGONS    # TODO change to id
+    mask_layer_id: Optional[str]  # Processing of masked layer - if processed_area_type is FROM_POLYGONS
 
-    processing_overlap_percentage: float = 15.0  # aka stride - overlap of neighbouring tiles while processing
+    input_channels_mapping: ChannelsMapping  # describes mapping of image channels to model inputs
+
+    processing_overlap_percentage: float  # aka stride - overlap of neighbouring tiles while processing
+
+    pixel_classification__enable_argmax: float  # Only most probable class will be segmented
+    pixel_classification__probability_threshold: float  # Minimum required class probability for pixel. 0 if disabled
 
     @property
     def tile_size_m(self):

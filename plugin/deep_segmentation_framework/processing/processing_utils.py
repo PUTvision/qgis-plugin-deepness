@@ -4,6 +4,8 @@ from typing import Optional, List, Tuple
 
 import numpy as np
 import cv2
+from qgis._core import QgsRasterLayer
+from qgis.core import Qgis
 from qgis.core import QgsWkbTypes
 from qgis.core import QgsRectangle
 
@@ -26,7 +28,10 @@ def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
     return distance_m
 
 
-def get_tile_image(rlayer, extent, inference_parameters: InferenceParameters) -> np.ndarray:
+def get_tile_image(
+        rlayer: QgsRasterLayer,
+        extent: QgsRectangle,
+        inference_parameters: InferenceParameters) -> np.ndarray:
     """
 
     :param rlayer: raster layer from which the image will be extracted
@@ -46,9 +51,6 @@ def get_tile_image(rlayer, extent, inference_parameters: InferenceParameters) ->
     assert image_size[0] == inference_parameters.tile_size_px
     assert image_size[1] == inference_parameters.tile_size_px
 
-    band_count = rlayer.bandCount()
-    band_data = []
-
     # enable resampling
     data_provider = rlayer.dataProvider()
     data_provider.enableProviderResampling(True)
@@ -56,37 +58,60 @@ def get_tile_image(rlayer, extent, inference_parameters: InferenceParameters) ->
     data_provider.setZoomedInResamplingMethod(data_provider.ResamplingMethod.Bilinear)
     data_provider.setZoomedOutResamplingMethod(data_provider.ResamplingMethod.Bilinear)
 
-    for band_number in range(1, band_count + 1):
+    def get_raster_block(band_number_):
         raster_block = rlayer.dataProvider().block(
-            band_number,
+            band_number_,
             extent,
             image_size[0], image_size[1])
-        rb = raster_block
-        block_height, block_width = rb.height(), rb.width()
+        block_height, block_width = raster_block.height(), raster_block.width()
         if block_width == 0 or block_width == 0:
             raise Exception("No data on layer within the expected extent!")
+        return raster_block
 
+    input_channels_mapping = inference_parameters.input_channels_mapping
+    number_of_model_inputs = input_channels_mapping.get_number_of_model_inputs()
+    tile_data = []
+
+    if input_channels_mapping.are_all_inputs_standalone_bands():
+        band_count = rlayer.bandCount()
+        for i in range(number_of_model_inputs):
+            image_channel = input_channels_mapping.get_image_channel_for_model_input(i)
+            band_number = image_channel.get_band_number()
+            assert band_number <= band_count  # we cannot obtain a higher band than the maximum in the image
+            rb = get_raster_block(band_number)
+            raw_data = rb.data()
+            bytes_array = bytes(raw_data)
+            dt = rb.dataType()
+            if dt == Qgis.DataType.Byte:
+                pass  # ok
+            else:
+                # TODO - maybe add support for more data types (change also the numpy type below then)
+                raise Exception("Invalid input layer data type!")
+            a = np.frombuffer(bytes_array, dtype=np.uint8)
+            b = a.reshape((image_size[1], image_size[0], 1))
+            tile_data.append(b)
+    elif input_channels_mapping.are_all_inputs_composite_byte():
+        rb = get_raster_block(1)  # the data are always in band 1
         raw_data = rb.data()
         bytes_array = bytes(raw_data)
         dt = rb.dataType()
-        if dt == dt.__class__.Byte:
-            number_of_channels = 1
-        elif dt == dt.__class__.ARGB32:
-            number_of_channels = 4
-        else:
+        number_of_image_channels = input_channels_mapping.get_number_of_image_channels()
+        assert number_of_image_channels == 4  # otherwise we did something wrong earlier...
+        if dt != Qgis.DataType.ARGB32:
             raise Exception("Invalid input layer data type!")
-
         a = np.frombuffer(bytes_array, dtype=np.uint8)
-        b = a.reshape((image_size[1], image_size[0], number_of_channels))
-        band_data.append(b)
+        b = a.reshape((image_size[1], image_size[0], number_of_image_channels))
+
+        for i in range(number_of_model_inputs):
+            image_channel = input_channels_mapping.get_image_channel_for_model_input(i)
+            byte_number = image_channel.get_byte_number()
+            assert byte_number < number_of_image_channels  # we cannot get more bytes than there are
+            tile_data.append(b[:, :, byte_number:byte_number+1])  # last index to keep dimension
+    else:
+        raise Exception("Unsupported image channels composition!")
 
     data_provider.setZoomedInResamplingMethod(original_resampling_method)  # restore old resampling method
-
-    # TODO - add analysis of band names, to properly set RGBA channels
-    if band_count == 4:
-        band_data = [band_data[0], band_data[1], band_data[2], band_data[3]]  # RGBA probably
-
-    img = np.concatenate(band_data, axis=2)
+    img = np.concatenate(tile_data, axis=2)
     return img
 
 
@@ -162,7 +187,8 @@ def transform_contours_yx_pixels_to_target_crs(contours,
 
     polygons_crs = []
     for polygon_3d in contours:
-        # https://stackoverflow.com/questions/33458362/opencv-findcontours-why-do-we-need-a-vectorvectorpoint-to-store-the-cont
+        # https://stackoverflow.com/questions/33458362/opencv-findcontours-why-do-we-need-a-
+        # vectorvectorpoint-to-store-the-cont
         polygon = polygon_3d.squeeze(axis=1)
 
         polygon_crs = []

@@ -45,11 +45,14 @@ class MapProcessor(QgsTask):
                  inference_parameters: InferenceParameters):
         """
 
-        :param rlayer: Raster layer whihc is being processed
+        :param rlayer: Raster layer which is being processed
+        :param vlayer_mask: Vector layer with outline of area which should be processed (within rlayer)
         :param map_canvas: active map canvas (in the GUI), required if processing visible map area
         :param inference_parameters: see InferenceParameters
         """
         QgsTask.__init__(self, self.__class__.__name__)
+        self._processing_finished = False
+        self._result_img = None
         self.rlayer = rlayer
         self.vlayer_mask = vlayer_mask
         if vlayer_mask:
@@ -93,11 +96,16 @@ class MapProcessor(QgsTask):
         self.y_bins_number = round((self.img_size_y_pixels - self.inference_parameters.tile_size_px)
                                    / self.stride_px) + 1
 
-        self.model_wrapper = ModelWrapper(model_file_path=inference_parameters.model_file_path)
+        self.model_wrapper = self.inference_parameters.model
 
     def run(self):
         print('run...')
-        return self._process()
+        result = self._process()
+        self._processing_finished = True
+        return result
+
+    def get_result_img(self):
+        return self._result_img
 
     def finished(self, result):
         print(f'finished. Res: {result = }')
@@ -144,8 +152,6 @@ class MapProcessor(QgsTask):
 
                 tile_img = processing_utils.get_tile_image(self.rlayer, tile_params.extent, self.inference_parameters)
 
-                # TODO add support for smaller
-
                 tile_result = self._process_tile(tile_img)
                 # plt.figure(); plt.imshow(tile_img); plt.show(block=False); plt.pause(0.001)
                 # self._show_image(tile_result)
@@ -156,9 +162,9 @@ class MapProcessor(QgsTask):
         full_result_img = processing_utils.erode_dilate_image(img=full_result_img,
                                                               inference_parameters=self.inference_parameters)
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
-        result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img,
+        self._result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img,
                                                                                mask_img=mask_img)
-        self._create_vlayer_from_mask_for_base_extent(result_img)
+        self._create_vlayer_from_mask_for_base_extent(self._result_img)
         return True
 
     def limit_extended_extent_image_to_base_extent_with_mask(self, full_img, mask_img: Optional[np.ndarray]):
@@ -217,24 +223,10 @@ class MapProcessor(QgsTask):
         QgsProject.instance().addMapLayer(vlayer)
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
-        # TODO - create proper mapping for channels (layer channels to model channels)
-        # Handle RGB, RGBA properly
-        # TODO check if we have RGB or RGBA
-
-        # thresholding on one channel
-        # tile_img = copy.copy(tile_img)
-        # tile_img = tile_img[:, :, 1]
-        # tile_img[tile_img <= 100] = 0
-        # tile_img[tile_img > 100] = 255
-        # result = tile_img
-
-        # thresholding on Red channel (max value - with manually drawn dots on fotomap)
-        # tile_img = copy.copy(tile_img)
-        # tile_img = tile_img[:, :, 0]
-        # tile_img[tile_img < 255] = 0
-        # tile_img[tile_img >= 255] = 255
-        # result = tile_img
-        # return result
-
+        # TODO - create proper mapping for output channels
         result = self.model_wrapper.process(tile_img)
-        return result
+
+        # TODO - apply argmax classification and thresholding
+        result_threshold = result > (self.inference_parameters.pixel_classification__probability_threshold * 255)
+
+        return result_threshold
