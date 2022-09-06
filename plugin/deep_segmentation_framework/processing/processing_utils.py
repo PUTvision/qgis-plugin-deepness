@@ -25,6 +25,7 @@ def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
     """ How many map units are there in one meter """
     # TODO - potentially implement conversions from other units
     if rlayer.crs().mapUnits() != QgsUnitTypes.DistanceUnit.DistanceMeters:
+        # TODO - add support for more unit types
         raise Exception("Unsupported layer units")
     assert distance_m != 0
     return distance_m
