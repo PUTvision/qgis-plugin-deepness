@@ -23,12 +23,13 @@ def export_dummy_fotomap_test():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
+    vlayer = create_vlayer_from_file(get_dummy_fotomap_area_path())
 
     params = TrainingDataExportParameters(
         export_image_tiles=True,
         resolution_cm_per_px=3,
-        segmentation_mask_layer_id=None,
-        output_directory_path='/tmp/aaa/qgis',
+        segmentation_mask_layer_id=vlayer.id(),
+        output_directory_path='/tmp/qgis_test',
         tile_size_px=512,  # same x and y dimensions, so take x
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
@@ -73,7 +74,7 @@ def export_dummy_fotomap_test():
 #         export_image_tiles=True,
 #         resolution_cm_per_px=3,
 #         segmentation_mask_layer_id=None,
-#         output_directory_path='/tmp/aaa/qgis',
+#         output_directory_path='/tmp/qgis_test',
 #         tile_size_px=512,  # same x and y dimensions, so take x
 #         processed_area_type=ProcessedAreaType.VISIBLE_PART,
 #         mask_layer_id=None,

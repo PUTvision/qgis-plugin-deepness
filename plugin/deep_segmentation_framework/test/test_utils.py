@@ -61,15 +61,15 @@ def create_default_input_channels_mapping_for_rgba_bands():
     # as in 'set_rlayer' function in 'input_channels_mapping_widget'
 
     channels_mapping = ChannelsMapping()
-    channels_mapping.set_number_of_model_inputs(3)
     channels_mapping.set_image_channels(
         [
             ImageChannelStandaloneBand(band_number=1, name='red'),
             ImageChannelStandaloneBand(band_number=2, name='green'),
             ImageChannelStandaloneBand(band_number=3, name='blue'),
-            ImageChannelStandaloneBand(band_number=0, name='alpha'),
+            ImageChannelStandaloneBand(band_number=4, name='alpha'),
         ]
     )
+    channels_mapping.set_number_of_model_inputs_same_as_image_channels()
     return channels_mapping
 
 

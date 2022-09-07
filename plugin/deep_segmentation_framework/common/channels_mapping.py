@@ -20,6 +20,11 @@ class ImageChannelStandaloneBand(ImageChannel):
         super().__init__(name)
         self.band_number = band_number  # index within bands (counted from one)
 
+    def __str__(self):
+        txt = f'ImageChannelStandaloneBand(name={self.name}, ' \
+              f'band_number={self.band_number})'
+        return txt
+
     def get_band_number(self):
         return self.band_number
 
@@ -31,6 +36,11 @@ class ImageChannelCompositeByte(ImageChannel):
     def __init__(self, byte_number: int, name: str):
         super().__init__(name)
         self.byte_number = byte_number  # position in composite byte (byte number in ARGB32, counted from zero)
+
+    def __str__(self):
+        txt = f'ImageChannelCompositeByte(name={self.name}, ' \
+              f'byte_number={self.byte_number})'
+        return txt
 
     def get_band_number(self):
         raise NotImplementedError
@@ -51,6 +61,13 @@ class ChannelsMapping:
         # maps model channels to input image channels
         # model_channel_number: image_channel_index (index in self._image_channels)
         self._mapping = {}  # type: Dict[int, int]
+
+    def __str__(self):
+        txt = f'ChannelsMapping(' \
+              f'number_of_model_inputs={self._number_of_model_inputs}, ' \
+              f'image_channels = {self._image_channels}, ' \
+              f'mapping {self._mapping})'
+        return txt
 
     def get_as_default_mapping(self):
         # get same channels mapping as we have right now, but without the mapping itself
