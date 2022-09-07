@@ -46,6 +46,7 @@ def export_dummy_fotomap_test():
     )
 
     map_processor.run()
+    # TODO - validate processing result (we expect to have xxx tiles in directory yyy)
 
 #
 # def export_google_earth_test():
