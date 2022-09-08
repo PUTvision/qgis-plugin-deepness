@@ -44,7 +44,6 @@ class MapProcessorInference(MapProcessor):
                 return False
 
             tile_result = self._process_tile(tile_img)
-            # plt.figure(); plt.imshow(tile_img); plt.show(block=False); plt.pause(0.001)
             # self._show_image(tile_result)
             tile_params.set_mask_on_full_img(
                 tile_result=tile_result,
@@ -111,8 +110,11 @@ class MapProcessorInference(MapProcessor):
         # TODO - create proper mapping for output channels
         result = self.model_wrapper.process(tile_img)
 
-        # TODO - apply argmax classification and thresholding
-        result_threshold = result > (self.inference_parameters.pixel_classification__probability_threshold * 255)
+        # TODO - SEGMENTER USE CASE
+        result[result < self.inference_parameters.pixel_classification__probability_threshold] = 0.0
+        result = np.argmax(result, axis=0)
 
-        return result_threshold
+        # TODO - OBJECT DETECTOR USE CASE
+
+        return result
 
