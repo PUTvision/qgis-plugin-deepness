@@ -1,6 +1,6 @@
 import numpy as np
 
-from deep_segmentation_framework.processing.models.segmenter import Segmentor
+from deep_segmentation_framework.processing.models.segmentor import Segmentor
 
 
 class ModelWrapper:
