@@ -64,7 +64,7 @@
 #
 #     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
 #
-#     map_processor = MapProcessor(
+#     map_processor = MapProcessorInference(
 #         rlayer=rlayer,
 #         vlayer_mask=None,
 #         map_canvas=map_canvas,
@@ -93,7 +93,7 @@
 #     inference_parameters = dockwidget.get_inference_parameters()
 #     inference_parameters.processed_area_type = ProcessedAreaType.FROM_POLYGONS
 #
-#     map_processor = MapProcessor(
+#     map_processor = MapProcessorInference(
 #         rlayer=rlayer,
 #         vlayer_mask=vlayer_mask,
 #         map_canvas=None,

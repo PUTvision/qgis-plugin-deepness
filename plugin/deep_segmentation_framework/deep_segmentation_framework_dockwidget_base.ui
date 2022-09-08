@@ -213,6 +213,9 @@
              <property name="decimals">
               <number>3</number>
              </property>
+             <property name="minimum">
+              <double>0.001000000000000</double>
+             </property>
              <property name="maximum">
               <double>999999.000000000000000</double>
              </property>
@@ -501,12 +504,39 @@ for some models</string>
            <item>
             <widget class="QLabel" name="label_15">
              <property name="text">
-              <string>Note: This group allows to export the data for the training process, with similar data as </string>
+              <string>Note: This group allows to export the data for the training process, with similar data as during inference.</string>
              </property>
              <property name="wordWrap">
               <bool>true</bool>
              </property>
             </widget>
+           </item>
+           <item>
+            <layout class="QVBoxLayout" name="verticalLayout_trainingDataExport"/>
+           </item>
+           <item>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <spacer name="horizontalSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_runTrainingDataExport">
+               <property name="text">
+                <string>Export training data</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
             <widget class="QWidget" name="widget_3" native="true">
@@ -523,13 +553,6 @@ for some models</string>
               <property name="bottomMargin">
                <number>0</number>
               </property>
-              <item>
-               <widget class="QLabel" name="label_16">
-                <property name="text">
-                 <string>TODO: add here export tool</string>
-                </property>
-               </widget>
-              </item>
              </layout>
             </widget>
            </item>
@@ -563,7 +586,7 @@ for some models</string>
     <item row="1" column="0">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QPushButton" name="pushButton_run_inference">
+       <widget class="QPushButton" name="pushButton_runInference">
         <property name="text">
          <string>Run</string>
         </property>

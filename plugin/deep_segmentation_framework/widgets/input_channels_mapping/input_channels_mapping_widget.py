@@ -1,30 +1,15 @@
-import enum
-import logging
 import os
-from dataclasses import dataclass
 from typing import Optional
 
-import onnxruntime as ort
 from qgis.PyQt.QtWidgets import QLabel
-from qgis.PyQt.QtWidgets import QMessageBox
 
 from qgis.PyQt.QtWidgets import QComboBox
-from qgis.PyQt import QtGui, QtWidgets, uic
-from qgis.PyQt.QtCore import pyqtSignal
-from qgis.core import QgsMapLayerProxyModel
-from qgis.core import QgsVectorLayer
-from qgis.core import QgsRasterLayer
-from qgis.core import QgsMessageLog
-from qgis.core import QgsProject
-from qgis.core import QgsVectorLayer
+from qgis.PyQt import QtWidgets, uic
 from qgis.core import Qgis
-from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit, QFileDialog
 
 from deep_segmentation_framework.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
     ImageChannelCompositeByte
 from deep_segmentation_framework.common.channels_mapping import ImageChannel
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -50,14 +35,15 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
         self._selection_mode_changed()
 
     def get_channels_mapping(self) -> ChannelsMapping:
-        print(self._channels_mapping._mapping)
-        print(self._channels_mapping._image_channels)
-        print(self._channels_mapping._number_of_model_inputs)
-
         if self.radioButton_defaultMapping.isChecked():
             return self._channels_mapping.get_as_default_mapping()
         else:  # advanced mapping
             return self._channels_mapping
+
+    def get_channels_mapping_for_training_data_export(self) -> ChannelsMapping:
+        mapping = self._channels_mapping.get_as_default_mapping()
+        mapping.set_number_of_model_inputs_same_as_image_channels()
+        return mapping
 
     def _create_connections(self):
         self.radioButton_defaultMapping.clicked.connect(self._selection_mode_changed)
@@ -76,8 +62,11 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
 
     def set_rlayer(self, rlayer):
         self._rlayer = rlayer
-        number_of_image_bands = rlayer.bandCount()
-        self.label_imageInputs.setText(f'{number_of_image_bands}')
+
+        if rlayer:
+            number_of_image_bands = rlayer.bandCount()
+        else:
+            number_of_image_bands = 0
 
         image_channels = []  # type: List[ImageChannel]
 
@@ -90,21 +79,18 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
                     name=rlayer.bandName(1))
                 image_channels.append(image_channel)
             elif data_type == Qgis.DataType.ARGB32:
+                # Alpha channel is at byte number 3, red is byte 2, ... - reversed order
                 band_names = [
                     'Alpha (band 4)',
                     'Red (band 1)',
                     'Green (band 2)',
                     'Blue (band 3)',
                 ]
-                for i in range(1, 4):  # RGB bytes, without A
+                for i in [1, 2, 3, 0]:  # We want order of model inputs as 'RGB' first and then 'A'
                     image_channel = ImageChannelCompositeByte(
-                        byte_number=i,
+                        byte_number=3 - i,  # bytes are in reversed order
                         name=band_names[i])
                     image_channels.append(image_channel)
-                image_channel = ImageChannelCompositeByte(
-                    byte_number=0,
-                    name=band_names[0])
-                image_channels.append(image_channel)
             else:
                 raise Exception("Invalid input layer data type!")
         else:
@@ -114,6 +100,7 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
                     name=rlayer.bandName(band_number))
                 image_channels.append(image_channel)
 
+        self.label_imageInputs.setText(f'{len(image_channels)}')
         self._channels_mapping.set_image_channels(image_channels)
         self.regenerate_mapping()
 

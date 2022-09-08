@@ -21,32 +21,31 @@
  *                                                                         *
  ***************************************************************************/
 """
-import enum
 import logging
 import os
-from dataclasses import dataclass
 from typing import Optional
 
-import onnxruntime as ort
 from PyQt5.QtWidgets import QMessageBox
 
 from qgis.PyQt.QtWidgets import QComboBox
-from qgis.PyQt import QtGui, QtWidgets, uic
+from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.core import QgsMapLayerProxyModel
-from qgis.core import QgsVectorLayer
-from qgis.core import QgsRasterLayer
 from qgis.core import QgsMessageLog
-from qgis.core import QgsProject
-from qgis.core import QgsVectorLayer
 from qgis.core import Qgis
-from qgis.PyQt.QtWidgets import QInputDialog, QLineEdit, QFileDialog
+from qgis.PyQt.QtWidgets import QFileDialog
 
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
-from deep_segmentation_framework.common.inference_parameters import InferenceParameters, ProcessedAreaType
+from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
+    ProcessedAreaType
+from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
+    TrainingDataExportParameters
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 from deep_segmentation_framework.widgets.input_channels_mapping.input_channels_mapping_widget import \
     InputChannelsMappingWidget
+from deep_segmentation_framework.widgets.training_data_export_widget.training_data_export_widget import \
+    TrainingDataExportWidget
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
@@ -60,12 +59,14 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
     run_inference_signal = pyqtSignal(InferenceParameters)
+    run_training_data_export_signal = pyqtSignal(TrainingDataExportParameters)
 
     def __init__(self, iface, parent=None):
         super(DeepSegmentationFrameworkDockWidget, self).__init__(parent)
         self.iface = iface
         self.setupUi(self)
         self._input_channels_mapping_widget = InputChannelsMappingWidget(self)
+        self._training_data_export_widget = TrainingDataExportWidget(self)
         self._create_connections()
         QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
         self._setup_misc_ui()
@@ -88,6 +89,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             combobox.addItem(name)
 
         self.verticalLayout_inputChannelsMapping.addWidget(self._input_channels_mapping_widget)
+        self.verticalLayout_trainingDataExport.addWidget(self._training_data_export_widget)
 
         model_path = ConfigEntryKey.MODEL_FILE_PATH.get()
         self.lineEdit_modelPath.setText(model_path)
@@ -108,7 +110,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return ProcessedAreaType(txt)
 
     def _create_connections(self):
-        self.pushButton_run_inference.clicked.connect(self._run_inference)
+        self.pushButton_runInference.clicked.connect(self._run_inference)
+        self.pushButton_runTrainingDataExport.clicked.connect(self._run_training_data_export)
         self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
         self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
         self.pushButton_reloadModel.clicked.connect(self._load_model_and_display_info)
@@ -175,32 +178,42 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             return 0
         return self.doubleSpinBox_probabilityThreshold.value()
 
-    def get_inference_parameters(self) -> InferenceParameters:
+    def get_inference_parameters(self, map_processing_parameters: MapProcessingParameters) -> InferenceParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
-        processed_area_type = self.get_selected_processed_area_type()
 
         if self._model_wrapper is None:
             raise OperationFailedException("Please select and load a model first!")
 
         inference_parameters = InferenceParameters(
-            resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
-            tile_size_px=self.spinBox_tileSize_px.value(),
-            processed_area_type=processed_area_type,
-            mask_layer_id=self.get_mask_layer_id(),
-            input_layer_id=self._get_input_layer_id(),
-            input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
+            **map_processing_parameters.__dict__,
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
-            processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
             pixel_classification__enable_argmax=self.checkBox_pixelClassArgmaxEnabled.isChecked(),
             pixel_classification__probability_threshold=self._get_pixel_classification_threshold(),
             model=self._model_wrapper,
         )
         return inference_parameters
 
+    def _get_map_processing_parameters(self) -> MapProcessingParameters:
+        """
+        Get common parameters for inference and exporting
+        """
+        processed_area_type = self.get_selected_processed_area_type()
+        inference_parameters = MapProcessingParameters(
+            resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
+            tile_size_px=self.spinBox_tileSize_px.value(),
+            processed_area_type=processed_area_type,
+            mask_layer_id=self.get_mask_layer_id(),
+            input_layer_id=self._get_input_layer_id(),
+            processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
+            input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
+        )
+        return inference_parameters
+
     def _run_inference(self):
         try:
-            inference_parameters = self.get_inference_parameters()
+            map_processing_parameters = self._get_map_processing_parameters()
+            inference_parameters = self.get_inference_parameters(map_processing_parameters)
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
@@ -208,6 +221,24 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             return
 
         self.run_inference_signal.emit(inference_parameters)
+
+    def _run_training_data_export(self):
+        try:
+            map_processing_parameters = self._get_map_processing_parameters()
+            training_data_export_parameters = self._training_data_export_widget.get_training_data_export_parameters(
+                map_processing_parameters)
+
+            # Overwrite common parameter - we don't want channels mapping as for the model,
+            # but just to take all channels
+            training_data_export_parameters.input_channels_mapping = \
+                self._input_channels_mapping_widget.get_channels_mapping_for_training_data_export()
+        except OperationFailedException as e:
+            msg = str(e)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
+            QMessageBox.critical(self, "Error!", msg)
+            return
+
+        self.run_training_data_export_signal.emit(training_data_export_parameters)
 
     def closeEvent(self, event):
         self.closingPlugin.emit()

@@ -1,15 +1,10 @@
-import sys
 from unittest.mock import MagicMock
 
-import pytest
-from qgis.PyQt.QtWidgets import QApplication
-from qgis.core import QgsVectorLayer, QgsProject
-from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsApplication
-from qgis.core import QgsRasterLayer
+from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
-from deep_segmentation_framework.common.channels_mapping import ChannelsMapping
-from deep_segmentation_framework.common.inference_parameters import ProcessedAreaType, InferenceParameters
-from deep_segmentation_framework.deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
+from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
+from deep_segmentation_framework.processing.map_processor_inference import MapProcessorInference
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
@@ -49,7 +44,7 @@ def dummy_model_processing__entire_file():
         model=model_wrapper,
     )
 
-    map_processor = MapProcessor(
+    map_processor = MapProcessorInference(
         rlayer=rlayer,
         vlayer_mask=None,
         map_canvas=MagicMock(),
@@ -86,7 +81,7 @@ def generic_processing_test__specified_extent_from_vlayer():
         pixel_classification__probability_threshold=0.5,
         model=model_wrapper,
     )
-    map_processor = MapProcessor(
+    map_processor = MapProcessorInference(
         rlayer=rlayer,
         vlayer_mask=vlayer_mask,
         map_canvas=MagicMock(),
@@ -127,7 +122,7 @@ def generic_processing_test__specified_extent_from_active_map_extent():
     map_canvas.extent = lambda: processed_extent
     map_canvas.mapSettings().destinationCrs = lambda: QgsCoordinateReferenceSystem("EPSG:32633")
 
-    map_processor = MapProcessor(
+    map_processor = MapProcessorInference(
         rlayer=rlayer,
         vlayer_mask=None,
         map_canvas=map_canvas,
