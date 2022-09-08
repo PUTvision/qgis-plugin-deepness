@@ -1,6 +1,6 @@
 import numpy as np
 
-from plugin.deep_segmentation_framework.processing.models.base import BaseModel
+from deep_segmentation_framework.processing.models.base import BaseModel
 
 
 class Segmentor(BaseModel):
