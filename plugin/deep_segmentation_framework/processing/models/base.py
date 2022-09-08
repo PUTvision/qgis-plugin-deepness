@@ -10,9 +10,11 @@ class BaseModel:
         if len(inputs) > 1:
             raise Exception("ONNX model: unsupported number of inputs")
         input_0 = inputs[0]
-        self.output_0_name = self.sess.get_outputs()[0].name  # We expect only the first output
+
         self.input_shape = input_0.shape
         self.input_name = input_0.name
+
+        self.outputs_layers = self.sess.get_outputs()
 
     def preprocessing(self, img: np.ndarray):
         raise NotImplementedError
@@ -31,7 +33,7 @@ class BaseModel:
         assert len(input_batch.shape) == 4
 
         model_output = self.sess.run(
-                output_names=[self.output_0_name],
+                output_names=None,
                 input_feed={self.input_name: input_batch})
 
         return self.postprocessing(model_output, **kwargs)

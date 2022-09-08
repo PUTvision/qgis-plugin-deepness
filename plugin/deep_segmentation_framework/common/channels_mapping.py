@@ -46,6 +46,7 @@ class ChannelsMapping:
 
     def __init__(self):
         self._number_of_model_inputs = 0
+        self._number_of_model_output_channels = 0
         self._image_channels = []  # type: List[ImageChannel]  # what channels are available from input image
 
         # maps model channels to input image channels
@@ -80,11 +81,17 @@ class ChannelsMapping:
     def set_number_of_model_inputs(self, number_of_model_inputs):
         self._number_of_model_inputs = number_of_model_inputs
 
+    def set_number_of_model_output_channels(self, number_of_output_channels):
+        self._number_of_model_output_channels = number_of_output_channels
+
     def set_number_of_model_inputs_same_as_image_channels(self):
         self._number_of_model_inputs = len(self._image_channels)
 
     def get_number_of_model_inputs(self):
         return self._number_of_model_inputs
+
+    def get_number_of_model_output_channels(self):
+        return self._number_of_model_output_channels
 
     def get_number_of_image_channels(self) -> int:
         return len(self._image_channels)

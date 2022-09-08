@@ -27,6 +27,12 @@ class ModelWrapper:
     def get_number_of_channels(self):
         return self.model.input_shape[-3]
 
+    def get_number_of_output_channels(self):
+        if len(self.model.outputs_layers) == 1:
+            return max(self.model.outputs_layers[0][-3] - 1, 1)
+        else:
+            raise NotImplementedError
+
     def process(self, img):
         """
         Process a single tile image
