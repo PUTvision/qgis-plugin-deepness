@@ -37,3 +37,6 @@ class BaseModel:
 
         return self.postprocessing(model_output)
 
+    @classmethod
+    def get_class_display_name(cls):
+        return NotImplementedError
