@@ -1,5 +1,7 @@
 from typing import List
 
+import numpy as np
+
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.processing import processing_utils

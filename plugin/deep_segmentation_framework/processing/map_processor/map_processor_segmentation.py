@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsProject

@@ -227,8 +227,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         params = DetectionParameters(
             **map_processing_parameters.__dict__,
-            confidence=doubleSpinBox_confidence.value(),
-            iou_threshold=doubleSpinBox_iouScore.value(),
+            confidence=self.doubleSpinBox_confidence.value(),
+            iou_threshold=self.doubleSpinBox_iouScore.value(),
             model=self._model_wrapper,
         )
         return params
