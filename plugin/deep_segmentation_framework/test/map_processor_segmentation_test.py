@@ -4,8 +4,7 @@ from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
-from deep_segmentation_framework.processing.map_processor_segmentation import MapProcessorSegmentation
-from deep_segmentation_framework.processing.map_processor import MapProcessor
+from deep_segmentation_framework.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
     create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, get_dummy_model_path, \

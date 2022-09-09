@@ -1,24 +1,16 @@
-from typing import Optional, Tuple
-
 import numpy as np
 import cv2
 
-from qgis.PyQt.QtCore import pyqtSignal
 from qgis.core import QgsVectorLayer
-from qgis.gui import QgsMapCanvas
-from qgis.core import QgsRasterLayer
-from qgis.core import QgsTask
 from qgis.core import QgsProject
 
-from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
-from deep_segmentation_framework.processing import processing_utils, extent_utils
+from deep_segmentation_framework.processing import processing_utils
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
-from deep_segmentation_framework.processing.map_processor import MapProcessor
-from deep_segmentation_framework.processing.tile_params import TileParams
+from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
 
 if IS_DEBUG:
-    from matplotlib import pyplot as plt
+    pass
 
 
 class MapProcessorSegmentation(MapProcessor):

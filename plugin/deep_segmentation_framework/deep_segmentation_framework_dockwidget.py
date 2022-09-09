@@ -162,7 +162,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             length_limit = 300
             exception_msg = info = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
             msg = txt + f'\n\nException: {exception_msg}'
-            raise e
             QMessageBox.critical(self, "Error!", msg)
 
         self.label_modelInfo.setText(txt)
