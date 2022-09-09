@@ -1,5 +1,6 @@
 import numpy as np
-import onnxruntime as ort
+
+from deep_segmentation_framework.processing.models.segmentor import Segmentor
 
 
 class ModelWrapper:
@@ -9,48 +10,36 @@ class ModelWrapper:
 
     def __init__(self, model_file_path):
         self.model_file_path = model_file_path
-        self.sess = ort.InferenceSession(self.model_file_path)
-        inputs = self.sess.get_inputs()
-        if len(inputs) > 1:
-            raise Exception("ONNX model: unsupported number of inputs")
-        input_0 = inputs[0]
-        self.output_0_name = self.sess.get_outputs()[0].name  # We expect only the first output
-        self.input_shape = input_0.shape
-        self.input_name = input_0.name
+        self.model = Segmentor(self.model_file_path)
 
     def get_input_shape(self):
         """
         Get shape of the input for the model
         """
-        return self.input_shape
+        return self.model.input_shape
 
     def get_input_size_in_pixels(self):
         """
         Get number of input pixels in x and y direction (the same value)
         """
-        return self.input_shape[-2:]
+        return self.model.input_shape[-2:]
 
     def get_number_of_channels(self):
-        return self.input_shape[-3]
+        return self.model.input_shape[-3]
+
+    def get_number_of_output_channels(self):
+        if len(self.model.outputs_layers) == 1:
+            return max(self.model.outputs_layers[0][-3] - 1, 1)
+        else:
+            raise NotImplementedError
 
     def process(self, img):
         """
         Process a single tile image
         :param img: RGB img [TILE_SIZE x TILE_SIZE x channels], type uint8, values 0 to 255
-        :return: single prediction mask
+        :return: single prediction
         """
 
-        img = img[:, :, :self.get_number_of_channels()]
+        model_output = self.model.predict(img)
 
-        input_batch = img.astype('float32')
-        input_batch /= 255
-        input_batch = input_batch.transpose(2, 0, 1)
-        input_batch = np.expand_dims(input_batch, axis=0)
-
-        model_output = self.sess.run(
-            output_names=[self.output_0_name],
-            input_feed={self.input_name: input_batch})
-
-        # TODO - add support for multiple output classes. For now just take 1 layer
-        damaged_area_onnx = model_output[0][0][1] * 255
-        return damaged_area_onnx
+        return model_output

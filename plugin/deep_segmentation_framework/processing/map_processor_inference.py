@@ -44,7 +44,6 @@ class MapProcessorInference(MapProcessor):
                 return False
 
             tile_result = self._process_tile(tile_img)
-            # plt.figure(); plt.imshow(tile_img); plt.show(block=False); plt.pause(0.001)
             # self._show_image(tile_result)
             tile_params.set_mask_on_full_img(
                 tile_result=tile_result,
@@ -75,44 +74,59 @@ class MapProcessorInference(MapProcessor):
 
     def _create_vlayer_from_mask_for_base_extent(self, mask_img):
         # create vector layer with polygons from the mask image
-        contours, hierarchy = cv2.findContours(mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        contours = processing_utils.transform_contours_yx_pixels_to_target_crs(
-            contours=contours,
-            extent=self.base_extent,
-            rlayer_units_per_pixel=self.rlayer_units_per_pixel)
-        features = []
 
-        if len(contours):
-            processing_utils.convert_cv_contours_to_features(
-                features=features,
-                cv_contours=contours,
-                hierarchy=hierarchy[0],
-                is_hole=False,
-                current_holes=[],
-                current_contour_index=0)
-        else:
-            pass  # just nothing, we already have an empty list of features
+        group = QgsProject.instance().layerTreeRoot().addGroup('model_output')
 
-        vlayer = QgsVectorLayer("multipolygon", "model_output", "memory")
-        vlayer.setCrs(self.rlayer.crs())
-        prov = vlayer.dataProvider()
+        for channel_id in np.unique(mask_img):
+            if channel_id == 0:
+                continue
 
-        color = vlayer.renderer().symbol().color()
-        OUTPUT_VLAYER_COLOR_TRANSPARENCY = 80
-        color.setAlpha(OUTPUT_VLAYER_COLOR_TRANSPARENCY)
-        vlayer.renderer().symbol().setColor(color)
-        # TODO - add also outline for the layer (thicker black border)
+            local_mask_img = np.uint8(mask_img == channel_id)
 
-        prov.addFeatures(features)
-        vlayer.updateExtents()
-        QgsProject.instance().addMapLayer(vlayer)
+            contours, hierarchy = cv2.findContours(local_mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contours = processing_utils.transform_contours_yx_pixels_to_target_crs(
+                contours=contours,
+                extent=self.base_extent,
+                rlayer_units_per_pixel=self.rlayer_units_per_pixel)
+            features = []
+
+            if len(contours):
+                processing_utils.convert_cv_contours_to_features(
+                    features=features,
+                    cv_contours=contours,
+                    hierarchy=hierarchy[0],
+                    is_hole=False,
+                    current_holes=[],
+                    current_contour_index=0)
+            else:
+                pass  # just nothing, we already have an empty list of features
+
+            vlayer = QgsVectorLayer("multipolygon", f"channel_{channel_id}", "memory")
+            vlayer.setCrs(self.rlayer.crs())
+            prov = vlayer.dataProvider()
+
+            color = vlayer.renderer().symbol().color()
+            OUTPUT_VLAYER_COLOR_TRANSPARENCY = 80
+            color.setAlpha(OUTPUT_VLAYER_COLOR_TRANSPARENCY)
+            vlayer.renderer().symbol().setColor(color)
+            # TODO - add also outline for the layer (thicker black border)
+
+            prov.addFeatures(features)
+            vlayer.updateExtents()
+
+            QgsProject.instance().addMapLayer(vlayer, False)
+            group.addLayer(vlayer)
+
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
         # TODO - create proper mapping for output channels
         result = self.model_wrapper.process(tile_img)
 
-        # TODO - apply argmax classification and thresholding
-        result_threshold = result > (self.inference_parameters.pixel_classification__probability_threshold * 255)
+        # TODO - SEGMENTER USE CASE
+        result[result < self.inference_parameters.pixel_classification__probability_threshold] = 0.0
+        result = np.argmax(result, axis=0)
 
-        return result_threshold
+        # TODO - OBJECT DETECTOR USE CASE
+
+        return result
 
