@@ -36,12 +36,15 @@ from qgis.core import Qgis
 from qgis.PyQt.QtWidgets import QFileDialog
 
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
+from deep_segmentation_framework.common.errors import OperationFailedException
+from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
     ProcessedAreaType
 from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.processing.models.model_types import ModelDefinition, ModelType
 from deep_segmentation_framework.widgets.input_channels_mapping.input_channels_mapping_widget import \
     InputChannelsMappingWidget
 from deep_segmentation_framework.widgets.training_data_export_widget.training_data_export_widget import \
@@ -51,14 +54,10 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deep_segmentation_framework_dockwidget_base.ui'))
 
 
-class OperationFailedException(Exception):
-    pass
-
-
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
-    run_inference_signal = pyqtSignal(SegmentationParameters)
+    run_model_inference_signal = pyqtSignal(MapProcessingParameters)  # run Segmentation or Detection
     run_training_data_export_signal = pyqtSignal(TrainingDataExportParameters)
 
     def __init__(self, iface, parent=None):
@@ -93,11 +92,15 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         model_path = ConfigEntryKey.MODEL_FILE_PATH.get()
         self.lineEdit_modelPath.setText(model_path)
-        self._load_model_and_display_info(abort_if_no_file_path=True)
 
         self.mMapLayerComboBox_inputLayer.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.mMapLayerComboBox_areaMaskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
         self._set_processed_area_mask_options()
+
+        for model_definition in ModelDefinition.get_model_definitions():
+            self.comboBox_modelType.addItem(model_definition.model_type.value)
+
+        self._load_model_and_display_info(abort_if_no_file_path=True)
 
     def _set_processed_area_mask_options(self):
         show_mask_combobox = (self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS)
@@ -138,8 +141,11 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             return
 
         txt = ''
+
         try:
-            self._model_wrapper = ModelWrapper(file_path)
+            model_definition = self.get_selected_model_class_definition()
+            model_class = model_definition.model_class
+            self._model_wrapper = model_class(file_path)
             input_0_shape = self._model_wrapper.get_input_shape()
             txt += f'Input shape: {input_0_shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
             input_size_px = input_0_shape[-1]
@@ -156,6 +162,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             length_limit = 300
             exception_msg = info = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
             msg = txt + f'\n\nException: {exception_msg}'
+            raise e
             QMessageBox.critical(self, "Error!", msg)
 
         self.label_modelInfo.setText(txt)
@@ -178,17 +185,51 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             return 0
         return self.doubleSpinBox_probabilityThreshold.value()
 
-    def get_segmentation_parameters(self, map_processing_parameters: MapProcessingParameters) -> SegmentationParameters:
-        postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
-                                         if self.checkBox_removeSmallAreas.isChecked() else 0
+    def get_selected_model_class_definition(self) ->ModelDefinition:
+        """
+        Get the currently selected model class (in UI)
+        """
+        model_type_txt = self.comboBox_modelType.currentText()
+        model_type = ModelType(model_type_txt)
+        model_definition = ModelDefinition.get_definition_for_type(model_type)
+        return model_definition
+
+    def get_inference_parameters(self):
+        map_processing_parameters = self._get_map_processing_parameters()
 
         if self._model_wrapper is None:
             raise OperationFailedException("Please select and load a model first!")
+
+        model_type = self.get_selected_model_class_definition().model_type
+        if model_type == ModelType.SEGMENTATION:
+            params = self.get_segmentation_parameters(map_processing_parameters)
+        elif model_type == ModelType.DETECTION:
+            params = self.get_detection_parameters(map_processing_parameters)
+        else:
+            raise Exception(f"Unknown model type '{model_type}'!")
+
+        return params
+
+    def get_segmentation_parameters(self, map_processing_parameters: MapProcessingParameters) -> SegmentationParameters:
+        postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
+                                         if self.checkBox_removeSmallAreas.isChecked() else 0
 
         params = SegmentationParameters(
             **map_processing_parameters.__dict__,
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
             pixel_classification__probability_threshold=self._get_pixel_classification_threshold(),
+            model=self._model_wrapper,
+        )
+        return params
+
+    def get_detection_parameters(self, map_processing_parameters: MapProcessingParameters) -> DetectionParameters:
+        postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
+                                         if self.checkBox_removeSmallAreas.isChecked() else 0
+
+        params = DetectionParameters(
+            **map_processing_parameters.__dict__,
+            confidence=doubleSpinBox_confidence.value(),
+            iou_threshold=doubleSpinBox_iouScore.value(),
             model=self._model_wrapper,
         )
         return params
@@ -211,15 +252,14 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def _run_inference(self):
         try:
-            map_processing_parameters = self._get_map_processing_parameters()
-            params = self.get_segmentation_parameters(map_processing_parameters)
+            params = self.get_inference_parameters()
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
             QMessageBox.critical(self, "Error!", msg)
             return
 
-        self.run_inference_signal.emit(params)
+        self.run_model_inference_signal.emit(params)
 
     def _run_training_data_export(self):
         try:

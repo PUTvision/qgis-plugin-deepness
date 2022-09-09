@@ -3,6 +3,7 @@ import numpy as np
 from deep_segmentation_framework.processing.models.segmentor import Segmentor
 
 
+# TODO - rename to BaseModel or something
 class ModelWrapper:
     """
     Wraps the ONNX model used during processing into a common interface

@@ -14,8 +14,8 @@ class DetectionParameters(MapProcessingParameters):
     Parameters for Inference of detection model (including pre/post-processing) obtained from UI.
     """
 
-    model: Detector  # wrapper of the loaded model
+    model: ModelWrapper  # wrapper of the loaded model
 
-    score_threshold: float
+    confidence: float
     iou_threshold: float
     

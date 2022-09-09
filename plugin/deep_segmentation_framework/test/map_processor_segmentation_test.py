@@ -4,7 +4,7 @@ from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
-from deep_segmentation_framework.processing.map_processor_inference import MapProcessorSegmentation
+from deep_segmentation_framework.processing.map_processor_segmentation import MapProcessorSegmentation
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
@@ -24,7 +24,7 @@ INPUT_CHANNELS_MAPPING = create_default_input_channels_mapping_for_rgba_bands()
 
 PROCESSED_EXTENT_1 = QgsRectangle(  # big part of the fotomap
         638840.370, 5802593.197,
-        638857.695, 5802601.792,)
+        638857.695, 5802601.792)
 
 
 def dummy_model_processing__entire_file():

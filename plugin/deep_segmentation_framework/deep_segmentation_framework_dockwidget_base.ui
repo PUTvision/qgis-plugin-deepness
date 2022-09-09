@@ -25,8 +25,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>393</width>
-         <height>1282</height>
+         <width>350</width>
+         <height>1308</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -96,14 +96,7 @@
            <string>ONNX Model</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_7">
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Model file path:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="2">
+           <item row="1" column="2">
             <widget class="QPushButton" name="pushButton_browseModelPath">
              <property name="enabled">
               <bool>true</bool>
@@ -113,28 +106,14 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="0">
+           <item row="3" column="0">
             <widget class="QLabel" name="label_3">
              <property name="text">
               <string>Model info:</string>
              </property>
             </widget>
            </item>
-           <item row="0" column="1">
-            <widget class="QLineEdit" name="lineEdit_modelPath">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0" colspan="3">
-            <widget class="QPushButton" name="pushButton_reloadModel">
-             <property name="text">
-              <string>Reload Model</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1" rowspan="2" colspan="2">
+           <item row="3" column="1" rowspan="2" colspan="2">
             <widget class="QLabel" name="label_modelInfo">
              <property name="font">
               <font>
@@ -151,6 +130,37 @@
               <bool>true</bool>
              </property>
             </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="lineEdit_modelPath">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0" colspan="3">
+            <widget class="QPushButton" name="pushButton_reloadModel">
+             <property name="text">
+              <string>Reload Model</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Model file path:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>Model type:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="comboBox_modelType"/>
            </item>
           </layout>
          </widget>
@@ -211,10 +221,10 @@
            <item row="0" column="1">
             <widget class="QDoubleSpinBox" name="doubleSpinBox_resolution_cm_px">
              <property name="decimals">
-              <number>3</number>
+              <number>2</number>
              </property>
              <property name="minimum">
-              <double>0.001000000000000</double>
+              <double>0.000000000000000</double>
              </property>
              <property name="maximum">
               <double>999999.000000000000000</double>
@@ -324,10 +334,13 @@ for some models</string>
               <item row="1" column="1">
                <widget class="QDoubleSpinBox" name="doubleSpinBox_probabilityThreshold">
                 <property name="decimals">
-                 <number>4</number>
+                 <number>2</number>
                 </property>
                 <property name="maximum">
                  <double>1.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.050000000000000</double>
                 </property>
                 <property name="value">
                  <double>0.500000000000000</double>
@@ -366,24 +379,27 @@ for some models</string>
            <item row="3" column="0">
             <widget class="QLabel" name="label_22">
              <property name="text">
-              <string>IoU threshold</string>
+              <string>IoU threshold:</string>
              </property>
             </widget>
            </item>
            <item row="3" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_iouScore">
              <property name="decimals">
-              <number>3</number>
+              <number>2</number>
              </property>
              <property name="maximum">
               <double>1.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.050000000000000</double>
              </property>
             </widget>
            </item>
            <item row="1" column="0">
             <widget class="QLabel" name="label_21">
              <property name="text">
-              <string>Confidence</string>
+              <string>Confidence:</string>
              </property>
             </widget>
            </item>
@@ -401,12 +417,15 @@ for some models</string>
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_confidence">
              <property name="decimals">
-              <number>3</number>
+              <number>2</number>
              </property>
              <property name="maximum">
               <double>1.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.050000000000000</double>
              </property>
             </widget>
            </item>
