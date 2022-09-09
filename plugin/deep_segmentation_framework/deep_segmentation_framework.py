@@ -25,8 +25,9 @@ import os
 
 from .common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from .common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
-from .processing.map_processor_inference import MapProcessorInference
+from .processing.map_processor_segmentation import MapProcessorSegmentation
 from .processing.map_processor_training_data_export import MapProcessorTrainingDataExport
+from .processing.models.model_types import ModelDefinition
 
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2
 import cv2
@@ -42,7 +43,7 @@ from qgis.core import Qgis
 
 # Initialize Qt resources from file resources.py
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, IS_DEBUG
-from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 
 # Import the code for the DockWidget
@@ -254,7 +255,7 @@ class DeepSegmentationFramework:
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)
-            self.dockwidget.run_inference_signal.connect(self._run_inference)
+            self.dockwidget.run_model_inference_signal.connect(self._run_model_inference)
             self.dockwidget.run_training_data_export_signal.connect(self._run_training_data_export)
 
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
@@ -295,20 +296,23 @@ class DeepSegmentationFramework:
         self._map_processor.show_img_signal.connect(self._show_img)
         QgsApplication.taskManager().addTask(self._map_processor)
 
-    def _run_inference(self, inference_parameters: InferenceParameters):
-        self._check_if_map_processing_parameters_are_correct(inference_parameters)
+    def _run_model_inference(self, params: MapProcessingParameters):
+        self._check_if_map_processing_parameters_are_correct(params)
         vlayer = None
 
-        rlayer = QgsProject.instance().mapLayers()[inference_parameters.input_layer_id]
-        if inference_parameters.processed_area_type == ProcessedAreaType.FROM_POLYGONS:
-            vlayer = QgsProject.instance().mapLayers()[inference_parameters.mask_layer_id]
+        rlayer = QgsProject.instance().mapLayers()[params.input_layer_id]
+        if params.processed_area_type == ProcessedAreaType.FROM_POLYGONS:
+            vlayer = QgsProject.instance().mapLayers()[params.mask_layer_id]
             vlayer.setCrs(rlayer.crs())
 
-        self._map_processor = MapProcessorInference(
+        model_definition = ModelDefinition.get_definition_for_params(params)
+        map_processor_class = model_definition.map_processor_class
+
+        self._map_processor = map_processor_class(
             rlayer=rlayer,
             vlayer_mask=vlayer,
             map_canvas=self.iface.mapCanvas(),
-            inference_parameters=inference_parameters)
+            params=params)
         self._map_processor.finished_signal.connect(self._map_processor_finished)
         self._map_processor.show_img_signal.connect(self._show_img)
         QgsApplication.taskManager().addTask(self._map_processor)

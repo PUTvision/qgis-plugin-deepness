@@ -4,9 +4,9 @@ from qgis.core import QgsVectorLayer
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsRectangle
 
+from deep_segmentation_framework.common.errors import OperationFailedException
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
     MapProcessingParameters
-from deep_segmentation_framework.deep_segmentation_framework_dockwidget import OperationFailedException
 from deep_segmentation_framework.processing.processing_utils import BoundingBox
 
 

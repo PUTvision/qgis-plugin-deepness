@@ -14,7 +14,7 @@ from deep_segmentation_framework.common.processing_parameters.map_processing_par
     ProcessedAreaType
 from deep_segmentation_framework.processing import processing_utils, extent_utils
 from deep_segmentation_framework.common.defines import IS_DEBUG
-from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.processing.tile_params import TileParams
 
 if IS_DEBUG:

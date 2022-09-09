@@ -11,6 +11,10 @@ class Detector(ModelWrapper):
         self.score_threshold = 0.6
         self.iou_threshold = 0.5
 
+    @classmethod
+    def get_class_display_name(cls):
+        return cls.__name__
+
     def preprocessing(self, image: np.ndarray):
         img = image[:, :, :self.input_shape[-3]]
 
