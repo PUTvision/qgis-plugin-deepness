@@ -11,6 +11,9 @@ from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer
     create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, get_dummy_model_path, \
     create_default_input_channels_mapping_for_rgba_bands
 
+import numpy as np
+
+
 RASTER_FILE_PATH = get_dummy_fotomap_small_path()
 
 VLAYER_MASK_FILE_PATH = get_dummy_fotomap_area_path()
@@ -57,6 +60,11 @@ def dummy_model_processing__entire_file():
     # TODO - add detailed check for pixel values once we have output channels mapping with thresholding
 
 
+def model_process_mock(x):
+    x = x[:, :, 0:2]
+    return np.transpose(x, (2, 0, 1))
+
+
 def generic_processing_test__specified_extent_from_vlayer():
     qgs = init_qgis()
 
@@ -64,8 +72,8 @@ def generic_processing_test__specified_extent_from_vlayer():
     vlayer_mask = create_vlayer_from_file(VLAYER_MASK_FILE_PATH)
     vlayer_mask.setCrs(rlayer.crs())
     model_wrapper = MagicMock()
-    model_wrapper.process = lambda x: x[:, :, 0]
-    model_wrapper.get_number_of_channels = lambda: 3
+    model_wrapper.process = model_process_mock
+    model_wrapper.get_number_of_channels = lambda: 2
 
     params = SegmentationParameters(
         resolution_cm_per_px=3,
@@ -95,8 +103,8 @@ def generic_processing_test__specified_extent_from_active_map_extent():
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
     model_wrapper = MagicMock()
-    model_wrapper.process = lambda x: x[:, :, 0]
-    model_wrapper.get_number_of_channels = lambda: 3
+    model_wrapper.process = model_process_mock
+    model_wrapper.get_number_of_channels = lambda: 2
 
     params = SegmentationParameters(
         resolution_cm_per_px=3,

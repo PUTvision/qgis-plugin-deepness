@@ -77,7 +77,7 @@ class MapProcessorSegmentation(MapProcessor):
 
         group = QgsProject.instance().layerTreeRoot().addGroup('model_output')
 
-        number_of_output_classes = self.params.model.get_number_of_output_channels()
+        number_of_output_classes = self.segmentation_parameters.model.get_number_of_output_channels()
         for channel_id in range(1, number_of_output_classes):
             local_mask_img = np.uint8(mask_img == channel_id)
 

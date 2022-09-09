@@ -29,7 +29,7 @@ class ModelWrapper:
 
     def get_number_of_output_channels(self):
         if len(self.model.outputs_layers) == 1:
-            return max(self.model.outputs_layers[0][-3] - 1, 1)
+            return max(self.model.outputs_layers[0].shape[-3] - 1, 1)
         else:
             raise NotImplementedError
 
