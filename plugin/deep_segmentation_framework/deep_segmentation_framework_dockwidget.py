@@ -188,7 +188,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         inference_parameters = InferenceParameters(
             **map_processing_parameters.__dict__,
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
-            pixel_classification__enable_argmax=self.checkBox_pixelClassArgmaxEnabled.isChecked(),
             pixel_classification__probability_threshold=self._get_pixel_classification_threshold(),
             model=self._model_wrapper,
         )

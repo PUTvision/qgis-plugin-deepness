@@ -21,8 +21,7 @@ if IS_DEBUG:
     from matplotlib import pyplot as plt
 
 
-# TODO: Rename to MapProcessorSegmentation
-class MapProcessorInference(MapProcessor):
+class MapProcessorDetection(MapProcessor):
     def __init__(self,
                  inference_parameters: InferenceParameters,
                  **kwargs):
@@ -78,8 +77,10 @@ class MapProcessorInference(MapProcessor):
 
         group = QgsProject.instance().layerTreeRoot().addGroup('model_output')
 
-        number_of_output_classes = self.params.model.get_number_of_output_channels()
-        for channel_id in range(1, number_of_output_classes):
+        for channel_id in np.unique(mask_img):
+            if channel_id == 0:
+                continue
+
             local_mask_img = np.uint8(mask_img == channel_id)
 
             contours, hierarchy = cv2.findContours(local_mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)

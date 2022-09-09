@@ -21,3 +21,7 @@ class Segmentor(BaseModel):
         labels = np.clip(model_output[0][0], 0, 1)
 
         return labels
+
+    @classmethod
+    def get_class_display_name(cls):
+        return cls.__name__

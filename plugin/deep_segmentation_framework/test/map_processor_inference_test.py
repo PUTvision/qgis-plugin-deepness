@@ -39,7 +39,6 @@ def dummy_model_processing__entire_file():
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
         postprocessing_dilate_erode_size=5,
         processing_overlap_percentage=20,
-        pixel_classification__enable_argmax=False,
         pixel_classification__probability_threshold=0.5,
         model=model_wrapper,
     )
@@ -77,7 +76,6 @@ def generic_processing_test__specified_extent_from_vlayer():
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
         postprocessing_dilate_erode_size=5,
         processing_overlap_percentage=20,
-        pixel_classification__enable_argmax=False,
         pixel_classification__probability_threshold=0.5,
         model=model_wrapper,
     )
@@ -109,7 +107,6 @@ def generic_processing_test__specified_extent_from_active_map_extent():
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
         postprocessing_dilate_erode_size=5,
         processing_overlap_percentage=20,
-        pixel_classification__enable_argmax=False,
         pixel_classification__probability_threshold=0.5,
         model=model_wrapper,
     )
