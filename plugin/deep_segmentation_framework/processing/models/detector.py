@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
 
-from deep_segmentation_framework.processing.models.model_wrapper import ModelWrapper
+from deep_segmentation_framework.processing.models.model_base import ModelBase
 
 
-class Detector(ModelWrapper):
+class Detector(ModelBase):
     def __init__(self, model_file_path: str):
         super(Detector, self).__init__(model_file_path)
 

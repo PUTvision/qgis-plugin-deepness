@@ -2,7 +2,7 @@ import numpy as np
 import onnxruntime as ort
 
 
-class ModelWrapper:
+class ModelBase:
     """
     Wraps the ONNX model used during processing into a common interface
     """

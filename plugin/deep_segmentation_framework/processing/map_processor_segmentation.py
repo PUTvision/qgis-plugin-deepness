@@ -29,7 +29,7 @@ class MapProcessorSegmentation(MapProcessor):
             params=params,
             **kwargs)
         self.segmentation_parameters = params
-        self.model_wrapper = params.model
+        self.model_base = params.model
         self._result_img = None
 
     def get_result_img(self):
@@ -118,7 +118,7 @@ class MapProcessorSegmentation(MapProcessor):
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
         # TODO - create proper mapping for output channels
-        result = self.model_wrapper.process(tile_img)
+        result = self.model_base.process(tile_img)
 
         # TODO - SEGMENTER USE CASE
         result[result < self.segmentation_parameters.pixel_classification__probability_threshold] = 0.0

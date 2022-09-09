@@ -10,7 +10,7 @@ from deep_segmentation_framework.common.processing_parameters.training_data_expo
 from deep_segmentation_framework.processing.map_processor_segmentation import MapProcessorSegmentation
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.processing.map_processor_training_data_export import MapProcessorTrainingDataExport
-from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.processing.models.model_base import ModelBase
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
     create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, get_dummy_model_path, \
     create_default_input_channels_mapping_for_rgba_bands, \

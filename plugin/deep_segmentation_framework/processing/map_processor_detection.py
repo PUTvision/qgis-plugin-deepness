@@ -30,7 +30,7 @@ class MapProcessorDetection(MapProcessor):
             params=params,
             **kwargs)
         self.detection_parameters = params
-        self.model_wrapper = params.model
+        self.model_base = params.model
 
     # def _run(self):
     #     final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
@@ -117,7 +117,7 @@ class MapProcessorDetection(MapProcessor):
     #
     # def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
     #     # TODO - create proper mapping for output channels
-    #     result = self.model_wrapper.process(tile_img)
+    #     result = self.model_base.process(tile_img)
     #
     #     # TODO - SEGMENTER USE CASE
     #     result[result < self.params.pixel_classification__probability_threshold] = 0.0

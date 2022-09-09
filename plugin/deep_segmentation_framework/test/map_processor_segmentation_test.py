@@ -6,7 +6,7 @@ from deep_segmentation_framework.common.processing_parameters.segmentation_param
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deep_segmentation_framework.processing.map_processor_segmentation import MapProcessorSegmentation
 from deep_segmentation_framework.processing.map_processor import MapProcessor
-from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.processing.models.segmentor import Segmentor
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
     create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, get_dummy_model_path, \
     create_default_input_channels_mapping_for_rgba_bands
@@ -31,7 +31,7 @@ def dummy_model_processing__entire_file():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
-    model_wrapper = ModelWrapper(MODEL_FILE_PATH)
+    model_wrapper = Segmentor(MODEL_FILE_PATH)
 
     params = SegmentationParameters(
         resolution_cm_per_px=3,
