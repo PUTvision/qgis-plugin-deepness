@@ -10,7 +10,7 @@ from qgis.core import Qgis
 from deep_segmentation_framework.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
     ImageChannelCompositeByte
 from deep_segmentation_framework.common.channels_mapping import ImageChannel
-from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.processing.models.model_base import ModelBase
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'input_channels_mapping_widget.ui'))
@@ -24,7 +24,7 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
     def __init__(self, rlayer, parent=None):
         super(InputChannelsMappingWidget, self).__init__(parent)
         self.setupUi(self)
-        self._model_wrapper = None  # type: Optional[ModelWrapper]
+        self._model_wrapper = None  # type: Optional[ModelBase]
         self._rlayer = rlayer  # type: QgsRasteLayer
         self._create_connections()
         self._channels_mapping = ChannelsMapping()
@@ -53,7 +53,7 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
         is_advanced = self.radioButton_advancedMapping.isChecked()
         self.widget_mapping.setVisible(is_advanced)
 
-    def set_model(self, model_wrapper: ModelWrapper):
+    def set_model(self, model_wrapper: ModelBase):
         self._model_wrapper = model_wrapper
         number_of_channels = self._model_wrapper.get_number_of_channels()
         self.label_modelInputs.setText(f'{number_of_channels}')

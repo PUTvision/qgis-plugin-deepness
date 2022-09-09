@@ -1,10 +1,10 @@
 import cv2
 import numpy as np
 
-from deep_segmentation_framework.processing.models.base import BaseModel
+from deep_segmentation_framework.processing.models.model_base import ModelBase
 
 
-class Detector(BaseModel):
+class Detector(ModelBase):
     def __init__(self, model_file_path: str):
         super(Detector, self).__init__(model_file_path)
 
@@ -18,9 +18,10 @@ class Detector(BaseModel):
     def preprocessing(self, image: np.ndarray):
         img = image[:, :, :self.input_shape[-3]]
 
-        input_data = (img / 255.0).astype(np.float32)
+        input_data = (img / 255.0)
         input_data = np.transpose(input_data, (2, 0, 1))
         input_batch = np.expand_dims(input_data, 0)
+        input_batch = input_batch.astype(np.float32)
 
         return input_batch
 
