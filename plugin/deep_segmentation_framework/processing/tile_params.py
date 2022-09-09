@@ -43,6 +43,22 @@ class TileParams:
         tile_extent.setYMinimum(y_min)
         return tile_extent
 
+    def get_slice_on_full_image_for_entire_tile(self):
+        """
+        Slice to get the entire tile from "full final image,
+        including the overlapping parts.
+        :return Slice to be used on the full image
+        """
+
+        # 'core' part of the tile (not overlapping with other tiles), for sure copied for each tile
+        x_min = self.start_pixel_x
+        x_max = self.start_pixel_x + self.params.tile_size_px - 1
+        y_min = self.start_pixel_y
+        y_max = self.start_pixel_y + self.params.tile_size_px - 1
+
+        roi_slice = np.s_[y_min:y_max + 1, x_min:x_max + 1]
+        return roi_slice
+
     def get_slice_on_full_image_for_copying(self):
         """
         As we are doing processing with overlap, we are not going to copy the entire tile result to final image,
@@ -108,3 +124,8 @@ class TileParams:
         roi_slice_on_full_image = self.get_slice_on_full_image_for_copying()
         roi_slice_on_tile_image = self.get_slice_on_tile_image_for_copying(roi_slice_on_full_image)
         full_result_img[roi_slice_on_full_image] = tile_result[roi_slice_on_tile_image]
+
+    def get_entire_tile_from_full_img(self, full_result_img) -> np.ndarray:
+        roi_slice_on_full_image = self.get_slice_on_full_image_for_entire_tile()
+        img = full_result_img[roi_slice_on_full_image]
+        return img

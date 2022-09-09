@@ -62,7 +62,11 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
 
     def set_rlayer(self, rlayer):
         self._rlayer = rlayer
-        number_of_image_bands = rlayer.bandCount()
+
+        if rlayer:
+            number_of_image_bands = rlayer.bandCount()
+        else:
+            number_of_image_bands = 0
 
         image_channels = []  # type: List[ImageChannel]
 

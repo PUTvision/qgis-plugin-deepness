@@ -10,7 +10,8 @@ from qgis.core import QgsRasterLayer
 from qgis.core import QgsTask
 from qgis.core import QgsProject
 
-from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
+    ProcessedAreaType
 from deep_segmentation_framework.processing import processing_utils, extent_utils
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
@@ -43,6 +44,7 @@ class MapProcessor(QgsTask):
         if vlayer_mask:
             assert vlayer_mask.crs() == self.rlayer.crs()  # should be set in higher layer
         self.params = params
+        self._assert_qgis_doesnt_need_reload()
 
         self.stride_px = self.params.processing_stride_px  # stride in pixels
         self.rlayer_units_per_pixel = processing_utils.convert_meters_to_rlayer_units(
@@ -87,6 +89,13 @@ class MapProcessor(QgsTask):
             extended_extent=self.extended_extent,
             rlayer_units_per_pixel=self.rlayer_units_per_pixel,
             image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])
+
+    def _assert_qgis_doesnt_need_reload(self):
+        # If the plugin is somehow invalid, it cannot compare the enums correctly
+        # I suppose it could be fixed somehow, but no need to investigate it now,
+        # it affects only the development
+        if self.params.processed_area_type.__class__ != ProcessedAreaType:
+            raise Exception("Disable plugin, restart QGis and enable plugin again!")
 
     def run(self):
         print('run...')

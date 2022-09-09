@@ -55,6 +55,11 @@ class TrainingDataExportWidget(QtWidgets.QWidget, FORM_CLASS):
         self.mMapLayerComboBox_maskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
         self._enable_disable_mask_layer_selection()
 
+    def get_segmentation_mask_layer_id(self):
+        if not self.checkBox_exportMaskEnabled.isChecked():
+            return None
+        return self.mMapLayerComboBox_maskLayer.currentLayer().id()
+
     def get_training_data_export_parameters(self, map_processing_parameters: MapProcessingParameters):
         params = TrainingDataExportParameters(
             **map_processing_parameters.__dict__,
