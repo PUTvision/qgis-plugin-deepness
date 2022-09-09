@@ -15,7 +15,7 @@ class Segmentor(BaseModel):
         input_batch = input_batch.transpose(2, 0, 1)
         input_batch = np.expand_dims(input_batch, axis=0)
 
-        return input_batch, {}
+        return input_batch
 
     def postprocessing(self, model_output):
         labels = np.clip(model_output[0][0], 0, 1)

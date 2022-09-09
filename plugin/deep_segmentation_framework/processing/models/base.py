@@ -26,15 +26,14 @@ class BaseModel:
         assert img.dtype == np.uint8
         assert len(img.shape) == 3
 
-        input_batch, kwargs = self.preprocessing(img)
+        input_batch = self.preprocessing(img)
 
         assert input_batch.dtype == np.float32
-        assert type(kwargs) == dict
         assert len(input_batch.shape) == 4
 
         model_output = self.sess.run(
                 output_names=None,
                 input_feed={self.input_name: input_batch})
 
-        return self.postprocessing(model_output, **kwargs)
+        return self.postprocessing(model_output)
 
