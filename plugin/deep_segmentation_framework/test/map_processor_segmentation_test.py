@@ -2,9 +2,9 @@ from unittest.mock import MagicMock
 
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
-from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
-from deep_segmentation_framework.processing.map_processor_inference import MapProcessorInference
+from deep_segmentation_framework.processing.map_processor_inference import MapProcessorSegmentation
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
@@ -30,7 +30,7 @@ def dummy_model_processing__entire_file():
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
     model_wrapper = ModelWrapper(MODEL_FILE_PATH)
 
-    inference_parameters = InferenceParameters(
+    params = SegmentationParameters(
         resolution_cm_per_px=3,
         tile_size_px=model_wrapper.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
@@ -43,11 +43,11 @@ def dummy_model_processing__entire_file():
         model=model_wrapper,
     )
 
-    map_processor = MapProcessorInference(
+    map_processor = MapProcessorSegmentation(
         rlayer=rlayer,
         vlayer_mask=None,
         map_canvas=MagicMock(),
-        inference_parameters=inference_parameters,
+        params=params,
     )
 
     map_processor.run()
@@ -67,7 +67,7 @@ def generic_processing_test__specified_extent_from_vlayer():
     model_wrapper.process = lambda x: x[:, :, 0]
     model_wrapper.get_number_of_channels = lambda: 3
 
-    inference_parameters = InferenceParameters(
+    params = SegmentationParameters(
         resolution_cm_per_px=3,
         tile_size_px=512,
         processed_area_type=ProcessedAreaType.FROM_POLYGONS,
@@ -79,11 +79,11 @@ def generic_processing_test__specified_extent_from_vlayer():
         pixel_classification__probability_threshold=0.5,
         model=model_wrapper,
     )
-    map_processor = MapProcessorInference(
+    map_processor = MapProcessorSegmentation(
         rlayer=rlayer,
         vlayer_mask=vlayer_mask,
         map_canvas=MagicMock(),
-        inference_parameters=inference_parameters,
+        params=params,
     )
 
     # just run - we will check the results in a more detailed test
@@ -98,7 +98,7 @@ def generic_processing_test__specified_extent_from_active_map_extent():
     model_wrapper.process = lambda x: x[:, :, 0]
     model_wrapper.get_number_of_channels = lambda: 3
 
-    inference_parameters = InferenceParameters(
+    params = SegmentationParameters(
         resolution_cm_per_px=3,
         tile_size_px=512,
         processed_area_type=ProcessedAreaType.VISIBLE_PART,
@@ -114,16 +114,16 @@ def generic_processing_test__specified_extent_from_active_map_extent():
 
     # we want to use a fake extent, which is the Visible Part of the map,
     # so we need to mock its function calls
-    inference_parameters.processed_area_type = ProcessedAreaType.VISIBLE_PART
+    params.processed_area_type = ProcessedAreaType.VISIBLE_PART
     map_canvas = MagicMock()
     map_canvas.extent = lambda: processed_extent
     map_canvas.mapSettings().destinationCrs = lambda: QgsCoordinateReferenceSystem("EPSG:32633")
 
-    map_processor = MapProcessorInference(
+    map_processor = MapProcessorSegmentation(
         rlayer=rlayer,
         vlayer_mask=None,
         map_canvas=map_canvas,
-        inference_parameters=inference_parameters,
+        params=params,
     )
 
     # just run - we will check the results in a more detailed test

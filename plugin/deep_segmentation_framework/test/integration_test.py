@@ -52,12 +52,12 @@
 #     dockwidget._input_channels_mapping_widget.set_model(dockwidget._model_wrapper)
 #     dockwidget._rlayer_updated()
 #
-#     inference_parameters = dockwidget.get_inference_parameters()
+#     params = dockwidget.get_inference_parameters()
 #     processed_extent = PROCESSED_EXTENT_4_FAKE_FOTOMAPA
 #
 #     # we want to use a fake extent, which is the Visible Part of the map
 #     # and we need to mock it's function calls
-#     inference_parameters.processed_area_type = ProcessedAreaType.VISIBLE_PART
+#     params.processed_area_type = ProcessedAreaType.VISIBLE_PART
 #     map_canvas = MagicMock()
 #     map_canvas.extent = lambda: processed_extent
 #     map_canvas.mapSettings().destinationCrs = lambda: QgsCoordinateReferenceSystem("EPSG:32633")
@@ -68,7 +68,7 @@
 #         rlayer=rlayer,
 #         vlayer_mask=None,
 #         map_canvas=map_canvas,
-#         inference_parameters=inference_parameters,
+#         params=params,
 #     )
 #
 #     map_processor.run()
@@ -90,14 +90,14 @@
 #     dockwidget._input_channels_mapping_widget.set_model(dockwidget._model_wrapper)
 #     dockwidget._rlayer_updated()
 #
-#     inference_parameters = dockwidget.get_inference_parameters()
-#     inference_parameters.processed_area_type = ProcessedAreaType.FROM_POLYGONS
+#     params = dockwidget.get_inference_parameters()
+#     params.processed_area_type = ProcessedAreaType.FROM_POLYGONS
 #
 #     map_processor = MapProcessorInference(
 #         rlayer=rlayer,
 #         vlayer_mask=vlayer_mask,
 #         map_canvas=None,
-#         inference_parameters=inference_parameters,
+#         params=params,
 #     )
 #
 #     map_processor.run()

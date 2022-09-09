@@ -17,7 +17,7 @@ from deep_segmentation_framework.common.processing_parameters.training_data_expo
     TrainingDataExportParameters
 from deep_segmentation_framework.processing import processing_utils, extent_utils
 from deep_segmentation_framework.common.defines import IS_DEBUG
-from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.processing.tile_params import TileParams
 

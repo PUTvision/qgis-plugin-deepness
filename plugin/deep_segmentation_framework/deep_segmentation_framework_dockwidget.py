@@ -36,7 +36,7 @@ from qgis.core import Qgis
 from qgis.PyQt.QtWidgets import QFileDialog
 
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
-from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
     ProcessedAreaType
 from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
@@ -58,7 +58,7 @@ class OperationFailedException(Exception):
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
-    run_inference_signal = pyqtSignal(InferenceParameters)
+    run_inference_signal = pyqtSignal(SegmentationParameters)
     run_training_data_export_signal = pyqtSignal(TrainingDataExportParameters)
 
     def __init__(self, iface, parent=None):
@@ -178,27 +178,27 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             return 0
         return self.doubleSpinBox_probabilityThreshold.value()
 
-    def get_inference_parameters(self, map_processing_parameters: MapProcessingParameters) -> InferenceParameters:
+    def get_segmentation_parameters(self, map_processing_parameters: MapProcessingParameters) -> SegmentationParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
                                          if self.checkBox_removeSmallAreas.isChecked() else 0
 
         if self._model_wrapper is None:
             raise OperationFailedException("Please select and load a model first!")
 
-        inference_parameters = InferenceParameters(
+        params = SegmentationParameters(
             **map_processing_parameters.__dict__,
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
             pixel_classification__probability_threshold=self._get_pixel_classification_threshold(),
             model=self._model_wrapper,
         )
-        return inference_parameters
+        return params
 
     def _get_map_processing_parameters(self) -> MapProcessingParameters:
         """
         Get common parameters for inference and exporting
         """
         processed_area_type = self.get_selected_processed_area_type()
-        inference_parameters = MapProcessingParameters(
+        params = MapProcessingParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
             processed_area_type=processed_area_type,
@@ -207,19 +207,19 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
             input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
         )
-        return inference_parameters
+        return params
 
     def _run_inference(self):
         try:
             map_processing_parameters = self._get_map_processing_parameters()
-            inference_parameters = self.get_inference_parameters(map_processing_parameters)
+            params = self.get_segmentation_parameters(map_processing_parameters)
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
             QMessageBox.critical(self, "Error!", msg)
             return
 
-        self.run_inference_signal.emit(inference_parameters)
+        self.run_inference_signal.emit(params)
 
     def _run_training_data_export(self):
         try:

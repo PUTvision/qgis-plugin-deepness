@@ -14,7 +14,7 @@ from qgis.core import QgsUnitTypes
 
 
 from deep_segmentation_framework.common.defines import IS_DEBUG
-from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 
 if IS_DEBUG:
@@ -120,11 +120,11 @@ def get_tile_image(
     return img
 
 
-def erode_dilate_image(img, inference_parameters: InferenceParameters):
+def erode_dilate_image(img, segmentation_parameters: SegmentationParameters):
     # self._show_image(img)
-    if inference_parameters.postprocessing_dilate_erode_size:
+    if segmentation_parameters.postprocessing_dilate_erode_size:
         print('Opening...')
-        size = (inference_parameters.postprocessing_dilate_erode_size // 2) ** 2 + 1
+        size = (segmentation_parameters.postprocessing_dilate_erode_size // 2) ** 2 + 1
         kernel = np.ones((size, size), np.uint8)
         img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
         img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)

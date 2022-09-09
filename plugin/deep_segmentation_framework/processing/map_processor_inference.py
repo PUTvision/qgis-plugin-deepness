@@ -13,7 +13,7 @@ from qgis.core import QgsProject
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 from deep_segmentation_framework.processing import processing_utils, extent_utils
 from deep_segmentation_framework.common.defines import IS_DEBUG
-from deep_segmentation_framework.common.processing_parameters.inference_parameters import InferenceParameters
+from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.processing.map_processor import MapProcessor
 from deep_segmentation_framework.processing.tile_params import TileParams
 
@@ -21,16 +21,15 @@ if IS_DEBUG:
     from matplotlib import pyplot as plt
 
 
-# TODO: Rename to MapProcessorSegmentation
-class MapProcessorInference(MapProcessor):
+class MapProcessorSegmentation(MapProcessor):
     def __init__(self,
-                 inference_parameters: InferenceParameters,
+                 params: SegmentationParameters,
                  **kwargs):
         super().__init__(
-            params=inference_parameters,
+            params=params,
             **kwargs)
-        self.inference_parameters = inference_parameters
-        self.model_wrapper = inference_parameters.model
+        self.segmentation_parameters = params
+        self.model_wrapper = params.model
         self._result_img = None
 
     def get_result_img(self):
@@ -52,7 +51,7 @@ class MapProcessorInference(MapProcessor):
 
         full_result_img = processing_utils.erode_dilate_image(
             img=full_result_img,
-            inference_parameters=self.inference_parameters)
+            segmentation_parameters=self.segmentation_parameters)
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
         self._result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
         self._create_vlayer_from_mask_for_base_extent(self._result_img)
@@ -122,7 +121,7 @@ class MapProcessorInference(MapProcessor):
         result = self.model_wrapper.process(tile_img)
 
         # TODO - SEGMENTER USE CASE
-        result[result < self.inference_parameters.pixel_classification__probability_threshold] = 0.0
+        result[result < self.segmentation_parameters.pixel_classification__probability_threshold] = 0.0
         result = np.argmax(result, axis=0)
 
         # TODO - OBJECT DETECTOR USE CASE
