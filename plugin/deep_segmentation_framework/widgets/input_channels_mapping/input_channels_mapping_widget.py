@@ -10,7 +10,7 @@ from qgis.core import Qgis
 from deep_segmentation_framework.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
     ImageChannelCompositeByte
 from deep_segmentation_framework.common.channels_mapping import ImageChannel
-from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.processing.models.model_wrapper import ModelWrapper
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'input_channels_mapping_widget.ui'))

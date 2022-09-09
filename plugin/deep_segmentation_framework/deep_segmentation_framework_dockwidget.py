@@ -41,7 +41,7 @@ from deep_segmentation_framework.common.processing_parameters.map_processing_par
     ProcessedAreaType
 from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
-from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.processing.models.model_wrapper import ModelWrapper
 from deep_segmentation_framework.widgets.input_channels_mapping.input_channels_mapping_widget import \
     InputChannelsMappingWidget
 from deep_segmentation_framework.widgets.training_data_export_widget.training_data_export_widget import \

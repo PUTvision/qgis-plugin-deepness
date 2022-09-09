@@ -1,9 +1,9 @@
 import numpy as np
 
-from deep_segmentation_framework.processing.models.base import BaseModel
+from deep_segmentation_framework.processing.models.model_wrapper import ModelWrapper
 
 
-class Segmentor(BaseModel):
+class Segmentor(ModelWrapper):
     def __init__(self, model_file_path: str):
         super(Segmentor, self).__init__(model_file_path)
 

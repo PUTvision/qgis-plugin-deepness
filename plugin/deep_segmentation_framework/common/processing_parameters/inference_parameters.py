@@ -4,7 +4,7 @@ from typing import Optional
 
 from deep_segmentation_framework.common.channels_mapping import ChannelsMapping
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
-from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.processing.models.model_wrapper import ModelWrapper
 
 
 @dataclass
