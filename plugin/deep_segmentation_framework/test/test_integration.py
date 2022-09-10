@@ -39,7 +39,7 @@
 #         638968.477, 5802_510.616)
 #
 #
-# def generic_processing_test__specified_extent():
+# def test_generic_processing__specified_extent():
 #     # TODO - prepare inference parameters manually
 #
 #     qgs = init_qgis()
@@ -74,7 +74,7 @@
 #     map_processor.run()
 #
 #
-# def generic_processing_test__specified_vlayer_mask():
+# def test_generic_processing__specified_vlayer_mask():
 #     # TODO - prepare inference parameters manually
 #
 #     qgs = init_qgis()
@@ -104,6 +104,6 @@
 #
 #
 # if __name__ == '__main__':
-#     generic_processing_test__specified_extent()
-#     generic_processing_test__specified_vlayer_mask()
+#     test_generic_processing__specified_extent()
+#     test_generic_processing__specified_vlayer_mask()
 #     print('Done')

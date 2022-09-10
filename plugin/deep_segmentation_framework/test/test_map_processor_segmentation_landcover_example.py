@@ -21,7 +21,7 @@ RASTER_FILE_PATH = os.path.join(EXAMPLE_DATA_DIR, 'N-33-60-D-c-4-2.tif')
 INPUT_CHANNELS_MAPPING = create_default_input_channels_mapping_for_rgb_bands()
 
 
-def map_processor_segmentation_landcover_example_test():
+def test_map_processor_segmentation_landcover_example():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
@@ -54,5 +54,5 @@ def map_processor_segmentation_landcover_example_test():
 
 
 if __name__ == '__main__':
-    map_processor_segmentation_landcover_example_test()
+    test_map_processor_segmentation_landcover_example()
     print('Done')
