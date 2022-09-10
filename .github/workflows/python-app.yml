@@ -48,4 +48,4 @@ jobs:
         .venv/bin/python -m flake8 plugin/deep_segmentation_framework/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        PYTHONPATH="/usr/lib/python3/dist-packages/:$PYTHONPATH" .venv/bin/python -m pytest plugin/deep_segmentation_framework/
+        PYTHONPATH="/usr/lib/python3/dist-packages/:$PYTHONPATH:$(pwd)/plugin" .venv/bin/python -m pytest plugin/deep_segmentation_framework/
