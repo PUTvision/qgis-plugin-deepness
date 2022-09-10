@@ -21,16 +21,16 @@ jobs:
         python-version: '3.10'
     - name: Update
       run: |
-        apt update
-    - name: Fix keyboard
-      run: |
-        export DEBIAN_FRONTEND=noninteractive && apt install -yq keyboard-configuration
+        sudo apt update
+    # - name: Fix keyboard
+    #   run: |
+    #     export DEBIAN_FRONTEND=noninteractive && apt install -yq keyboard-configuration
     - name: Install qgis
       run: |
-        apt install -yq qgis python3.10-venv
+        sudo apt install -yq qgis python3.10-venv
     - name: Install pyqt5
       run: |
-        apt install -yq python3-pyqt5 pyqt5-dev-tools qttools5-dev-tools
+        sudo apt install -yq python3-pyqt5 pyqt5-dev-tools qttools5-dev-tools
     - name: Create and start virtual environment
       run: |
         python3.10 -m venv .venv --system-site-packages
