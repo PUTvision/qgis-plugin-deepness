@@ -1,4 +1,5 @@
 ## CORE ##
+numpy
 opencv-contrib-python
 
 ## DEVEL ##
