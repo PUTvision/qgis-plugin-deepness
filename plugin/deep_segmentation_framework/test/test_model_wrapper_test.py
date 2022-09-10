@@ -13,4 +13,4 @@ def test_load_and_validate_metadata():
 
 
 if __name__ == '__main__':
-    testload_and_validate_metadata()
+    test_load_and_validate_metadata()

@@ -1,50 +1,25 @@
-import time
-
-import numpy as np
-import cv2
-
-from PyQt5.QtCore import QByteArray
-from PyQt5.QtGui import QPixmap
-from qgis.PyQt.QtCore import pyqtSignal
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
-from qgis._core import QgsVectorLayer, QgsVectorLayerUtils, QgsGeometry, QgsPoint, QgsFeature, QgsPointXY
-from qgis.core import QgsCoordinateTransform
-from qgis.core import QgsRectangle
-from qgis.core import QgsMessageLog
-from qgis.core import QgsApplication
-from qgis.core import QgsTask
+from qgis._core import QgsVectorLayer, QgsGeometry, QgsFeature, QgsPointXY
 from qgis.core import QgsProject
-from qgis.gui import QgisInterface
-from qgis.core import Qgis
-import qgis
 from qgis.utils import iface
-
 
 # Initialize Qt resources from file resources.py
 
 
 # Import the code for the DockWidget
-import os.path
-
 
 # Run in console:
 # exec(open("/home/przemek/Projects/pp/qgis-deep-segmentation-framework/tmp.py").read())
 
 rlayer = iface.activeLayer()
 
-
 for layer_id, layer in QgsProject.instance().mapLayers().items():
     if layer.name() == 'model_output':
         QgsProject.instance().removeMapLayer(layer_id)
         break
 
-
 vlayer = QgsVectorLayer("multipolygon", "model_output", "memory")
 vlayer.setCrs(rlayer.crs())
 prov = vlayer.dataProvider()
-
 
 # feat = QgsFeature()
 # geometry = QgsGeometry.fromPolygonXY([[
@@ -82,11 +57,8 @@ geometry = QgsGeometry.fromPolygonXY([
 feat.setGeometry(geometry)
 prov.addFeatures([feat])
 
-
 vlayer.updateExtents()
 QgsProject.instance().addMapLayer(vlayer)
-
-
 
 """
 f = next(iface.activeLayer().getFeatures())

@@ -1,11 +1,11 @@
 import os
-from typing import Optional
+from typing import Optional, List
 
 from qgis.PyQt.QtWidgets import QLabel
 
 from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtWidgets, uic
-from qgis.core import Qgis
+from qgis.core import Qgis, QgsRasterLayer
 
 from deep_segmentation_framework.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
     ImageChannelCompositeByte
@@ -24,13 +24,13 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
     def __init__(self, rlayer, parent=None):
         super(InputChannelsMappingWidget, self).__init__(parent)
         self.setupUi(self)
-        self._model_wrapper = None  # type: Optional[ModelBase]
-        self._rlayer = rlayer  # type: QgsRasteLayer
+        self._model_wrapper: Optional[ModelBase] = None
+        self._rlayer: QgsRasterLayer = rlayer
         self._create_connections()
         self._channels_mapping = ChannelsMapping()
 
-        self._channels_mapping_labels = []  # type: List[QLabel]
-        self._channels_mapping_comboboxes = []  # type: List[QComboBox]
+        self._channels_mapping_labels: List[QLabel] = []
+        self._channels_mapping_comboboxes: List[QComboBox] = []
 
         self._selection_mode_changed()
 
