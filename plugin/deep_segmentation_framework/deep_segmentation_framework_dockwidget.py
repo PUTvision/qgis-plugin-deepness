@@ -43,7 +43,7 @@ from deep_segmentation_framework.common.processing_parameters.map_processing_par
     ProcessedAreaType
 from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
-from deep_segmentation_framework.processing.model_wrapper import ModelWrapper
+from deep_segmentation_framework.processing.models.model_base import ModelBase
 from deep_segmentation_framework.processing.models.model_types import ModelDefinition, ModelType
 from deep_segmentation_framework.widgets.input_channels_mapping.input_channels_mapping_widget import \
     InputChannelsMappingWidget
@@ -69,7 +69,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self._create_connections()
         QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
         self._setup_misc_ui()
-        self._model_wrapper = None  # type: Optional[ModelWrapper]
+        self._model_wrapper = None  # type: Optional[ModelBase]
         self._set_default_input_layer()  # TODO: determine if needed in the future
 
     def _set_default_input_layer(self):
@@ -162,7 +162,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             length_limit = 300
             exception_msg = info = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
             msg = txt + f'\n\nException: {exception_msg}'
-            raise e
             QMessageBox.critical(self, "Error!", msg)
 
         self.label_modelInfo.setText(txt)
@@ -228,8 +227,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         params = DetectionParameters(
             **map_processing_parameters.__dict__,
-            confidence=doubleSpinBox_confidence.value(),
-            iou_threshold=doubleSpinBox_iouScore.value(),
+            confidence=self.doubleSpinBox_confidence.value(),
+            iou_threshold=self.doubleSpinBox_iouScore.value(),
             model=self._model_wrapper,
         )
         return params
