@@ -63,21 +63,32 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def __init__(self, iface, parent=None):
         super(DeepSegmentationFrameworkDockWidget, self).__init__(parent)
         self.iface = iface
+        self._model_wrapper = None  # type: Optional[ModelBase]
         self.setupUi(self)
+
         self._input_channels_mapping_widget = InputChannelsMappingWidget(self)
         self._training_data_export_widget = TrainingDataExportWidget(self)
-        self._create_connections()
-        QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
-        self._setup_misc_ui()
-        self._model_wrapper = None  # type: Optional[ModelBase]
-        self._set_default_input_layer()  # TODO: determine if needed in the future
 
-    def _set_default_input_layer(self):
-        layers = self.iface.mapCanvas().layers()
-        for layer in layers:
-            if 'fotomap' in layer.name():
-                self.mMapLayerComboBox_inputLayer.setLayer(layer)
-                break
+        self._create_connections()
+        self._setup_misc_ui()
+
+        self._load_ui_from_config()
+
+    def _load_ui_from_config(self):
+        ...
+
+    # def _set_default_input_layer(self):
+    #     layers = self.iface.mapCanvas().layers()
+    #     for layer in layers:
+    #         if 'fotomap' in layer.name():
+    #             self.mMapLayerComboBox_inputLayer.setLayer(layer)
+    #             print('aaaa')
+    #             print(self.mMapLayerComboBox_inputLayer.__class__)
+    #             print(layer.name())
+    #             break
+
+    def _save_ui_to_config(self):
+        pass
 
     def _rlayer_updated(self):
         self._input_channels_mapping_widget.set_rlayer(self._get_input_layer())
@@ -99,6 +110,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         for model_definition in ModelDefinition.get_model_definitions():
             self.comboBox_modelType.addItem(model_definition.model_type.value)
+
+        self._rlayer_updated()  # to force refresh the dependant ui elements
 
         self._load_model_and_display_info(abort_if_no_file_path=True)
 
@@ -258,6 +271,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             QMessageBox.critical(self, "Error!", msg)
             return
 
+        self._save_ui_to_config()
         self.run_model_inference_signal.emit(params)
 
     def _run_training_data_export(self):
