@@ -1,7 +1,31 @@
+from dataclasses import dataclass
+from typing import Tuple
+
 import cv2
 import numpy as np
 
 from deep_segmentation_framework.processing.models.model_base import ModelBase
+
+
+@dataclass
+class BBox:
+    left_upper: Tuple[int, int]
+    right_down: Tuple[int, int]
+
+    def apply_offset(self, offset_x: int, offset_y: int):
+        self.left_upper[0] += offset_x
+        self.left_upper[1] += offset_y
+        self.right_down[0] += offset_x
+        self.right_down[1] += offset_y
+
+@dataclass
+class Detection:
+    bbox: BBox
+    conf: float
+    clss: int
+
+    def convert_to_global(self, offset_x: int, offset_y: int):
+        self.bbox.apply_offset(offset_x=offset_x, offset_y=offset_y)
 
 
 class Detector(ModelBase):
@@ -31,17 +55,27 @@ class Detector(ModelBase):
         outputs_filtered = np.array(list(filter(lambda x: x[4] >= self.score_threshold, model_output)))
 
         if len(outputs_filtered.shape) < 2:
-            return [], [], []
+            return []
 
         outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
 
         outputs_nms = self.non_max_suppression_fast(outputs_x1y1x2y2, self.iou_threshold)
 
-        boxes = np.int(outputs_nms[:, :4])
+        boxes = np.array(outputs_nms[:, :4], dtype=int)
         conf = outputs_nms[:, 4]
         classes = np.argmax(outputs_nms[:, 5:], axis=1)
 
-        return boxes, conf, classes
+        detections = []
+
+        for b, c, cl in zip(boxes, conf, classes):
+            det = Detection(
+                bbox=BBox(left_upper=b[:2], right_down=b[2:]),
+                conf=c,
+                clss=cl
+            )
+            detections.append(det)
+
+        return detections
 
     @staticmethod
     def xywh2xyxy(x):

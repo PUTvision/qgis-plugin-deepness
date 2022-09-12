@@ -7,6 +7,7 @@ from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.processing import processing_utils
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
 from deep_segmentation_framework.processing.tile_params import TileParams
+from deep_segmentation_framework.processing.models.detector import Detection
 
 if IS_DEBUG:
     pass
@@ -39,7 +40,7 @@ class MapProcessorDetection(MapProcessor):
 
         all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_suppressed)
 
-        self._create_vlayer_from_mask_for_base_extent(all_bounding_boxes_restricted)
+        self._create_vlayer_for_output_bounding_boxes(all_bounding_boxes_restricted)
 
         return True
 
@@ -66,12 +67,13 @@ class MapProcessorDetection(MapProcessor):
         return bounding_boxes
 
     def convert_bounding_boxes_to_absolute_positions(self, bounding_boxes_relative, tile_params: TileParams):
-        # TODO - implement
+        for det in bounding_boxes_relative:
+            det.convert_to_global(offset_x=tile_params.start_pixel_x, offset_y=tile_params.start_pixel_y)
         return bounding_boxes_relative
 
     def _process_tile(self, tile_img: np.ndarray, tile_params: TileParams) -> np.ndarray:
         # TODO - create proper mapping for output channels
-        bounding_boxes_relative = self.model.process(tile_img)
+        bounding_boxes_relative: List[Detection] = self.model.process(tile_img)
 
         bounding_boxes_absolute_positions = self.convert_bounding_boxes_to_absolute_positions(
             bounding_boxes_relative, tile_params)
