@@ -1,6 +1,8 @@
 from typing import List
 
+import cv2
 import numpy as np
+from qgis._core import QgsVectorLayer, QgsProject
 
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.defines import IS_DEBUG
@@ -60,8 +62,50 @@ class MapProcessorDetection(MapProcessor):
         return bounding_boxes
 
     def _create_vlayer_for_output_bounding_boxes(self, bounding_boxes):
-        # TODO - create group with a layer for each output
-        pass
+        group = QgsProject.instance().layerTreeRoot().addGroup('model_output')
+
+        number_of_output_classes = self.detection_parameters.model.get_number_of_output_channels()
+
+        for channel_id in range(0, number_of_output_classes):
+            local_mask_img = np.zeros((self.img_size_y_pixels, self.img_size_x_pixels), dtype=np.uint8)
+
+            filtered_bounding_boxes = [det for det in bounding_boxes if det.clss == channel_id]
+            for det in filtered_bounding_boxes:
+                cv2.rectangle(local_mask_img, det.bbox.left_upper, det.bbox.right_down, 1, -1)
+
+            contours, hierarchy = cv2.findContours(local_mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            contours = processing_utils.transform_contours_yx_pixels_to_target_crs(
+                contours=contours,
+                extent=self.base_extent,
+                rlayer_units_per_pixel=self.rlayer_units_per_pixel)
+            features = []
+
+            if len(contours):
+                processing_utils.convert_cv_contours_to_features(
+                    features=features,
+                    cv_contours=contours,
+                    hierarchy=hierarchy[0],
+                    is_hole=False,
+                    current_holes=[],
+                    current_contour_index=0)
+            else:
+                pass  # just nothing, we already have an empty list of features
+
+            vlayer = QgsVectorLayer("multipolygon", f"channel_{channel_id}", "memory")
+            vlayer.setCrs(self.rlayer.crs())
+            prov = vlayer.dataProvider()
+
+            color = vlayer.renderer().symbol().color()
+            OUTPUT_VLAYER_COLOR_TRANSPARENCY = 80
+            color.setAlpha(OUTPUT_VLAYER_COLOR_TRANSPARENCY)
+            vlayer.renderer().symbol().setColor(color)
+            # TODO - add also outline for the layer (thicker black border)
+
+            prov.addFeatures(features)
+            vlayer.updateExtents()
+
+            QgsProject.instance().addMapLayer(vlayer, False)
+            group.addLayer(vlayer)
 
     def apply_non_maximum_supression(self, bounding_boxes: List[Detection]) -> List[Detection]:
         bboxes = []

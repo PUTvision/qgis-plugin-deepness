@@ -45,6 +45,12 @@ class Detector(ModelBase):
     def get_class_display_name(cls):
         return cls.__name__
 
+    def get_number_of_output_channels(self):
+        if len(self.outputs_layers) == 1:
+            return self.outputs_layers[0].shape[-1] - 4 - 1 # shape - 4 bboxes - 1 conf
+        else:
+            return NotImplementedError
+
     def preprocessing(self, image: np.ndarray):
         img = image[:, :, :self.input_shape[-3]]
 
