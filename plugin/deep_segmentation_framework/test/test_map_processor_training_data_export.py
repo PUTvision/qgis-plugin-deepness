@@ -11,7 +11,7 @@ from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer
 RASTER_FILE_PATH = get_dummy_fotomap_small_path()
 
 
-def export_dummy_fotomap_test():
+def test_export_dummy_fotomap():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
@@ -41,7 +41,7 @@ def export_dummy_fotomap_test():
     # TODO - validate processing result (we expect to have xxx tiles in directory yyy)
 
 #
-# def export_google_earth_test():
+# def test_export_google_earth():
 #     """
 #     Just a test to debug part of processing with Google Earth Satellite images.
 #     idk how to create this layer in Python, so I loaded a project which contains this layer.
@@ -95,6 +95,6 @@ def export_dummy_fotomap_test():
 
 
 if __name__ == '__main__':
-    # export_google_earth_test()
-    export_dummy_fotomap_test()
+    # test_export_google_earth()
+    test_export_dummy_fotomap()
     print('Done')

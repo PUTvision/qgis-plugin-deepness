@@ -3,10 +3,12 @@ import os
 from PyQt5.QtWidgets import QFileDialog
 
 from qgis.PyQt import QtWidgets, uic
+from qgis.core import QgsProject
 from qgis.core import QgsMapLayerProxyModel
 from qgis.PyQt.QtWidgets import QFileDialog
 
 from deep_segmentation_framework.common.channels_mapping import ChannelsMapping
+from deep_segmentation_framework.common.config_entry_key import ConfigEntryKey
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
@@ -25,6 +27,27 @@ class TrainingDataExportWidget(QtWidgets.QWidget, FORM_CLASS):
         self.setupUi(self)
         self._create_connections()
         self._setup_misc_ui()
+
+    def load_ui_from_config(self):
+        layers = QgsProject.instance().mapLayers()
+
+        self.lineEdit_outputDirPath.setText(ConfigEntryKey.DATA_EXPORT_DIR.get())
+        self.checkBox_exportImageTiles.setChecked(
+            ConfigEntryKey.DATA_EXPORT_TILES_ENABLED.get())
+        self.checkBox_exportMaskEnabled.setChecked(
+            ConfigEntryKey.DATA_EXPORT_SEGMENTATION_MASK_ENABLED.get())
+
+        segmentation_layer_id = ConfigEntryKey.DATA_EXPORT_SEGMENTATION_MASK_ID.get()
+        if segmentation_layer_id and segmentation_layer_id in layers:
+            self.mMapLayerComboBox_inputLayer.setLayer(layers[segmentation_layer_id])
+
+    def save_ui_to_config(self):
+        ConfigEntryKey.DATA_EXPORT_DIR.set(self.lineEdit_outputDirPath.text())
+        ConfigEntryKey.DATA_EXPORT_TILES_ENABLED.set(
+            self.checkBox_exportImageTiles.isChecked())
+        ConfigEntryKey.DATA_EXPORT_SEGMENTATION_MASK_ENABLED.set(
+            self.checkBox_exportMaskEnabled.isChecked())
+        ConfigEntryKey.DATA_EXPORT_SEGMENTATION_MASK_ID.set(self.get_segmentation_mask_layer_id())
 
     def get_channels_mapping(self) -> ChannelsMapping:
         if self.radioButton_defaultMapping.isChecked():

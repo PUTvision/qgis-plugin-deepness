@@ -1,6 +1,8 @@
 ## CORE ##
+numpy
 opencv-contrib-python
+pyqt5
+onnxruntime
 
 ## DEVEL ##
 pytest
-onnxruntime

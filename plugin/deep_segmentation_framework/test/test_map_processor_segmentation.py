@@ -26,7 +26,7 @@ PROCESSED_EXTENT_1 = QgsRectangle(  # big part of the fotomap
         638857.695, 5802601.792)
 
 
-def dummy_model_processing__entire_file():
+def test_dummy_model_processing__entire_file():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
@@ -64,7 +64,7 @@ def model_process_mock(x):
     return np.transpose(x, (2, 0, 1))
 
 
-def generic_processing_test__specified_extent_from_vlayer():
+def test_generic_processing_test__specified_extent_from_vlayer():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
@@ -97,7 +97,7 @@ def generic_processing_test__specified_extent_from_vlayer():
     map_processor.run()
 
 
-def generic_processing_test__specified_extent_from_active_map_extent():
+def test_generic_processing_test__specified_extent_from_active_map_extent():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
@@ -138,7 +138,7 @@ def generic_processing_test__specified_extent_from_active_map_extent():
 
 
 if __name__ == '__main__':
-    dummy_model_processing__entire_file()
-    generic_processing_test__specified_extent_from_vlayer()
-    generic_processing_test__specified_extent_from_active_map_extent()
+    test_dummy_model_processing__entire_file()
+    test_generic_processing_test__specified_extent_from_vlayer()
+    test_generic_processing_test__specified_extent_from_active_map_extent()
     print('Done')

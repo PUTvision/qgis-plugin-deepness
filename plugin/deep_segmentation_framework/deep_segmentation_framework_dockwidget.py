@@ -30,12 +30,14 @@ from PyQt5.QtWidgets import QMessageBox
 from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
+from qgis.core import QgsProject
 from qgis.core import QgsMapLayerProxyModel
 from qgis.core import QgsMessageLog
 from qgis.core import Qgis
 from qgis.PyQt.QtWidgets import QFileDialog
 
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, ConfigEntryKey
+from deep_segmentation_framework.common.config_entry_key import ConfigEntryKey
+from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
 from deep_segmentation_framework.common.errors import OperationFailedException
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
@@ -55,6 +57,9 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 
 class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
+    """
+    Default values for ui edits are based on 'ConfigEntryKey' default value, not taken from the UI form.
+    """
 
     closingPlugin = pyqtSignal()
     run_model_inference_signal = pyqtSignal(MapProcessingParameters)  # run Segmentation or Detection
@@ -63,21 +68,77 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def __init__(self, iface, parent=None):
         super(DeepSegmentationFrameworkDockWidget, self).__init__(parent)
         self.iface = iface
+        self._model_wrapper = None  # type: Optional[ModelBase]
         self.setupUi(self)
+
         self._input_channels_mapping_widget = InputChannelsMappingWidget(self)
         self._training_data_export_widget = TrainingDataExportWidget(self)
-        self._create_connections()
-        QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
-        self._setup_misc_ui()
-        self._model_wrapper = None  # type: Optional[ModelBase]
-        self._set_default_input_layer()  # TODO: determine if needed in the future
 
-    def _set_default_input_layer(self):
-        layers = self.iface.mapCanvas().layers()
-        for layer in layers:
-            if 'fotomap' in layer.name():
-                self.mMapLayerComboBox_inputLayer.setLayer(layer)
-                break
+        self._create_connections()
+        self._setup_misc_ui()
+
+        self._load_ui_from_config()
+
+    def _load_ui_from_config(self):
+        layers = QgsProject.instance().mapLayers()
+
+        try:
+            model_file_path = ConfigEntryKey.MODEL_FILE_PATH.get()
+            if model_file_path:
+                self.lineEdit_modelPath.setText(model_file_path)
+                self._load_model_and_display_info(abort_if_no_file_path=True)  # to prepare other ui components
+
+            input_layer_id = ConfigEntryKey.INPUT_LAYER_ID.get()
+            if input_layer_id and input_layer_id in layers:
+                self.mMapLayerComboBox_inputLayer.setLayer(layers[input_layer_id])
+
+            model_type_txt = ConfigEntryKey.MODEL_TYPE.get()
+            self.comboBox_modelType.setCurrentText(model_type_txt)
+
+            # TODO - load and save channels mapping
+
+            self.doubleSpinBox_resolution_cm_px.setValue(ConfigEntryKey.PREPROCESSING_RESOLUTION.get())
+            self.spinBox_processingTileOverlapPercentage.setValue(ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.get())
+
+            self.doubleSpinBox_probabilityThreshold.setValue(
+                ConfigEntryKey.SEGMENTATION_PROBABILITY_THRESHOLD_VALUE.get())
+            self.checkBox_pixelClassEnableThreshold.setChecked(
+                ConfigEntryKey.SEGMENTATION_PROBABILITY_THRESHOLD_ENABLED.get())
+            self._set_probability_threshold_enabled()
+            self.spinBox_dilateErodeSize.setValue(
+                ConfigEntryKey.SEGMENTATION_REMOVE_SMALL_SEGMENT_SIZE.get())
+            self.checkBox_removeSmallAreas.setChecked(
+                ConfigEntryKey.SEGMENTATION_REMOVE_SMALL_SEGMENT_ENABLED.get())
+            self._set_remove_small_segment_enabled()
+
+            self.doubleSpinBox_confidence.setValue(ConfigEntryKey.DETECTION_CONFIDENCE.get())
+            self.doubleSpinBox_iouScore.setValue(ConfigEntryKey.DETECTION_IOU.get())
+
+            self._training_data_export_widget.load_ui_from_config()
+        except:
+            logging.exception("Failed to load the ui state from config!")
+
+    def _save_ui_to_config(self):
+        ConfigEntryKey.MODEL_FILE_PATH.set(self.lineEdit_modelPath.text())
+        ConfigEntryKey.INPUT_LAYER_ID.set(self._get_input_layer_id())
+        ConfigEntryKey.MODEL_TYPE.set(self.comboBox_modelType.currentText())
+
+        # TODO - load and save channels mapping
+
+        ConfigEntryKey.PREPROCESSING_RESOLUTION.set(self.doubleSpinBox_resolution_cm_px.value())
+        ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.set(self.spinBox_processingTileOverlapPercentage.value())
+
+        ConfigEntryKey.SEGMENTATION_PROBABILITY_THRESHOLD_ENABLED.set(
+            self.checkBox_pixelClassEnableThreshold.isChecked())
+        ConfigEntryKey.SEGMENTATION_PROBABILITY_THRESHOLD_VALUE.set(self.doubleSpinBox_probabilityThreshold.value())
+        ConfigEntryKey.SEGMENTATION_REMOVE_SMALL_SEGMENT_ENABLED.set(
+            self.checkBox_removeSmallAreas.isChecked())
+        ConfigEntryKey.SEGMENTATION_REMOVE_SMALL_SEGMENT_SIZE.set(self.spinBox_dilateErodeSize.value())
+
+        ConfigEntryKey.DETECTION_CONFIDENCE.set(self.doubleSpinBox_confidence.value())
+        ConfigEntryKey.DETECTION_IOU.set(self.doubleSpinBox_iouScore.value())
+
+        self._training_data_export_widget.save_ui_to_config()
 
     def _rlayer_updated(self):
         self._input_channels_mapping_widget.set_rlayer(self._get_input_layer())
@@ -90,9 +151,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.verticalLayout_inputChannelsMapping.addWidget(self._input_channels_mapping_widget)
         self.verticalLayout_trainingDataExport.addWidget(self._training_data_export_widget)
 
-        model_path = ConfigEntryKey.MODEL_FILE_PATH.get()
-        self.lineEdit_modelPath.setText(model_path)
-
         self.mMapLayerComboBox_inputLayer.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.mMapLayerComboBox_areaMaskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
         self._set_processed_area_mask_options()
@@ -100,7 +158,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         for model_definition in ModelDefinition.get_model_definitions():
             self.comboBox_modelType.addItem(model_definition.model_type.value)
 
-        self._load_model_and_display_info(abort_if_no_file_path=True)
+        self._rlayer_updated()  # to force refresh the dependant ui elements
 
     def _set_processed_area_mask_options(self):
         show_mask_combobox = (self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS)
@@ -119,6 +177,14 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
         self.pushButton_reloadModel.clicked.connect(self._load_model_and_display_info)
         self.mMapLayerComboBox_inputLayer.layerChanged.connect(self._rlayer_updated)
+        self.checkBox_pixelClassEnableThreshold.stateChanged.connect(self._set_probability_threshold_enabled)
+        self.checkBox_removeSmallAreas.stateChanged.connect(self._set_remove_small_segment_enabled)
+
+    def _set_probability_threshold_enabled(self):
+        self.doubleSpinBox_probabilityThreshold.setEnabled(self.checkBox_pixelClassEnableThreshold.isChecked())
+
+    def _set_remove_small_segment_enabled(self):
+        self.spinBox_dilateErodeSize.setEnabled(self.checkBox_removeSmallAreas.isChecked())
 
     def _browse_model_path(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -128,7 +194,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             'All files (*.*);; ONNX files (*.onnx)')
         if file_path:
             self.lineEdit_modelPath.setText(file_path)
-            ConfigEntryKey.MODEL_FILE_PATH.set(file_path)
             self._load_model_and_display_info()
 
     def _load_model_and_display_info(self, abort_if_no_file_path: bool = False):
@@ -177,7 +242,11 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return self.mMapLayerComboBox_inputLayer.currentLayer()
 
     def _get_input_layer_id(self):
-        return self._get_input_layer().id()
+        layer = self._get_input_layer()
+        if layer:
+            return layer.id()
+        else:
+            return ''
 
     def _get_pixel_classification_threshold(self):
         if not self.checkBox_pixelClassEnableThreshold.isChecked():
@@ -258,6 +327,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             QMessageBox.critical(self, "Error!", msg)
             return
 
+        self._save_ui_to_config()
         self.run_model_inference_signal.emit(params)
 
     def _run_training_data_export(self):
@@ -276,6 +346,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             QMessageBox.critical(self, "Error!", msg)
             return
 
+        self._save_ui_to_config()
         self.run_training_data_export_signal.emit(training_data_export_parameters)
 
     def closeEvent(self, event):
