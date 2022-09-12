@@ -27,6 +27,12 @@ class Detection:
     def convert_to_global(self, offset_x: int, offset_y: int):
         self.bbox.apply_offset(offset_x=offset_x, offset_y=offset_y)
 
+    def get_bbox_xyxy(self) -> np.ndarray:
+        return np.array([
+            self.bbox.left_upper[0], self.bbox.left_upper[1],
+            self.bbox.right_down[0], self.bbox.right_down[1]]
+        )
+
 
 class Detector(ModelBase):
     def __init__(self, model_file_path: str):
@@ -59,7 +65,8 @@ class Detector(ModelBase):
 
         outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
 
-        outputs_nms = self.non_max_suppression_fast(outputs_x1y1x2y2, self.iou_threshold)
+        pick_indxs = self.non_max_suppression_fast(outputs_x1y1x2y2, self.iou_threshold)
+        outputs_nms = outputs_x1y1x2y2[pick_indxs]
 
         boxes = np.array(outputs_nms[:, :4], dtype=int)
         conf = outputs_nms[:, 4]
@@ -124,4 +131,4 @@ class Detector(ModelBase):
             idxs = np.delete(idxs, np.concatenate(([last],
                                                    np.where(overlap > iou_threshold)[0])))
 
-        return boxes[pick]
+        return pick

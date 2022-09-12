@@ -63,12 +63,23 @@ class MapProcessorDetection(MapProcessor):
         # TODO - create group with a layer for each output
         pass
 
-    def apply_non_maximum_supression(self, bounding_boxes):
-        return bounding_boxes
+    def apply_non_maximum_supression(self, bounding_boxes: List[Detection]) -> List[Detection]:
+        bboxes = []
+        for det in bounding_boxes:
+            bboxes.append(det.get_bbox_xyxy())
 
-    def convert_bounding_boxes_to_absolute_positions(self, bounding_boxes_relative, tile_params: TileParams):
+        bboxes = np.stack(bboxes, axis=0)
+        pick_ids = self.model.non_max_suppression_fast(bboxes, self.model.iou_threshold)
+
+        filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
+
+        return filtered_bounding_boxes
+
+    @staticmethod
+    def convert_bounding_boxes_to_absolute_positions(bounding_boxes_relative: List[Detection], tile_params: TileParams) -> List[Detection]:
         for det in bounding_boxes_relative:
             det.convert_to_global(offset_x=tile_params.start_pixel_x, offset_y=tile_params.start_pixel_y)
+
         return bounding_boxes_relative
 
     def _process_tile(self, tile_img: np.ndarray, tile_params: TileParams) -> np.ndarray:
