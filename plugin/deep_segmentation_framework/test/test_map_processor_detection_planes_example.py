@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock
 
-from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
+from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deep_segmentation_framework.processing.map_processor.map_processor_detection import MapProcessorDetection
 from deep_segmentation_framework.processing.models.detector import Detector
@@ -27,17 +27,17 @@ def test_map_processor_detection_planes_example():
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
     model_wrapper = Detector(MODEL_FILE_PATH)
 
-    params = SegmentationParameters(
+    params = DetectionParameters(
         resolution_cm_per_px=100,
         tile_size_px=model_wrapper.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
         input_layer_id=rlayer.id(),
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
-        postprocessing_dilate_erode_size=5,
         processing_overlap_percentage=60,
-        pixel_classification__probability_threshold=0.5,
         model=model_wrapper,
+        confidence=0.5,
+        iou_threshold=0.5,
     )
 
     map_processor = MapProcessorDetection(
