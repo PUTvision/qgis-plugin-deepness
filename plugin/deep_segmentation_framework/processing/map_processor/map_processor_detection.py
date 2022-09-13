@@ -68,7 +68,7 @@ class MapProcessorDetection(MapProcessor):
         return bounding_boxes
 
     def _create_vlayer_for_output_bounding_boxes(self, bounding_boxes: List[Detection]):
-        group = QgsProject.instance().layerTreeRoot().addGroup('model_output')
+        group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
 
         number_of_output_classes = self.detection_parameters.model.get_number_of_output_channels()
 
