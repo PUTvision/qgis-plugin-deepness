@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple
+from typing import Tuple, List
 
 import cv2
 import numpy as np
@@ -9,8 +9,11 @@ from deep_segmentation_framework.processing.models.model_base import ModelBase
 
 @dataclass
 class BBox:
-    left_upper: Tuple[int, int]
-    right_down: Tuple[int, int]
+    """
+    bounding box - rectangle area, describing position in pixels
+    """
+    left_upper: Tuple[int, int]  # left upper corner (x, y)
+    right_down: Tuple[int, int]  # bottom right corner (x, y)
 
     def apply_offset(self, offset_x: int, offset_y: int):
         self.left_upper[0] += offset_x
@@ -18,11 +21,24 @@ class BBox:
         self.right_down[0] += offset_x
         self.right_down[1] += offset_y
 
+    def get_4_corners(self) -> List[Tuple]:
+        """
+        Get 4 points (corners) describing the detection rectangle, each point in (x, y) format
+        :return:
+        """
+        return [
+            (self.left_upper[0], self.left_upper[1]),
+            (self.left_upper[0], self.right_down[1]),
+            (self.right_down[0], self.right_down[1]),
+            (self.right_down[0], self.left_upper[1]),
+        ]
+
+
 @dataclass
 class Detection:
-    bbox: BBox
-    conf: float
-    clss: int
+    bbox: BBox  # bounding box describing the detection rectangle
+    conf: float  # confidence of the detection
+    clss: int  # class of the detected object
 
     def convert_to_global(self, offset_x: int, offset_y: int):
         self.bbox.apply_offset(offset_x=offset_x, offset_y=offset_y)

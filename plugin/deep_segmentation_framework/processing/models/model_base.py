@@ -57,5 +57,5 @@ class ModelBase:
         model_output = self.sess.run(
             output_names=None,
             input_feed={self.input_name: input_batch})
-
-        return self.postprocessing(model_output)
+        res = self.postprocessing(model_output)
+        return res

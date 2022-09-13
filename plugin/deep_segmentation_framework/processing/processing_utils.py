@@ -184,9 +184,25 @@ def convert_cv_contours_to_features(features,
             break
 
 
-def transform_contours_yx_pixels_to_target_crs(contours,
-                                               extent: QgsRectangle,
-                                               rlayer_units_per_pixel: float):
+def transform_points_list_xy_to_target_crs(
+        points: List[Tuple],
+        extent: QgsRectangle,
+        rlayer_units_per_pixel: float):
+    x_left = extent.xMinimum()
+    y_upper = extent.yMaximum()
+    points_crs = []
+
+    for point_xy in points:
+        x_crs = point_xy[1] * rlayer_units_per_pixel + x_left
+        y_crs = -(point_xy[0] * rlayer_units_per_pixel - y_upper)
+        points_crs.append(QgsPointXY(x_crs, y_crs))
+    return points_crs
+
+
+def transform_contours_yx_pixels_to_target_crs(
+        contours,
+        extent: QgsRectangle,
+        rlayer_units_per_pixel: float):
     x_left = extent.xMinimum()
     y_upper = extent.yMaximum()
 
