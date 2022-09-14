@@ -83,17 +83,18 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         layers = QgsProject.instance().mapLayers()
 
         try:
-            model_file_path = ConfigEntryKey.MODEL_FILE_PATH.get()
-            if model_file_path:
-                self.lineEdit_modelPath.setText(model_file_path)
-                self._load_model_and_display_info(abort_if_no_file_path=True)  # to prepare other ui components
-
             input_layer_id = ConfigEntryKey.INPUT_LAYER_ID.get()
             if input_layer_id and input_layer_id in layers:
                 self.mMapLayerComboBox_inputLayer.setLayer(layers[input_layer_id])
 
             model_type_txt = ConfigEntryKey.MODEL_TYPE.get()
             self.comboBox_modelType.setCurrentText(model_type_txt)
+
+            # NOTE: load the model after setting the model_type above
+            model_file_path = ConfigEntryKey.MODEL_FILE_PATH.get()
+            if model_file_path:
+                self.lineEdit_modelPath.setText(model_file_path)
+                self._load_model_and_display_info(abort_if_no_file_path=True)  # to prepare other ui components
 
             # TODO - load and save channels mapping
 

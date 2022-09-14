@@ -67,7 +67,7 @@ class MapProcessorSegmentation(MapProcessor):
     def _create_vlayer_from_mask_for_base_extent(self, mask_img):
         # create vector layer with polygons from the mask image
 
-        group = QgsProject.instance().layerTreeRoot().addGroup('model_output')
+        group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
 
         number_of_output_classes = self.segmentation_parameters.model.get_number_of_output_channels()
         for channel_id in range(1, number_of_output_classes):

@@ -1,7 +1,53 @@
+from dataclasses import dataclass
+from typing import Tuple, List
+
 import cv2
 import numpy as np
 
 from deep_segmentation_framework.processing.models.model_base import ModelBase
+
+
+@dataclass
+class BBox:
+    """
+    bounding box - rectangle area, describing position in pixels
+    """
+    left_upper: Tuple[int, int]  # left upper corner (x, y)
+    right_down: Tuple[int, int]  # bottom right corner (x, y)
+
+    def apply_offset(self, offset_x: int, offset_y: int):
+        self.left_upper[0] += offset_x
+        self.left_upper[1] += offset_y
+        self.right_down[0] += offset_x
+        self.right_down[1] += offset_y
+
+    def get_4_corners(self) -> List[Tuple]:
+        """
+        Get 4 points (corners) describing the detection rectangle, each point in (x, y) format
+        :return:
+        """
+        return [
+            (self.left_upper[0], self.left_upper[1]),
+            (self.left_upper[0], self.right_down[1]),
+            (self.right_down[0], self.right_down[1]),
+            (self.right_down[0], self.left_upper[1]),
+        ]
+
+
+@dataclass
+class Detection:
+    bbox: BBox  # bounding box describing the detection rectangle
+    conf: float  # confidence of the detection
+    clss: int  # class of the detected object
+
+    def convert_to_global(self, offset_x: int, offset_y: int):
+        self.bbox.apply_offset(offset_x=offset_x, offset_y=offset_y)
+
+    def get_bbox_xyxy(self) -> np.ndarray:
+        return np.array([
+            self.bbox.left_upper[0], self.bbox.left_upper[1],
+            self.bbox.right_down[0], self.bbox.right_down[1]]
+        )
 
 
 class Detector(ModelBase):
@@ -14,6 +60,12 @@ class Detector(ModelBase):
     @classmethod
     def get_class_display_name(cls):
         return cls.__name__
+
+    def get_number_of_output_channels(self):
+        if len(self.outputs_layers) == 1:
+            return self.outputs_layers[0].shape[-1] - 4 - 1 # shape - 4 bboxes - 1 conf
+        else:
+            return NotImplementedError
 
     def preprocessing(self, image: np.ndarray):
         img = image[:, :, :self.input_shape[-3]]
@@ -31,17 +83,28 @@ class Detector(ModelBase):
         outputs_filtered = np.array(list(filter(lambda x: x[4] >= self.score_threshold, model_output)))
 
         if len(outputs_filtered.shape) < 2:
-            return [], [], []
+            return []
 
         outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
 
-        outputs_nms = self.non_max_suppression_fast(outputs_x1y1x2y2, self.iou_threshold)
+        pick_indxs = self.non_max_suppression_fast(outputs_x1y1x2y2, self.iou_threshold)
+        outputs_nms = outputs_x1y1x2y2[pick_indxs]
 
-        boxes = np.int(outputs_nms[:, :4])
+        boxes = np.array(outputs_nms[:, :4], dtype=int)
         conf = outputs_nms[:, 4]
         classes = np.argmax(outputs_nms[:, 5:], axis=1)
 
-        return boxes, conf, classes
+        detections = []
+
+        for b, c, cl in zip(boxes, conf, classes):
+            det = Detection(
+                bbox=BBox(left_upper=b[:2], right_down=b[2:]),
+                conf=c,
+                clss=cl
+            )
+            detections.append(det)
+
+        return detections
 
     @staticmethod
     def xywh2xyxy(x):
@@ -90,4 +153,4 @@ class Detector(ModelBase):
             idxs = np.delete(idxs, np.concatenate(([last],
                                                    np.where(overlap > iou_threshold)[0])))
 
-        return boxes[pick]
+        return pick

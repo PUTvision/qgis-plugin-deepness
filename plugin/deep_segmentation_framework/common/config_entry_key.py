@@ -49,7 +49,6 @@ class ConfigEntryKey(enum.Enum):
         else:
             raise Exception("Unsupported entry type!")
 
-        print(self.name)
         value, _ = read_function(PLUGIN_NAME, self.name, default_value)
         return value
 
