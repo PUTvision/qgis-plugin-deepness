@@ -42,7 +42,7 @@ from deep_segmentation_framework.common.errors import OperationFailedException
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
-    ProcessedAreaType
+    ProcessedAreaType, ModelOutputFormat
 from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
 from deep_segmentation_framework.processing.models.model_base import ModelBase
@@ -90,6 +90,11 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             model_type_txt = ConfigEntryKey.MODEL_TYPE.get()
             self.comboBox_modelType.setCurrentText(model_type_txt)
 
+            model_output_format_txt = ConfigEntryKey.MODEL_OUTPUT_FORMAT.get()
+            self.comboBox_modelOutputFormat.setCurrentText(model_output_format_txt)
+
+            self.comboBox_outputFormatClassNumber.setCurrentIndex(ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.get())
+
             # NOTE: load the model after setting the model_type above
             model_file_path = ConfigEntryKey.MODEL_FILE_PATH.get()
             if model_file_path:
@@ -126,6 +131,10 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         # TODO - load and save channels mapping
 
+        model_output_format = self.comboBox_modelOutputFormat.currentText()
+        ConfigEntryKey.MODEL_OUTPUT_FORMAT.set(model_output_format)
+        ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.set(self.comboBox_outputFormatClassNumber.currentIndex())
+
         ConfigEntryKey.PREPROCESSING_RESOLUTION.set(self.doubleSpinBox_resolution_cm_px.value())
         ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.set(self.spinBox_processingTileOverlapPercentage.value())
 
@@ -159,6 +168,10 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         for model_definition in ModelDefinition.get_model_definitions():
             self.comboBox_modelType.addItem(model_definition.model_type.value)
 
+        for output_format_type in ModelOutputFormat.get_all_names():
+            self.comboBox_modelOutputFormat.addItem(output_format_type)
+        self._model_output_format_changed()
+
         self._rlayer_updated()  # to force refresh the dependant ui elements
 
     def _set_processed_area_mask_options(self):
@@ -180,6 +193,13 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.mMapLayerComboBox_inputLayer.layerChanged.connect(self._rlayer_updated)
         self.checkBox_pixelClassEnableThreshold.stateChanged.connect(self._set_probability_threshold_enabled)
         self.checkBox_removeSmallAreas.stateChanged.connect(self._set_remove_small_segment_enabled)
+        self.comboBox_modelOutputFormat.currentIndexChanged.connect(self._model_output_format_changed)
+
+    def _model_output_format_changed(self):
+        txt = self.comboBox_modelOutputFormat.currentText()
+        model_output_format = ModelOutputFormat(txt)
+        class_number_selection_enabled = bool(model_output_format == ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER)
+        self.comboBox_outputFormatClassNumber.setEnabled(class_number_selection_enabled)
 
     def _set_probability_threshold_enabled(self):
         self.doubleSpinBox_probabilityThreshold.setEnabled(self.checkBox_pixelClassEnableThreshold.isChecked())
@@ -231,6 +251,17 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             QMessageBox.critical(self, "Error!", msg)
 
         self.label_modelInfo.setText(txt)
+        self._update_model_output_format_mapping()
+
+    def _update_model_output_format_mapping(self):
+        self.comboBox_outputFormatClassNumber: QComboBox
+        self.comboBox_outputFormatClassNumber.clear()
+        if not self._model_wrapper:
+            return
+
+        for output_number in range(self._model_wrapper.get_number_of_output_channels()):
+            name = f'Output channel {output_number}'  # TODO: potentially use channels names from model metaparameters
+            self.comboBox_outputFormatClassNumber.addItem(name)
 
     def get_mask_layer_id(self):
         if not self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS:
@@ -254,7 +285,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             return 0
         return self.doubleSpinBox_probabilityThreshold.value()
 
-    def get_selected_model_class_definition(self) ->ModelDefinition:
+    def get_selected_model_class_definition(self) -> ModelDefinition:
         """
         Get the currently selected model class (in UI)
         """
@@ -316,6 +347,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             input_layer_id=self._get_input_layer_id(),
             processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
             input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
+            model_output_format=ModelOutputFormat(self.comboBox_modelOutputFormat.currentText()),
+            model_output_format__single_class_number=self.comboBox_outputFormatClassNumber.currentIndex(),
         )
         return params
 

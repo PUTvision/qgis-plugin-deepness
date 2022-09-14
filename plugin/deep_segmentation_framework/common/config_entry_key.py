@@ -30,6 +30,9 @@ class ConfigEntryKey(enum.Enum):
     DATA_EXPORT_SEGMENTATION_MASK_ENABLED = enum.auto(), False
     DATA_EXPORT_SEGMENTATION_MASK_ID = enum.auto(), ''
 
+    MODEL_OUTPUT_FORMAT = enum.auto(), ''
+    MODEL_OUTPUT_FORMAT_CLASS_NUMBER = enum.auto(), 0
+
     def get(self):
         """
         Get value store in config (or a default one)
