@@ -3,7 +3,8 @@ from unittest.mock import MagicMock
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
-from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
+    ModelOutputFormat
 from deep_segmentation_framework.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deep_segmentation_framework.processing.models.segmentor import Segmentor
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
@@ -30,11 +31,11 @@ def test_dummy_model_processing__entire_file():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
-    model_wrapper = Segmentor(MODEL_FILE_PATH)
+    model = Segmentor(MODEL_FILE_PATH)
 
     params = SegmentationParameters(
         resolution_cm_per_px=3,
-        tile_size_px=model_wrapper.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        tile_size_px=model.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
         input_layer_id=rlayer.id(),
@@ -42,7 +43,9 @@ def test_dummy_model_processing__entire_file():
         postprocessing_dilate_erode_size=5,
         processing_overlap_percentage=20,
         pixel_classification__probability_threshold=0.5,
-        model=model_wrapper,
+        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
+        model_output_format__single_class_number=-1,
+        model=model,
     )
 
     map_processor = MapProcessorSegmentation(
@@ -70,9 +73,10 @@ def test_generic_processing_test__specified_extent_from_vlayer():
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
     vlayer_mask = create_vlayer_from_file(VLAYER_MASK_FILE_PATH)
     vlayer_mask.setCrs(rlayer.crs())
-    model_wrapper = MagicMock()
-    model_wrapper.process = model_process_mock
-    model_wrapper.get_number_of_channels = lambda: 2
+    model = MagicMock()
+    model.process = model_process_mock
+    model.get_number_of_channels = lambda: 2
+    model.get_number_of_output_channels = lambda: 2
 
     params = SegmentationParameters(
         resolution_cm_per_px=3,
@@ -84,7 +88,9 @@ def test_generic_processing_test__specified_extent_from_vlayer():
         postprocessing_dilate_erode_size=5,
         processing_overlap_percentage=20,
         pixel_classification__probability_threshold=0.5,
-        model=model_wrapper,
+        model_output_format=ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER,
+        model_output_format__single_class_number=1,
+        model=model,
     )
     map_processor = MapProcessorSegmentation(
         rlayer=rlayer,
@@ -101,9 +107,10 @@ def test_generic_processing_test__specified_extent_from_active_map_extent():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
-    model_wrapper = MagicMock()
-    model_wrapper.process = model_process_mock
-    model_wrapper.get_number_of_channels = lambda: 2
+    model = MagicMock()
+    model.process = model_process_mock
+    model.get_number_of_channels = lambda: 2
+    model.get_number_of_output_channels = lambda: 2
 
     params = SegmentationParameters(
         resolution_cm_per_px=3,
@@ -115,7 +122,9 @@ def test_generic_processing_test__specified_extent_from_active_map_extent():
         postprocessing_dilate_erode_size=5,
         processing_overlap_percentage=20,
         pixel_classification__probability_threshold=0.5,
-        model=model_wrapper,
+        model_output_format=ModelOutputFormat.CLASSES_AS_SEPARATE_LAYERS_WITHOUT_ZERO_CLASS,
+        model_output_format__single_class_number=-1,
+        model=model,
     )
     processed_extent = PROCESSED_EXTENT_1
 
