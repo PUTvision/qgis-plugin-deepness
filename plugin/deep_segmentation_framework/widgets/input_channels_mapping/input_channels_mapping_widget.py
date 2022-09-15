@@ -10,6 +10,7 @@ from qgis.core import Qgis, QgsRasterLayer
 from deep_segmentation_framework.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
     ImageChannelCompositeByte
 from deep_segmentation_framework.common.channels_mapping import ImageChannel
+from deep_segmentation_framework.common.config_entry_key import ConfigEntryKey
 from deep_segmentation_framework.processing.models.model_base import ModelBase
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -33,6 +34,24 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
         self._channels_mapping_comboboxes: List[QComboBox] = []
 
         self._selection_mode_changed()
+
+    def load_ui_from_config(self):
+        is_advanced_mode = ConfigEntryKey.INPUT_CHANNELS_MAPPING__ADVANCED_MODE.get()
+        self.radioButton_advancedMapping.setChecked(is_advanced_mode)
+
+        if is_advanced_mode:
+            mapping_list_str = ConfigEntryKey.INPUT_CHANNELS_MAPPING__MAPPING_LIST_STR.get()
+            mapping_list = [int(v) for v in mapping_list_str]
+            self._channels_mapping.load_mapping_from_list(mapping_list)
+
+    def save_ui_to_config(self):
+        is_advanced_mode = self.radioButton_advancedMapping.isChecked()
+        ConfigEntryKey.INPUT_CHANNELS_MAPPING__ADVANCED_MODE.set(is_advanced_mode)
+
+        if is_advanced_mode:
+            mapping_list = self._channels_mapping.get_mapping_as_list()
+            mapping_list_str = [str(v) for v in mapping_list]
+            ConfigEntryKey.INPUT_CHANNELS_MAPPING__MAPPING_LIST_STR.set(mapping_list_str)
 
     def get_channels_mapping(self) -> ChannelsMapping:
         if self.radioButton_defaultMapping.isChecked():
