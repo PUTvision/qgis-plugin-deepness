@@ -321,8 +321,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return params
 
     def get_detection_parameters(self, map_processing_parameters: MapProcessingParameters) -> DetectionParameters:
-        postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
-                                         if self.checkBox_removeSmallAreas.isChecked() else 0
 
         params = DetectionParameters(
             **map_processing_parameters.__dict__,
@@ -330,6 +328,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             iou_threshold=self.doubleSpinBox_iouScore.value(),
             model=self._model_wrapper,
         )
+
         return params
 
     def _get_map_processing_parameters(self) -> MapProcessingParameters:

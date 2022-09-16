@@ -54,8 +54,12 @@ class Detector(ModelBase):
     def __init__(self, model_file_path: str):
         super(Detector, self).__init__(model_file_path)
 
-        self.score_threshold = 0.6
-        self.iou_threshold = 0.5
+        self.confidence = None
+        self.iou_threshold = None
+
+    def set_inference_params(self, confidence: float, iou_threshold: float):
+        self.confidence = confidence
+        self.iou_threshold = iou_threshold
 
     @classmethod
     def get_class_display_name(cls):
@@ -78,9 +82,12 @@ class Detector(ModelBase):
         return input_batch
 
     def postprocessing(self, model_output):
+        if self.confidence is None or self.iou_threshold is None:
+            return Exception
+
         model_output = model_output[0][0]
 
-        outputs_filtered = np.array(list(filter(lambda x: x[4] >= self.score_threshold, model_output)))
+        outputs_filtered = np.array(list(filter(lambda x: x[4] >= self.confidence, model_output)))
 
         if len(outputs_filtered.shape) < 2:
             return []

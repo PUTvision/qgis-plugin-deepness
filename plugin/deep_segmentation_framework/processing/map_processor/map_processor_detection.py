@@ -32,9 +32,13 @@ class MapProcessorDetection(MapProcessorWithModel):
             **kwargs)
         self.detection_parameters = params
         self.model = params.model  # type: Detector
+        self.model.set_inference_params(
+            confidence=params.confidence,
+            iou_threshold=params.iou_threshold
+        )
 
     def _run(self):
-        all_bounding_boxes = []  # type: List[...]
+        all_bounding_boxes = []  # type: List[Detection]
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
                 return False
@@ -114,7 +118,7 @@ class MapProcessorDetection(MapProcessorWithModel):
             bboxes.append(det.get_bbox_xyxy())
 
         bboxes = np.stack(bboxes, axis=0)
-        pick_ids = self.model.non_max_suppression_fast(bboxes, self.model.iou_threshold)
+        pick_ids = self.model.non_max_suppression_fast(bboxes, self.detection_parameters.confidence)
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
 
