@@ -17,6 +17,7 @@ class ProcessedAreaType(enum.Enum):
 
 class ModelOutputFormat(enum.Enum):
     ALL_CLASSES_AS_SEPARATE_LAYERS = 'All classes as separate layers'
+    CLASSES_AS_SEPARATE_LAYERS_WITHOUT_ZERO_CLASS = 'Classes as separate layers (without 0 class)'
     ONLY_SINGLE_CLASS_AS_LAYER = 'Single class as a vector layer'
 
     @classmethod

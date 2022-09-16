@@ -21,12 +21,6 @@ class ModelBase:
 
         self.outputs_layers = self.sess.get_outputs()
 
-    def preprocessing(self, img: np.ndarray):
-        return NotImplementedError
-
-    def postprocessing(self, outs: np.ndarray):
-        return NotImplementedError
-
     def get_input_shape(self):
         """
         Get shape of the input for the model
@@ -42,9 +36,6 @@ class ModelBase:
     def get_number_of_channels(self):
         return self.input_shape[-3]
 
-    def get_number_of_output_channels(self):
-        return NotImplementedError
-
     def process(self, img):
         """
         Process a single tile image
@@ -53,9 +44,20 @@ class ModelBase:
         """
 
         input_batch = self.preprocessing(img)
-
         model_output = self.sess.run(
             output_names=None,
             input_feed={self.input_name: input_batch})
         res = self.postprocessing(model_output)
         return res
+
+    def preprocessing(self, img: np.ndarray):
+        return NotImplementedError
+
+    def postprocessing(self, outs: np.ndarray):
+        return NotImplementedError
+
+    def get_number_of_output_channels(self):
+        return NotImplementedError
+
+    def _check_loaded_model_outputs(self):
+        return NotImplementedError

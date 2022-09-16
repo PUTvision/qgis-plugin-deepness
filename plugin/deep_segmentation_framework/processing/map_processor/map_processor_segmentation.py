@@ -4,23 +4,26 @@ import numpy as np
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsProject
 
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ModelOutputFormat
 from deep_segmentation_framework.processing import processing_utils
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResult, \
     MapProcessingResultCanceled, MapProcessingResultSuccess
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
+from deep_segmentation_framework.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 
 if IS_DEBUG:
     pass
 
 
-class MapProcessorSegmentation(MapProcessor):
+class MapProcessorSegmentation(MapProcessorWithModel):
     def __init__(self,
                  params: SegmentationParameters,
                  **kwargs):
         super().__init__(
             params=params,
+            model=params.model,
             **kwargs)
         self.segmentation_parameters = params
         self.model = params.model
@@ -76,8 +79,8 @@ class MapProcessorSegmentation(MapProcessor):
 
         group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
 
-        number_of_output_classes = self.segmentation_parameters.model.get_number_of_output_channels()
-        for channel_id in range(1, number_of_output_classes):
+        for channel_id in self._get_indexes_of_model_output_channels_to_create():
+
             local_mask_img = np.uint8(mask_img == channel_id)
 
             contours, hierarchy = cv2.findContours(local_mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)

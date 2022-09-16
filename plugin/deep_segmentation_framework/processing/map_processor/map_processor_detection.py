@@ -3,7 +3,7 @@ from typing import List
 
 import cv2
 import numpy as np
-from qgis._core import QgsVectorLayer, QgsProject, QgsGeometry, QgsFeature
+from qgis.core import QgsVectorLayer, QgsProject, QgsGeometry, QgsFeature
 
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.defines import IS_DEBUG
@@ -11,6 +11,7 @@ from deep_segmentation_framework.processing import processing_utils
 from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResultCanceled, \
     MapProcessingResultSuccess
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
+from deep_segmentation_framework.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 from deep_segmentation_framework.processing.models.detector import Detector
 from deep_segmentation_framework.processing.tile_params import TileParams
 from deep_segmentation_framework.processing.models.detector import Detection
@@ -19,7 +20,7 @@ if IS_DEBUG:
     pass
 
 
-class MapProcessorDetection(MapProcessor):
+class MapProcessorDetection(MapProcessorWithModel):
     """
     Process the entire map for the detection models, which produce bounding boxes
     """
@@ -29,12 +30,17 @@ class MapProcessorDetection(MapProcessor):
                  **kwargs):
         super().__init__(
             params=params,
+            model=params.model,
             **kwargs)
         self.detection_parameters = params
         self.model = params.model  # type: Detector
+        self.model.set_inference_params(
+            confidence=params.confidence,
+            iou_threshold=params.iou_threshold
+        )
 
-    def _run(self):
-        all_bounding_boxes = []  # type: List[...]
+    def _run(self) -> MapProcessingResult:
+        all_bounding_boxes = []  # type: List[Detection]
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
@@ -42,9 +48,12 @@ class MapProcessorDetection(MapProcessor):
             bounding_boxes_in_tile = self._process_tile(tile_img, tile_params)
             all_bounding_boxes += bounding_boxes_in_tile
 
-        all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
+        if len(all_bounding_boxes) > 0:
+            all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
 
-        all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_suppressed)
+            all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_suppressed)
+        else:
+            all_bounding_boxes_restricted = []
 
         self._create_vlayer_for_output_bounding_boxes(all_bounding_boxes_restricted)
 
@@ -76,8 +85,7 @@ class MapProcessorDetection(MapProcessor):
     def _create_vlayer_for_output_bounding_boxes(self, bounding_boxes: List[Detection]):
         group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
 
-        number_of_output_classes = self.detection_parameters.model.get_number_of_output_channels()
-        for channel_id in range(0, number_of_output_classes):
+        for channel_id in self._get_indexes_of_model_output_channels_to_create():
             filtered_bounding_boxes = [det for det in bounding_boxes if det.clss == channel_id]
             print(f'Detections for class {channel_id}: {len(filtered_bounding_boxes)}')
 
@@ -119,7 +127,7 @@ class MapProcessorDetection(MapProcessor):
             bboxes.append(det.get_bbox_xyxy())
 
         bboxes = np.stack(bboxes, axis=0)
-        pick_ids = self.model.non_max_suppression_fast(bboxes, self.model.iou_threshold)
+        pick_ids = self.model.non_max_suppression_fast(bboxes, self.detection_parameters.confidence)
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
 

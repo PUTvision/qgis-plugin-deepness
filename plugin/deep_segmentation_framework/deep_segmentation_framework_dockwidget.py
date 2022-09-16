@@ -95,13 +95,14 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             self.comboBox_outputFormatClassNumber.setCurrentIndex(ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.get())
 
+            self._input_channels_mapping_widget.load_ui_from_config()
+            self._training_data_export_widget.load_ui_from_config()
+
             # NOTE: load the model after setting the model_type above
             model_file_path = ConfigEntryKey.MODEL_FILE_PATH.get()
             if model_file_path:
                 self.lineEdit_modelPath.setText(model_file_path)
                 self._load_model_and_display_info(abort_if_no_file_path=True)  # to prepare other ui components
-
-            # TODO - load and save channels mapping
 
             self.doubleSpinBox_resolution_cm_px.setValue(ConfigEntryKey.PREPROCESSING_RESOLUTION.get())
             self.spinBox_processingTileOverlapPercentage.setValue(ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.get())
@@ -119,8 +120,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             self.doubleSpinBox_confidence.setValue(ConfigEntryKey.DETECTION_CONFIDENCE.get())
             self.doubleSpinBox_iouScore.setValue(ConfigEntryKey.DETECTION_IOU.get())
-
-            self._training_data_export_widget.load_ui_from_config()
         except:
             logging.exception("Failed to load the ui state from config!")
 
@@ -128,8 +127,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ConfigEntryKey.MODEL_FILE_PATH.set(self.lineEdit_modelPath.text())
         ConfigEntryKey.INPUT_LAYER_ID.set(self._get_input_layer_id())
         ConfigEntryKey.MODEL_TYPE.set(self.comboBox_modelType.currentText())
-
-        # TODO - load and save channels mapping
 
         model_output_format = self.comboBox_modelOutputFormat.currentText()
         ConfigEntryKey.MODEL_OUTPUT_FORMAT.set(model_output_format)
@@ -148,6 +145,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ConfigEntryKey.DETECTION_CONFIDENCE.set(self.doubleSpinBox_confidence.value())
         ConfigEntryKey.DETECTION_IOU.set(self.doubleSpinBox_iouScore.value())
 
+        self._input_channels_mapping_widget.save_ui_to_config()
         self._training_data_export_widget.save_ui_to_config()
 
     def _rlayer_updated(self):
@@ -232,6 +230,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             model_definition = self.get_selected_model_class_definition()
             model_class = model_definition.model_class
             self._model_wrapper = model_class(file_path)
+            self._model_wrapper._check_loaded_model_outputs()
             input_0_shape = self._model_wrapper.get_input_shape()
             txt += f'Input shape: {input_0_shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
             input_size_px = input_0_shape[-1]
@@ -323,8 +322,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return params
 
     def get_detection_parameters(self, map_processing_parameters: MapProcessingParameters) -> DetectionParameters:
-        postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
-                                         if self.checkBox_removeSmallAreas.isChecked() else 0
 
         params = DetectionParameters(
             **map_processing_parameters.__dict__,
@@ -332,6 +329,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             iou_threshold=self.doubleSpinBox_iouScore.value(),
             model=self._model_wrapper,
         )
+
         return params
 
     def _get_map_processing_parameters(self) -> MapProcessingParameters:
