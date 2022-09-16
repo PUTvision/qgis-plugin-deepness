@@ -9,7 +9,7 @@ from deep_segmentation_framework.common.processing_parameters.detection_paramete
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.processing import processing_utils
 from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResultCanceled, \
-    MapProcessingResultSuccess
+    MapProcessingResultSuccess, MapProcessingResult
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
 from deep_segmentation_framework.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 from deep_segmentation_framework.processing.models.detector import Detector

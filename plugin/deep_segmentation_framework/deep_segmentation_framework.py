@@ -23,6 +23,8 @@
 """
 import os
 
+from PyQt5.QtWidgets import QMessageBox
+
 from .common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from .common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deep_segmentation_framework.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
@@ -325,7 +327,6 @@ class DeepSegmentationFramework:
         cv2.waitKey(1)
 
     def _map_processor_finished(self, result: MapProcessingResult):
-        print(f'_map_processor_finished. {result = }')
         if isinstance(result, MapProcessingResultFailed):
             msg = f'Error! Processing error: "{result.message}"!'
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
@@ -336,7 +337,7 @@ class DeepSegmentationFramework:
             msg = 'Processing finished!'
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Success)
             message_to_show = result.message
-            print(message_to_show)  # TODO
+            QMessageBox.information(self.dockwidget, "Processing Result", message_to_show)
         self._map_processor = None
 
 

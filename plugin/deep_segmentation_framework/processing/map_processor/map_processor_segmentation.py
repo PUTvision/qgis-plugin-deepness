@@ -35,7 +35,6 @@ class MapProcessorSegmentation(MapProcessorWithModel):
     def _run(self) -> MapProcessingResult:
         final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
         full_result_img = np.zeros(final_shape_px, np.uint8)
-
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
@@ -57,7 +56,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         return MapProcessingResultSuccess(result_message)
 
     def _create_result_message(self) -> str:
-        return 'TODO'
+        return 'TODO Add here information about result!'
 
     def limit_extended_extent_image_to_base_extent_with_mask(self, full_img):
         """

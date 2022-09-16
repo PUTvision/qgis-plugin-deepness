@@ -22,8 +22,9 @@ class MapProcessingResultFailed(MapProcessingResult):
     Processing result on error
     """
 
-    def __init__(self, error_message: str):
+    def __init__(self, error_message: str, exception=None):
         super().__init__(error_message)
+        self.exception = exception
 
 
 class MapProcessingResultCanceled(MapProcessingResult):
