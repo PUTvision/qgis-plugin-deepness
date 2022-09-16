@@ -46,9 +46,12 @@ class MapProcessorDetection(MapProcessorWithModel):
             bounding_boxes_in_tile = self._process_tile(tile_img, tile_params)
             all_bounding_boxes += bounding_boxes_in_tile
 
-        all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
+        if len(all_bounding_boxes) > 0:
+            all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
 
-        all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_suppressed)
+            all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_suppressed)
+        else:
+            all_bounding_boxes_restricted = []
 
         self._create_vlayer_for_output_bounding_boxes(all_bounding_boxes_restricted)
 
