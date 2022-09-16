@@ -15,6 +15,7 @@ from deep_segmentation_framework.common.processing_parameters.map_processing_par
 from deep_segmentation_framework.processing import processing_utils, extent_utils
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
+from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResult
 from deep_segmentation_framework.processing.tile_params import TileParams
 
 if IS_DEBUG:
@@ -22,7 +23,7 @@ if IS_DEBUG:
 
 
 class MapProcessor(QgsTask):
-    finished_signal = pyqtSignal(str)  # error message if finished with error, empty string otherwise
+    finished_signal = pyqtSignal(MapProcessingResult)  # error message if finished with error, empty string otherwise
     show_img_signal = pyqtSignal(object, str)  # request to show an image. Params: (image, window_name)
 
     def __init__(self,
@@ -103,15 +104,12 @@ class MapProcessor(QgsTask):
         self._processing_finished = True
         return result
 
-    def _run(self):
+    def _run(self) -> MapProcessingResult:
         return NotImplementedError
 
-    def finished(self, result):
+    def finished(self, result: MapProcessingResult):
         print(f'finished. Res: {result = }')
-        if result:
-            self.finished_signal.emit('')
-        else:
-            self.finished_signal.emit('Processing error')
+        self.finished_signal.emit(result)
 
     @staticmethod
     def is_busy():

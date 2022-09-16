@@ -8,6 +8,8 @@ from qgis._core import QgsVectorLayer, QgsProject, QgsGeometry, QgsFeature
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.processing import processing_utils
+from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResultCanceled, \
+    MapProcessingResultSuccess
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
 from deep_segmentation_framework.processing.models.detector import Detector
 from deep_segmentation_framework.processing.tile_params import TileParams
@@ -35,7 +37,7 @@ class MapProcessorDetection(MapProcessor):
         all_bounding_boxes = []  # type: List[...]
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
-                return False
+                return MapProcessingResultCanceled()
 
             bounding_boxes_in_tile = self._process_tile(tile_img, tile_params)
             all_bounding_boxes += bounding_boxes_in_tile
@@ -46,7 +48,8 @@ class MapProcessorDetection(MapProcessor):
 
         self._create_vlayer_for_output_bounding_boxes(all_bounding_boxes_restricted)
 
-        return True
+        result_message = self._create_result_message(all_bounding_boxes_restricted)
+        return MapProcessingResultSuccess(result_message)
 
     def limit_bounding_boxes_to_processed_area(self, bounding_boxes):
         """
@@ -67,11 +70,13 @@ class MapProcessorDetection(MapProcessor):
         # if bounding box is not in the area_mask_img (at least in some percentage) - remove it
         return bounding_boxes
 
+    def _create_result_message(self, bounding_boxes: List[Detection]) -> str:
+        return 'TODO'
+
     def _create_vlayer_for_output_bounding_boxes(self, bounding_boxes: List[Detection]):
         group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
 
         number_of_output_classes = self.detection_parameters.model.get_number_of_output_channels()
-
         for channel_id in range(0, number_of_output_classes):
             filtered_bounding_boxes = [det for det in bounding_boxes if det.clss == channel_id]
             print(f'Detections for class {channel_id}: {len(filtered_bounding_boxes)}')

@@ -26,6 +26,8 @@ import os
 from .common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from .common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deep_segmentation_framework.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
+from .processing.map_processor.map_processing_result import MapProcessingResult, MapProcessingResultFailed, \
+    MapProcessingResultCanceled, MapProcessingResultSuccess
 from .processing.models.model_types import ModelDefinition
 
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2
@@ -322,14 +324,19 @@ class DeepSegmentationFramework:
         cv2.imshow(window_name, img_bgr)
         cv2.waitKey(1)
 
-    def _map_processor_finished(self, error_msg):
-        print(f'_map_processor_finished. {error_msg = }')
-        if error_msg:
-            msg = f'Error! Processing error: "{error_msg}"!'
+    def _map_processor_finished(self, result: MapProcessingResult):
+        print(f'_map_processor_finished. {result = }')
+        if isinstance(result, MapProcessingResultFailed):
+            msg = f'Error! Processing error: "{result.message}"!'
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
-        else:
+        elif isinstance(result, MapProcessingResultCanceled):
+            msg = f'Info! Processing canceled by user!'
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Info)
+        elif isinstance(result, MapProcessingResultSuccess):
             msg = 'Processing finished!'
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Success)
+            message_to_show = result.message
+            print(message_to_show)  # TODO
         self._map_processor = None
 
 

@@ -7,6 +7,8 @@ from qgis.core import QgsProject
 from deep_segmentation_framework.processing import processing_utils
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
+from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResult, \
+    MapProcessingResultCanceled, MapProcessingResultSuccess
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
 
 if IS_DEBUG:
@@ -27,13 +29,13 @@ class MapProcessorSegmentation(MapProcessor):
     def get_result_img(self):
         return self._result_img
 
-    def _run(self):
+    def _run(self) -> MapProcessingResult:
         final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
         full_result_img = np.zeros(final_shape_px, np.uint8)
 
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
-                return False
+                return MapProcessingResultCanceled()
 
             tile_result = self._process_tile(tile_img)
             # self._show_image(tile_result)
@@ -47,7 +49,12 @@ class MapProcessorSegmentation(MapProcessor):
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
         self._result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
         self._create_vlayer_from_mask_for_base_extent(self._result_img)
-        return True
+
+        result_message = self._create_result_message()
+        return MapProcessingResultSuccess(result_message)
+
+    def _create_result_message(self) -> str:
+        return 'TODO'
 
     def limit_extended_extent_image_to_base_extent_with_mask(self, full_img):
         """

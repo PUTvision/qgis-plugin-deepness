@@ -9,6 +9,8 @@ from deep_segmentation_framework.common.processing_parameters.training_data_expo
     TrainingDataExportParameters
 from deep_segmentation_framework.processing import processing_utils
 from deep_segmentation_framework.common.defines import IS_DEBUG
+from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResultSuccess, \
+    MapProcessingResultCanceled
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
 from deep_segmentation_framework.processing.tile_params import TileParams
 
@@ -44,9 +46,11 @@ class MapProcessorTrainingDataExport(MapProcessor):
                 rlayer_units_per_pixel=self.rlayer_units_per_pixel,
                 image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])
 
+        number_of_written_tiles = 0
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
-                return False
+                return MapProcessingResultCanceled()
+
             tile_params = tile_params  # type: TileParams
 
             if self.params.export_image_tiles:
@@ -58,6 +62,7 @@ class MapProcessorTrainingDataExport(MapProcessor):
                     tile_img = cv2.cvtColor(tile_img, cv2.COLOR_RGB2BGR)
 
                 cv2.imwrite(file_path, tile_img)
+                number_of_written_tiles += 1
 
             if export_segmentation_mask:
                 file_name = f'tile_mask_{tile_params.x_bin_number}_{tile_params.y_bin_number}.png'
@@ -65,4 +70,10 @@ class MapProcessorTrainingDataExport(MapProcessor):
                 segmentation_mask_for_tile = tile_params.get_entire_tile_from_full_img(segmentation_mask_full)
                 cv2.imwrite(file_path, segmentation_mask_for_tile)
 
-        return True
+            result_message = self._create_result_message(number_of_written_tiles)
+            return MapProcessingResultSuccess(result_message)
+
+    def _create_result_message(self, number_of_written_tiles) -> str:
+        return f'Exporting data finished!\n' \
+               f'Exported {number_of_written_tiles} tiles.\n' \
+               f'Directory: "{self.output_dir_path}"'
