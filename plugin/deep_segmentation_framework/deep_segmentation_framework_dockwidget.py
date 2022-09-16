@@ -230,6 +230,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             model_definition = self.get_selected_model_class_definition()
             model_class = model_definition.model_class
             self._model_wrapper = model_class(file_path)
+            self._model_wrapper._check_loaded_model_outputs()
             input_0_shape = self._model_wrapper.get_input_shape()
             txt += f'Input shape: {input_0_shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
             input_size_px = input_0_shape[-1]

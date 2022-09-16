@@ -83,7 +83,7 @@ class Detector(ModelBase):
 
     def postprocessing(self, model_output):
         if self.confidence is None or self.iou_threshold is None:
-            return Exception
+            return Exception('Confidence or IOU threshold is not set for model. Use self.set_inference_params')
 
         model_output = model_output[0][0]
 
@@ -161,3 +161,16 @@ class Detector(ModelBase):
                                                    np.where(overlap > iou_threshold)[0])))
 
         return pick
+
+    def _check_loaded_model_outputs(self):
+        if len(self.outputs_layers) == 1:
+            shape = self.outputs_layers[0].shape
+
+            if len(shape) != 3:
+                raise Exception(f'Detection model output should have 3 dimensions: (B,detections,values). Has {shape}')
+
+            if shape[0] != 1:
+                raise Exception(f'Detection model can handle only 1-Batch outputs. Has {shape}')
+            
+        else:
+            raise NotImplementedError
