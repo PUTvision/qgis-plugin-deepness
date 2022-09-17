@@ -38,8 +38,8 @@ jobs:
         export PYTHONPATH="/usr/lib/python3/dist-packages":PYTHONPATH && echo "import qgis" | python3
         export PYTHONPATH="$PYTHONPATH:$(pwd)/plugin"
         
-        pip uninstall opencv-python-headless
-        pip install opencv-python-headless
+        pip uninstall opencv-python-headless --yes
+        pip install opencv-python-headless --yes
         
         xvfb-run python3 plugin/deep_segmentation_framework/test/test_map_processor_segmentation.py
         
