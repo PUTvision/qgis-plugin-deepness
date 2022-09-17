@@ -80,7 +80,28 @@ class MapProcessorDetection(MapProcessorWithModel):
         return bounding_boxes
 
     def _create_result_message(self, bounding_boxes: List[Detection]) -> str:
-        return 'TODO'
+        channels = self._get_indexes_of_model_output_channels_to_create()
+
+        counts_mapping = {}
+        total_counts = 0
+        for channel_id in channels:
+            filtered_bounding_boxes = [det for det in bounding_boxes if det.clss == channel_id]
+            counts = len(filtered_bounding_boxes)
+            counts_mapping[channel_id] = counts
+            total_counts += counts
+
+        txt = f'Detection done for {len(channels)} model output classes, with the following statistics:\n'
+        for channel_id in channels:
+            counts = counts_mapping[channel_id]
+
+            if total_counts:
+                counts_percentage = counts / total_counts * 100
+            else:
+                counts_percentage = 0
+
+            txt += f' - class {channel_id}: counts = {counts} ({counts_percentage:.2f} %)\n'
+
+        return txt
 
     def _create_vlayer_for_output_bounding_boxes(self, bounding_boxes: List[Detection]):
         group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
