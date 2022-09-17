@@ -5,8 +5,7 @@ name: Python application
 
 on:
   push:
-    branches:
-      - "*"
+    branches: [ master, devel ]
   pull_request:
     branches: [ master, devel ]
 
@@ -38,10 +37,13 @@ jobs:
         export PYTHONPATH="/usr/lib/python3/dist-packages":PYTHONPATH && echo "import qgis" | python3
         export PYTHONPATH="$PYTHONPATH:$(pwd)/plugin"
         
+        # apparently there is some issue with opencv-python-headless, we need to reinstall it 
         pip uninstall opencv-python-headless --yes
         pip install opencv-python-headless
         
+        # run one this without pytest, because pytest creates obfuscated error messages
+        # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
         xvfb-run python3 plugin/deep_segmentation_framework/test/test_map_processor_segmentation.py
         
-        # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
+        # run the actual tests
         xvfb-run python3 -m pytest plugin/deep_segmentation_framework/
