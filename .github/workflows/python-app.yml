@@ -16,16 +16,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
     - name: Update
       run: |
         sudo apt update
     - name: Install qgis
       run: |
-        sudo apt install -yq qgis python3.10-venv
+        sudo apt install -yq qgis
     - name: Install dependencies
       run: |
         pip install --upgrade pip
@@ -46,5 +42,8 @@ jobs:
       run: |
         export PYTHONPATH="/usr/lib/python3/dist-packages":PYTHONPATH && echo "import qgis" | python3
         export PYTHONPATH="$PYTHONPATH:$(pwd)/plugin"
+        
+        xvfb-run python3 plugin/deep_segmentation_framework/test/test_map_processor_segmentation.py
+        
         # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
         xvfb-run python3 -m pytest plugin/deep_segmentation_framework/

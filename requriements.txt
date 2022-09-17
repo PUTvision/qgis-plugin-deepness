@@ -1,7 +1,7 @@
 ## CORE ##
 numpy
 opencv-contrib-python
-pyqt5
+#pyqt5
 onnxruntime
 opencv-python-headless  # opencv-python if you would like to display images while debugging
 
