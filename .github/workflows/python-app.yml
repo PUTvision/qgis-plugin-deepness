@@ -42,6 +42,6 @@ jobs:
         export PYTHONPATH="/usr/lib/python3/dist-packages":$PATH && echo "import qgis" | python3
         export PYTHONPATH="$PYTHONPATH:$(pwd)/plugin"
         # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
-        xvfb-run pytho3 -m pytest plugin/deep_segmentation_framework/
+        xvfb-run python3 -m pytest plugin/deep_segmentation_framework/
 
 
