@@ -39,7 +39,7 @@ jobs:
         export PYTHONPATH="$PYTHONPATH:$(pwd)/plugin"
         
         pip uninstall opencv-python-headless --yes
-        pip install opencv-python-headless --yes
+        pip install opencv-python-headless
         
         xvfb-run python3 plugin/deep_segmentation_framework/test/test_map_processor_segmentation.py
         
