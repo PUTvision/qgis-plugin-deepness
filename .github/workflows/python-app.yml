@@ -23,12 +23,14 @@ jobs:
     - name: Update
       run: |
         sudo apt update
-    # - name: Fix keyboard
-    #   run: |
-    #     export DEBIAN_FRONTEND=noninteractive && apt install -yq keyboard-configuration
     - name: Install qgis
       run: |
         sudo apt install -yq qgis python3.10-venv
+    - name: Setup upterm session
+      uses: lhotari/action-upterm@v1
+      with:
+        ## limits ssh access and adds the ssh public key for the user which triggered the workflow
+        limit-access-to-actor: false
     - name: Install pyqt5
       run: |
         sudo apt install -yq python3-pyqt5 pyqt5-dev-tools qttools5-dev-tools
@@ -47,11 +49,6 @@ jobs:
         .venv/bin/python -m flake8 plugin/deep_segmentation_framework/ --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         .venv/bin/python -m flake8 plugin/deep_segmentation_framework/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Setup upterm session
-      uses: lhotari/action-upterm@v1
-      with:
-        ## limits ssh access and adds the ssh public key for the user which triggered the workflow
-        limit-access-to-actor: false
     - name: Test with pytest
       run: |
         PYTHONPATH="/usr/lib/python3/dist-packages/:$PYTHONPATH:$(pwd)/plugin" .venv/bin/python -m pytest plugin/deep_segmentation_framework/
