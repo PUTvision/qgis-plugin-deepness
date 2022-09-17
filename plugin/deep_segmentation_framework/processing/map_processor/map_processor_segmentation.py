@@ -52,11 +52,25 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         self._result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
         self._create_vlayer_from_mask_for_base_extent(self._result_img)
 
-        result_message = self._create_result_message()
+        result_message = self._create_result_message(self._result_img)
         return MapProcessingResultSuccess(result_message)
 
-    def _create_result_message(self) -> str:
-        return 'TODO Add here information about result!'
+    def _create_result_message(self, result_img: np.ndarray) -> str:
+        unique, counts = np.unique(result_img, return_counts=True)
+        counts_map = {}
+        for i in range(len(unique)):
+            counts_map[unique[i]] = counts[i]
+
+        channels = self._get_indexes_of_model_output_channels_to_create()
+        txt = f'Segmentation done for {len(channels)} model output channels, with the following statistics:\n'
+        total_area = result_img.shape[0] * result_img.shape[1] * self.params.resolution_m_per_px**2
+        for channel_id in channels:
+            pixels_count = counts_map.get(channel_id, 0)
+            area = pixels_count * self.params.resolution_m_per_px**2
+            area_percentage = area / total_area * 100
+            txt += f' - class {channel_id}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
+
+        return txt
 
     def limit_extended_extent_image_to_base_extent_with_mask(self, full_img):
         """
@@ -79,7 +93,6 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
 
         for channel_id in self._get_indexes_of_model_output_channels_to_create():
-
             local_mask_img = np.uint8(mask_img == channel_id)
 
             contours, hierarchy = cv2.findContours(local_mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
