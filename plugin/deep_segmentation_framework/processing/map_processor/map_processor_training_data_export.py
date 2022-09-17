@@ -35,11 +35,11 @@ class MapProcessorTrainingDataExport(MapProcessor):
         return full_path
 
     def _run(self):
-        vlayer_segmentation = QgsProject.instance().mapLayers()[self.params.segmentation_mask_layer_id]
-        vlayer_segmentation.setCrs(self.rlayer.crs())
 
         export_segmentation_mask = self.params.segmentation_mask_layer_id is not None
         if export_segmentation_mask:
+            vlayer_segmentation = QgsProject.instance().mapLayers()[self.params.segmentation_mask_layer_id]
+            vlayer_segmentation.setCrs(self.rlayer.crs())
             segmentation_mask_full = processing_utils.create_area_mask_image(
                 vlayer_mask=vlayer_segmentation,
                 extended_extent=self.extended_extent,
@@ -70,10 +70,12 @@ class MapProcessorTrainingDataExport(MapProcessor):
                 segmentation_mask_for_tile = tile_params.get_entire_tile_from_full_img(segmentation_mask_full)
                 cv2.imwrite(file_path, segmentation_mask_for_tile)
 
-            result_message = self._create_result_message(number_of_written_tiles)
-            return MapProcessingResultSuccess(result_message)
+        result_message = self._create_result_message(number_of_written_tiles)
+        return MapProcessingResultSuccess(result_message)
 
     def _create_result_message(self, number_of_written_tiles) -> str:
+        total_area = self.img_size_x_pixels * self.img_size_y_pixels * self.params.resolution_m_per_px**2
         return f'Exporting data finished!\n' \
                f'Exported {number_of_written_tiles} tiles.\n' \
+               f'Total processed area: {total_area:.2f} m^2\n' \
                f'Directory: "{self.output_dir_path}"'
