@@ -12,3 +12,4 @@ def test_model_types():
 
 if __name__ == '__main__':
     test_model_types()
+    

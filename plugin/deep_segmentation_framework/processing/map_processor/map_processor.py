@@ -1,3 +1,4 @@
+import logging
 from typing import Optional, Tuple
 
 import numpy as np
@@ -15,6 +16,8 @@ from deep_segmentation_framework.common.processing_parameters.map_processing_par
 from deep_segmentation_framework.processing import processing_utils, extent_utils
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
+from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResult, \
+    MapProcessingResultFailed
 from deep_segmentation_framework.processing.tile_params import TileParams
 
 if IS_DEBUG:
@@ -22,7 +25,7 @@ if IS_DEBUG:
 
 
 class MapProcessor(QgsTask):
-    finished_signal = pyqtSignal(str)  # error message if finished with error, empty string otherwise
+    finished_signal = pyqtSignal(MapProcessingResult)  # error message if finished with error, empty string otherwise
     show_img_signal = pyqtSignal(object, str)  # request to show an image. Params: (image, window_name)
 
     def __init__(self,
@@ -45,6 +48,7 @@ class MapProcessor(QgsTask):
             assert vlayer_mask.crs() == self.rlayer.crs()  # should be set in higher layer
         self.params = params
         self._assert_qgis_doesnt_need_reload()
+        self._processing_result = MapProcessingResultFailed('Failed to get processing result!')
 
         self.stride_px = self.params.processing_stride_px  # stride in pixels
         self.rlayer_units_per_pixel = processing_utils.convert_meters_to_rlayer_units(
@@ -98,20 +102,25 @@ class MapProcessor(QgsTask):
             raise Exception("Disable plugin, restart QGis and enable plugin again!")
 
     def run(self):
-        print('run...')
-        result = self._run()
-        self._processing_finished = True
-        return result
+        try:
+            self._processing_result = self._run()
+        except Exception as e:
+            logging.exception("Error occurred in MapProcessor:")
+            msg = "Unhandled exception occurred. See Python Console for details"
+            self._processing_result = MapProcessingResultFailed(msg)
+            if IS_DEBUG:
+                raise e
 
-    def _run(self):
+        self._processing_finished = True
+        return True
+
+    def _run(self) -> MapProcessingResult:
         return NotImplementedError
 
-    def finished(self, result):
-        print(f'finished. Res: {result = }')
-        if result:
-            self.finished_signal.emit('')
-        else:
-            self.finished_signal.emit('Processing error')
+    def finished(self, result: bool):
+        if not result:
+            self._processing_result = MapProcessingResultFailed("Unhandled processing error!")
+        self.finished_signal.emit(self._processing_result)
 
     @staticmethod
     def is_busy():

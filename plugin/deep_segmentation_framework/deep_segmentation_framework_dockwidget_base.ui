@@ -25,8 +25,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>416</width>
-         <height>1307</height>
+         <width>430</width>
+         <height>1296</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -124,7 +124,7 @@
               <string notr="true">color: rgb(135, 135, 133);</string>
              </property>
              <property name="text">
-              <string>Model not loaded! Please select its path and click &quot;Load Model&quot; buttonabove first!</string>
+              <string>Model not loaded! Please select its path and click &quot;Load Model&quot; button above first!</string>
              </property>
              <property name="wordWrap">
               <bool>true</bool>
@@ -566,13 +566,6 @@ number:</string>
             </widget>
            </item>
           </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLabel" name="label_14">
-          <property name="text">
-           <string>remove later label, needed to put easily widget in layout in qtdesigner</string>
-          </property>
          </widget>
         </item>
         <item>

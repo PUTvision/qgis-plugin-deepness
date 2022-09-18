@@ -8,6 +8,8 @@ from qgis.core import QgsVectorLayer, QgsProject, QgsGeometry, QgsFeature
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.processing import processing_utils
+from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResultCanceled, \
+    MapProcessingResultSuccess, MapProcessingResult
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
 from deep_segmentation_framework.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 from deep_segmentation_framework.processing.models.detector import Detector
@@ -37,11 +39,11 @@ class MapProcessorDetection(MapProcessorWithModel):
             iou_threshold=params.iou_threshold
         )
 
-    def _run(self):
+    def _run(self) -> MapProcessingResult:
         all_bounding_boxes = []  # type: List[Detection]
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
-                return False
+                return MapProcessingResultCanceled()
 
             bounding_boxes_in_tile = self._process_tile(tile_img, tile_params)
             all_bounding_boxes += bounding_boxes_in_tile
@@ -55,7 +57,8 @@ class MapProcessorDetection(MapProcessorWithModel):
 
         self._create_vlayer_for_output_bounding_boxes(all_bounding_boxes_restricted)
 
-        return True
+        result_message = self._create_result_message(all_bounding_boxes_restricted)
+        return MapProcessingResultSuccess(result_message)
 
     def limit_bounding_boxes_to_processed_area(self, bounding_boxes):
         """
@@ -75,6 +78,30 @@ class MapProcessorDetection(MapProcessorWithModel):
 
         # if bounding box is not in the area_mask_img (at least in some percentage) - remove it
         return bounding_boxes
+
+    def _create_result_message(self, bounding_boxes: List[Detection]) -> str:
+        channels = self._get_indexes_of_model_output_channels_to_create()
+
+        counts_mapping = {}
+        total_counts = 0
+        for channel_id in channels:
+            filtered_bounding_boxes = [det for det in bounding_boxes if det.clss == channel_id]
+            counts = len(filtered_bounding_boxes)
+            counts_mapping[channel_id] = counts
+            total_counts += counts
+
+        txt = f'Detection done for {len(channels)} model output classes, with the following statistics:\n'
+        for channel_id in channels:
+            counts = counts_mapping[channel_id]
+
+            if total_counts:
+                counts_percentage = counts / total_counts * 100
+            else:
+                counts_percentage = 0
+
+            txt += f' - class {channel_id}: counts = {counts} ({counts_percentage:.2f} %)\n'
+
+        return txt
 
     def _create_vlayer_for_output_bounding_boxes(self, bounding_boxes: List[Detection]):
         group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')

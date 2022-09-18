@@ -123,7 +123,6 @@ def get_tile_image(
 def erode_dilate_image(img, segmentation_parameters: SegmentationParameters):
     # self._show_image(img)
     if segmentation_parameters.postprocessing_dilate_erode_size:
-        print('Opening...')
         size = (segmentation_parameters.postprocessing_dilate_erode_size // 2) ** 2 + 1
         kernel = np.ones((size, size), np.uint8)
         img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)

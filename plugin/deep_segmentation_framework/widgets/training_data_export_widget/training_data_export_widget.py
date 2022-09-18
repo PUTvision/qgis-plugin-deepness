@@ -84,10 +84,15 @@ class TrainingDataExportWidget(QtWidgets.QWidget, FORM_CLASS):
         return self.mMapLayerComboBox_maskLayer.currentLayer().id()
 
     def get_training_data_export_parameters(self, map_processing_parameters: MapProcessingParameters):
+        if self.checkBox_exportMaskEnabled.isChecked():
+            segmentation_mask_layer_id = self.mMapLayerComboBox_maskLayer.currentLayer().id()
+        else:
+            segmentation_mask_layer_id = None
+
         params = TrainingDataExportParameters(
             **map_processing_parameters.__dict__,
             export_image_tiles=self.checkBox_exportImageTiles.isChecked(),
-            segmentation_mask_layer_id=self.mMapLayerComboBox_maskLayer.currentLayer().id(),
+            segmentation_mask_layer_id=segmentation_mask_layer_id,
             output_directory_path=self.lineEdit_outputDirPath.text(),
         )
         return params
