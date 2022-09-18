@@ -25,12 +25,12 @@ import os
 
 from PyQt5.QtWidgets import QMessageBox
 
-from .common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
-from .common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
+from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deep_segmentation_framework.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
-from .processing.map_processor.map_processing_result import MapProcessingResult, MapProcessingResultFailed, \
+from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResult, MapProcessingResultFailed, \
     MapProcessingResultCanceled, MapProcessingResultSuccess
-from .processing.models.model_types import ModelDefinition
+from deep_segmentation_framework.processing.models.model_types import ModelDefinition
 
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2
 import cv2
