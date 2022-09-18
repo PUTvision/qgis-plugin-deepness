@@ -11,9 +11,10 @@ class ConfigEntryKey(enum.Enum):
     Second element of enum value (in tuple) is the default value for this field
     """
 
-    MODEL_FILE_PATH = enum.auto(), ''
+    MODEL_FILE_PATH = enum.auto(), ''  # Path to the model file
     INPUT_LAYER_ID = enum.auto(), ''
-    MODEL_TYPE = enum.auto(), ''
+    PROCESSED_AREA_TYPE = enum.auto(), ''  # string of ProcessedAreaType, e.g. "ProcessedAreaType.VISIBLE_PART.value"
+    MODEL_TYPE = enum.auto(), ''  # string of ModelType enum, e.g. "ModelType.SEGMENTATION.value"
     PREPROCESSING_RESOLUTION = enum.auto(), 3.0
     PREPROCESSING_TILES_OVERLAP = enum.auto(), 15
 
@@ -30,7 +31,7 @@ class ConfigEntryKey(enum.Enum):
     DATA_EXPORT_SEGMENTATION_MASK_ENABLED = enum.auto(), False
     DATA_EXPORT_SEGMENTATION_MASK_ID = enum.auto(), ''
 
-    MODEL_OUTPUT_FORMAT = enum.auto(), ''
+    MODEL_OUTPUT_FORMAT = enum.auto(), ''  # string of ModelOutputFormat, e.g. "ONLY_SINGLE_CLASS_AS_LAYER.value"
     MODEL_OUTPUT_FORMAT_CLASS_NUMBER = enum.auto(), 0
 
     INPUT_CHANNELS_MAPPING__ADVANCED_MODE = enum.auto, False

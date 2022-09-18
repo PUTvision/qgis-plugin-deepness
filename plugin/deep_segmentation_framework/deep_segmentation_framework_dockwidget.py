@@ -25,8 +25,7 @@ import logging
 import os
 from typing import Optional
 
-from PyQt5.QtWidgets import QMessageBox
-
+from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
@@ -87,13 +86,14 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if input_layer_id and input_layer_id in layers:
                 self.mMapLayerComboBox_inputLayer.setLayer(layers[input_layer_id])
 
+            processed_area_type_txt = ConfigEntryKey.PROCESSED_AREA_TYPE.get()
+            self.comboBox_processedAreaSelection.setCurrentText(processed_area_type_txt)
+
             model_type_txt = ConfigEntryKey.MODEL_TYPE.get()
             self.comboBox_modelType.setCurrentText(model_type_txt)
 
             model_output_format_txt = ConfigEntryKey.MODEL_OUTPUT_FORMAT.get()
             self.comboBox_modelOutputFormat.setCurrentText(model_output_format_txt)
-
-            self.comboBox_outputFormatClassNumber.setCurrentIndex(ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.get())
 
             self._input_channels_mapping_widget.load_ui_from_config()
             self._training_data_export_widget.load_ui_from_config()
@@ -103,6 +103,9 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if model_file_path:
                 self.lineEdit_modelPath.setText(model_file_path)
                 self._load_model_and_display_info(abort_if_no_file_path=True)  # to prepare other ui components
+
+            # needs to be loaded after the model is set up
+            self.comboBox_outputFormatClassNumber.setCurrentIndex(ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.get())
 
             self.doubleSpinBox_resolution_cm_px.setValue(ConfigEntryKey.PREPROCESSING_RESOLUTION.get())
             self.spinBox_processingTileOverlapPercentage.setValue(ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.get())
@@ -127,6 +130,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ConfigEntryKey.MODEL_FILE_PATH.set(self.lineEdit_modelPath.text())
         ConfigEntryKey.INPUT_LAYER_ID.set(self._get_input_layer_id())
         ConfigEntryKey.MODEL_TYPE.set(self.comboBox_modelType.currentText())
+        ConfigEntryKey.PROCESSED_AREA_TYPE.set(self.comboBox_processedAreaSelection.currentText())
 
         model_output_format = self.comboBox_modelOutputFormat.currentText()
         ConfigEntryKey.MODEL_OUTPUT_FORMAT.set(model_output_format)

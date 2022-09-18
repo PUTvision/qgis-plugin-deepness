@@ -1,0 +1,105 @@
+"""
+This is an integration test of multiple components.
+"""
+
+import sys
+from unittest.mock import MagicMock
+
+import pytest
+from qgis.PyQt.QtWidgets import QApplication
+from qgis.core import QgsVectorLayer, QgsProject
+from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsApplication
+from qgis.core import QgsRasterLayer
+
+from deep_segmentation_framework.common.channels_mapping import ChannelsMapping
+from deep_segmentation_framework.common.config_entry_key import ConfigEntryKey
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
+    ModelOutputFormat, MapProcessingParameters
+from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
+from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
+    TrainingDataExportParameters
+from deep_segmentation_framework.deep_segmentation_framework_dockwidget import DeepSegmentationFrameworkDockWidget
+from deep_segmentation_framework.processing.models.model_types import ModelType
+from deep_segmentation_framework.processing.models.segmentor import Segmentor
+from test.test_utils import init_qgis, create_rlayer_from_file, get_dummy_fotomap_small_path, \
+    get_dummy_fotomap_area_path, get_dummy_model_path, create_vlayer_from_file, SignalCollector
+
+RASTER_FILE_PATH = get_dummy_fotomap_small_path()
+VLAYER_MASK_FILE_PATH = get_dummy_fotomap_area_path()
+MODEL_FILE_PATH = get_dummy_model_path()
+
+
+def test_run_inference():
+    qgs = init_qgis()
+
+    # with 2 example filed from config to validate the logic flow
+
+    ConfigEntryKey.PROCESSED_AREA_TYPE.set(ProcessedAreaType.VISIBLE_PART.value)
+    ConfigEntryKey.MODEL_FILE_PATH.set(MODEL_FILE_PATH)
+    ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.set(44)
+
+    dockwidget = DeepSegmentationFrameworkDockWidget(iface=MagicMock())
+
+    # set to different values to check if will be saved while running ui
+    ConfigEntryKey.PROCESSED_AREA_TYPE.set(ProcessedAreaType.ENTIRE_LAYER.value)
+    ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.set(55)
+
+    signal_collector = SignalCollector(dockwidget.run_model_inference_signal)
+    dockwidget.pushButton_runInference.click()
+
+    assert signal_collector.was_called
+    params = signal_collector.get_first_arg()
+    assert isinstance(params, MapProcessingParameters)
+    assert ConfigEntryKey.PROCESSED_AREA_TYPE.get() == ProcessedAreaType.VISIBLE_PART.value
+    assert ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.get() == 44
+
+
+def test_run_data_export():
+    qgs = init_qgis()
+
+    dockwidget = DeepSegmentationFrameworkDockWidget(iface=MagicMock())
+
+    signal_collector = SignalCollector(dockwidget.run_training_data_export_signal)
+    dockwidget.pushButton_runTrainingDataExport.click()
+
+    assert signal_collector.was_called
+    params = signal_collector.get_first_arg()
+    assert isinstance(params, TrainingDataExportParameters)
+
+
+def test_get_inference_parameters():
+    qgs = init_qgis()
+
+    rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
+    vlayer_mask = create_vlayer_from_file(VLAYER_MASK_FILE_PATH)
+    ConfigEntryKey.MODEL_TYPE.set(ModelType.SEGMENTATION.value)
+    ConfigEntryKey.MODEL_FILE_PATH.set(MODEL_FILE_PATH)
+    ConfigEntryKey.PREPROCESSING_RESOLUTION.set(7)
+    ConfigEntryKey.PROCESSED_AREA_TYPE.set(ProcessedAreaType.VISIBLE_PART.value)
+    ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.set(44)
+    ConfigEntryKey.MODEL_OUTPUT_FORMAT.set(ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER.value)
+    ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.set(1)
+
+    dockwidget = DeepSegmentationFrameworkDockWidget(iface=MagicMock())
+
+    params = dockwidget.get_inference_parameters()
+    assert isinstance(params, SegmentationParameters)
+
+    assert isinstance(params.model, Segmentor)
+    assert params.resolution_cm_per_px == 7
+    assert params.processed_area_type == ProcessedAreaType.VISIBLE_PART
+    assert params.tile_size_px == 512  # should be read from model input
+    assert params.input_layer_id == rlayer.id()
+    assert params.processing_overlap_percentage == 0.44
+    assert params.input_channels_mapping.get_number_of_model_inputs() == 3
+    assert params.input_channels_mapping.get_number_of_image_channels() == 4
+    assert params.input_channels_mapping.get_image_channel_index_for_model_input(2) == 2
+    assert params.model_output_format == ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER
+    assert params.model_output_format__single_class_number == 1
+
+
+if __name__ == '__main__':
+    test_run_inference()
+    test_run_data_export()
+    test_get_inference_parameters()
+    print('Done')

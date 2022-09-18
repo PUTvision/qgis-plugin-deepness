@@ -2,8 +2,9 @@
 To run unit tests issue the following commands:
 ```
 export PYTHONPATH=$PYTHONPATH:`pwd/plugin`
+export PYTHONPATH=$PYTHONPATH:`pwd`
 python3 -m pytest --cov=plugin/deep_segmentation_framework/ --cov-report html test/
-
+xdg-open htmlcov/index.html 
 ```
 
 ## pip packages issues

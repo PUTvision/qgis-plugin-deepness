@@ -72,6 +72,11 @@ class ChannelsMapping:
               f'mapping {self._mapping})'
         return txt
 
+    def __eq__(self, other):
+        if self._number_of_model_inputs != other._number_of_model_inputs:
+            return False
+        return True
+
     def get_as_default_mapping(self):
         # get same channels mapping as we have right now, but without the mapping itself
         # (so just a definition of inputs and outputs)
