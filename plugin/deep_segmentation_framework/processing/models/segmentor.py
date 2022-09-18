@@ -31,3 +31,19 @@ class Segmentor(ModelBase):
     @classmethod
     def get_class_display_name(cls):
         return cls.__name__
+
+    def _check_loaded_model_outputs(self):
+        if len(self.outputs_layers) == 1:
+            shape = self.outputs_layers[0].shape
+
+            if len(shape) != 4:
+                raise Exception(f'Segmentation model output should have 4 dimensions: (B,C,H,W). Has {shape}')
+
+            if shape[0] != 1:
+                raise Exception(f'Segmentation model can handle only 1-Batch outputs. Has {shape}')
+
+            if shape[2] != shape[3]:
+                raise Exception(f'Segmentation model can handle only quared outputs masks. Has: {shape}')
+            
+        else:
+            raise NotImplementedError

@@ -32,9 +32,13 @@ class MapProcessorDetection(MapProcessorWithModel):
             **kwargs)
         self.detection_parameters = params
         self.model = params.model  # type: Detector
+        self.model.set_inference_params(
+            confidence=params.confidence,
+            iou_threshold=params.iou_threshold
+        )
 
     def _run(self):
-        all_bounding_boxes = []  # type: List[...]
+        all_bounding_boxes = []  # type: List[Detection]
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
                 return False
@@ -42,9 +46,12 @@ class MapProcessorDetection(MapProcessorWithModel):
             bounding_boxes_in_tile = self._process_tile(tile_img, tile_params)
             all_bounding_boxes += bounding_boxes_in_tile
 
-        all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
+        if len(all_bounding_boxes) > 0:
+            all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
 
-        all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_suppressed)
+            all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_suppressed)
+        else:
+            all_bounding_boxes_restricted = []
 
         self._create_vlayer_for_output_bounding_boxes(all_bounding_boxes_restricted)
 
@@ -114,7 +121,7 @@ class MapProcessorDetection(MapProcessorWithModel):
             bboxes.append(det.get_bbox_xyxy())
 
         bboxes = np.stack(bboxes, axis=0)
-        pick_ids = self.model.non_max_suppression_fast(bboxes, self.model.iou_threshold)
+        pick_ids = self.model.non_max_suppression_fast(bboxes, self.detection_parameters.confidence)
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
 
