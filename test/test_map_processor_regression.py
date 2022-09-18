@@ -151,6 +151,6 @@ def test_dummy_model_processing__entire_file():
 
 if __name__ == '__main__':
     test_dummy_model_processing__entire_file()
-    test_generic_processing_test__specified_extent_from_vlayer()
-    test_generic_processing_test__specified_extent_from_active_map_extent()
+    # test_generic_processing_test__specified_extent_from_vlayer()
+    # test_generic_processing_test__specified_extent_from_active_map_extent()
     print('Done')

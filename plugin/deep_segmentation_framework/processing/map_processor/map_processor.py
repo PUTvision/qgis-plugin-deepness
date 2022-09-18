@@ -129,6 +129,21 @@ class MapProcessor(QgsTask):
     def _show_image(self, img, window_name='img'):
         self.show_img_signal.emit(img, window_name)
 
+    def limit_extended_extent_image_to_base_extent_with_mask(self, full_img):
+        """
+        Limit an image which is for extended_extent to the base_extent image.
+        If a limiting polygon was used for processing, it will be also applied.
+        :param full_img:
+        :return:
+        """
+        # TODO look for some inplace operation to save memory
+        # cv2.copyTo(src=full_img, mask=area_mask_img, dst=full_img)  # this doesn't work due to implementation details
+        full_img = cv2.copyTo(src=full_img, mask=self.area_mask_img)
+
+        b = self.base_extent_bbox_in_full_image
+        result_img = full_img[b.y_min:b.y_max+1, b.x_min:b.x_max+1]
+        return result_img
+
     def tiles_generator(self) -> Tuple[np.ndarray, TileParams]:
         """
         Iterate over all tiles, as a Python generator function
