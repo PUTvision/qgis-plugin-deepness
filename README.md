@@ -1,4 +1,9 @@
-# qgis-deep-segmentation-framework
+# ![dsf](https://github.com/PUTvision/qgis-deep-segmentation-framework/blob/devel/plugin/deep_segmentation_framework/icon.png?raw=true) QGIS: Deep Segmentation Plugin
+![main](https://github.com/PUTvision/qgis-deep-segmentation-framework/actions/workflows/python-app.yml/badge.svg)
+[![GitHub contributors](https://img.shields.io/github/contributors/PUTvision/qgis-deep-segmentation-framework)](https://github.com/PUTvision/qgis-deep-segmentation-framework/graphs/contributors)
+[![GitHub stars](https://img.shields.io/github/stars/PUTvision/qgis-deep-segmentation-framework)](https://github.com/PUTvision/qgis-deep-segmentation-framework/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/PUTvision/qgis-deep-segmentation-framework)](https://github.com/PUTvision/qgis-deep-segmentation-framework/network/members)
+
 Plugin for QGis to perform map/image segmentation with neural network models. 
 
 # Development
