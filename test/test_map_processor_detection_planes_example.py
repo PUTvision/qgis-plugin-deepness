@@ -5,15 +5,14 @@ from deep_segmentation_framework.common.processing_parameters.map_processing_par
     ModelOutputFormat
 from deep_segmentation_framework.processing.map_processor.map_processor_detection import MapProcessorDetection
 from deep_segmentation_framework.processing.models.detector import Detector
-from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
+from test.test_utils import init_qgis, create_rlayer_from_file, \
     create_default_input_channels_mapping_for_rgb_bands
 
 import os
-import numpy as np
 
 from pathlib import Path
 
-HOME_DIR = Path(__file__).resolve().parents[3]
+HOME_DIR = Path(__file__).resolve().parents[1]
 EXAMPLE_DATA_DIR = os.path.join(HOME_DIR, 'examples', 'yolov7_planes_detection_google_earth')
 
 MODEL_FILE_PATH = os.path.join(EXAMPLE_DATA_DIR, 'model_yolov7_tiny_planes_256_1c.onnx')

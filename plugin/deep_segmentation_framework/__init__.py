@@ -32,5 +32,5 @@ def classFactory(iface):  # pylint: disable=invalid-name
     :type iface: QgsInterface
     """
     #
-    from .deep_segmentation_framework import DeepSegmentationFramework
+    from deep_segmentation_framework.deep_segmentation_framework import DeepSegmentationFramework
     return DeepSegmentationFramework(iface)

@@ -5,15 +5,14 @@ from deep_segmentation_framework.common.processing_parameters.map_processing_par
     ModelOutputFormat
 from deep_segmentation_framework.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deep_segmentation_framework.processing.models.segmentor import Segmentor
-from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
+from test.test_utils import init_qgis, create_rlayer_from_file, \
     create_default_input_channels_mapping_for_rgb_bands
 
 import os
-import numpy as np
 
 from pathlib import Path
 
-HOME_DIR = Path(__file__).resolve().parents[3]
+HOME_DIR = Path(__file__).resolve().parents[1]
 EXAMPLE_DATA_DIR = os.path.join(HOME_DIR, 'examples', 'deeplabv3_segmentation_landcover')
 
 MODEL_FILE_PATH = os.path.join(EXAMPLE_DATA_DIR, 'deeplabv3_landcover_4c.onnx')

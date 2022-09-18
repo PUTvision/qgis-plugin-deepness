@@ -30,6 +30,8 @@ qgis
 
 Every time plugin code is modified, use the `Plugin reloader` to reload our plugin.
 
+# Unit tests
+See [test/README.md](test/README.md)
 
 # Model requirements
 ONNX models are supported.

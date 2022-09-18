@@ -1,4 +1,10 @@
 # Developing and running test
+To run unit tests issue the following commands:
+```
+export PYTHONPATH=$PYTHONPATH:`pwd/plugin`
+python3 -m pytest --cov=plugin/deep_segmentation_framework/ --cov-report html test/
+
+```
 
 ## pip packages issues
 There is some conflict between `opencv-python` and `PyQt5`.

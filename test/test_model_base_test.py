@@ -1,5 +1,5 @@
 from deep_segmentation_framework.processing.models.model_base import ModelBase
-from deep_segmentation_framework.test.test_utils import get_dummy_model_path
+from test.test_utils import get_dummy_model_path
 
 
 MODEL_FILE_PATH = get_dummy_model_path()

@@ -5,7 +5,8 @@ name: Python application
 
 on:
   push:
-    branches: [ master, devel ]
+    branches:
+      - "*"
   pull_request:
     branches: [ master, devel ]
 
@@ -24,8 +25,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --upgrade flake8 pytest
         pip install --upgrade -r requriements.txt
+        pip install --upgrade -r requriements_development.txt
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -43,7 +44,8 @@ jobs:
         
         # run one this without pytest, because pytest creates obfuscated error messages
         # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
-        xvfb-run python3 plugin/deep_segmentation_framework/test/test_map_processor_segmentation.py
+        xvfb-run python3 test/test_map_processor_segmentation.py
         
         # run the actual tests
-        xvfb-run python3 -m pytest plugin/deep_segmentation_framework/
+        xvfb-run python3 -m pytest --cov=deep_segmentation_framework/ --cov-report html  test/
+

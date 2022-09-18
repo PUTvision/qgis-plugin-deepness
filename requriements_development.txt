@@ -1,0 +1,4 @@
+# Requirements required only to test and debug code while developing
+pytest
+pytest-cov
+flake8
