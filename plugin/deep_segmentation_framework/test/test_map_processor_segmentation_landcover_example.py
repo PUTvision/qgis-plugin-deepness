@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
 
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
-from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
+    ModelOutputFormat
 from deep_segmentation_framework.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deep_segmentation_framework.processing.models.segmentor import Segmentor
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
@@ -25,11 +26,11 @@ def test_map_processor_segmentation_landcover_example():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
-    model_wrapper = Segmentor(MODEL_FILE_PATH)
+    model = Segmentor(MODEL_FILE_PATH)
 
     params = SegmentationParameters(
         resolution_cm_per_px=100,
-        tile_size_px=model_wrapper.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        tile_size_px=model.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
         input_layer_id=rlayer.id(),
@@ -37,7 +38,9 @@ def test_map_processor_segmentation_landcover_example():
         postprocessing_dilate_erode_size=5,
         processing_overlap_percentage=20,
         pixel_classification__probability_threshold=0.5,
-        model=model_wrapper,
+        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
+        model_output_format__single_class_number=-1,
+        model=model,
     )
 
     map_processor = MapProcessorSegmentation(

@@ -15,6 +15,16 @@ class ProcessedAreaType(enum.Enum):
         return [e.value for e in cls]
 
 
+class ModelOutputFormat(enum.Enum):
+    ALL_CLASSES_AS_SEPARATE_LAYERS = 'All classes as separate layers'
+    CLASSES_AS_SEPARATE_LAYERS_WITHOUT_ZERO_CLASS = 'Classes as separate layers (without 0 class)'
+    ONLY_SINGLE_CLASS_AS_LAYER = 'Single class as a vector layer'
+
+    @classmethod
+    def get_all_names(cls):
+        return [e.value for e in cls]
+
+
 @dataclass
 class MapProcessingParameters:
     """
@@ -33,6 +43,9 @@ class MapProcessingParameters:
     processing_overlap_percentage: float  # aka stride - overlap of neighbouring tiles while processing
 
     input_channels_mapping: ChannelsMapping  # describes mapping of image channels to model inputs
+
+    model_output_format: ModelOutputFormat  # what kind of model output do we want to achieve
+    model_output_format__single_class_number: int  # if we want to show just one output channel - here is its number
 
     @property
     def tile_size_m(self):

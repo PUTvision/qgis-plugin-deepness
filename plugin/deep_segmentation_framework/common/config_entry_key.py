@@ -30,6 +30,12 @@ class ConfigEntryKey(enum.Enum):
     DATA_EXPORT_SEGMENTATION_MASK_ENABLED = enum.auto(), False
     DATA_EXPORT_SEGMENTATION_MASK_ID = enum.auto(), ''
 
+    MODEL_OUTPUT_FORMAT = enum.auto(), ''
+    MODEL_OUTPUT_FORMAT_CLASS_NUMBER = enum.auto(), 0
+
+    INPUT_CHANNELS_MAPPING__ADVANCED_MODE = enum.auto, False
+    INPUT_CHANNELS_MAPPING__MAPPING_LIST_STR = enum.auto, []
+
     def get(self):
         """
         Get value store in config (or a default one)
@@ -46,6 +52,8 @@ class ConfigEntryKey(enum.Enum):
             read_function = QgsProject.instance().readBoolEntry
         elif isinstance(default_value, str):
             read_function = QgsProject.instance().readEntry
+        elif isinstance(default_value, str):
+            read_function = QgsProject.instance().readListEntry
         else:
             raise Exception("Unsupported entry type!")
 
@@ -64,6 +72,8 @@ class ConfigEntryKey(enum.Enum):
         elif isinstance(default_value, bool):
             write_function = QgsProject.instance().writeEntryBool
         elif isinstance(default_value, str):
+            write_function = QgsProject.instance().writeEntry
+        elif isinstance(default_value, list):
             write_function = QgsProject.instance().writeEntry
         else:
             raise Exception("Unsupported entry type!")

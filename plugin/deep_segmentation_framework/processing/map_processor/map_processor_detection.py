@@ -3,12 +3,13 @@ from typing import List
 
 import cv2
 import numpy as np
-from qgis._core import QgsVectorLayer, QgsProject, QgsGeometry, QgsFeature
+from qgis.core import QgsVectorLayer, QgsProject, QgsGeometry, QgsFeature
 
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.processing import processing_utils
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
+from deep_segmentation_framework.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 from deep_segmentation_framework.processing.models.detector import Detector
 from deep_segmentation_framework.processing.tile_params import TileParams
 from deep_segmentation_framework.processing.models.detector import Detection
@@ -17,7 +18,7 @@ if IS_DEBUG:
     pass
 
 
-class MapProcessorDetection(MapProcessor):
+class MapProcessorDetection(MapProcessorWithModel):
     """
     Process the entire map for the detection models, which produce bounding boxes
     """
@@ -27,6 +28,7 @@ class MapProcessorDetection(MapProcessor):
                  **kwargs):
         super().__init__(
             params=params,
+            model=params.model,
             **kwargs)
         self.detection_parameters = params
         self.model = params.model  # type: Detector
@@ -70,9 +72,7 @@ class MapProcessorDetection(MapProcessor):
     def _create_vlayer_for_output_bounding_boxes(self, bounding_boxes: List[Detection]):
         group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
 
-        number_of_output_classes = self.detection_parameters.model.get_number_of_output_channels()
-
-        for channel_id in range(0, number_of_output_classes):
+        for channel_id in self._get_indexes_of_model_output_channels_to_create():
             filtered_bounding_boxes = [det for det in bounding_boxes if det.clss == channel_id]
             print(f'Detections for class {channel_id}: {len(filtered_bounding_boxes)}')
 

@@ -1,7 +1,8 @@
 from unittest.mock import MagicMock
 
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
-from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
+    ModelOutputFormat
 from deep_segmentation_framework.processing.map_processor.map_processor_detection import MapProcessorDetection
 from deep_segmentation_framework.processing.models.detector import Detector
 from deep_segmentation_framework.test.test_utils import init_qgis, create_rlayer_from_file, \
@@ -38,6 +39,8 @@ def test_map_processor_detection_planes_example():
         model=model_wrapper,
         confidence=0.5,
         iou_threshold=0.5,
+        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
+        model_output_format__single_class_number=-1,
     )
 
     map_processor = MapProcessorDetection(

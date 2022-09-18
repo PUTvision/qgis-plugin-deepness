@@ -54,6 +54,8 @@ class ChannelsMapping:
     Defines mapping of model input channels to input image channels (bands)
     """
 
+    INVALID_INPUT_CHANNEL = -1
+
     def __init__(self):
         self._number_of_model_inputs = 0
         self._number_of_model_output_channels = 0
@@ -149,3 +151,23 @@ class ChannelsMapping:
             raise Exception("Invalid image channel index!")
         # image_channel = self._image_channels[image_channel_index]
         self._mapping[model_input_number] = image_channel_index
+
+    def get_mapping_as_list(self) -> List[int]:
+        mapping_list = []
+        for i in range(self._number_of_model_inputs):
+            if i in self._mapping:
+                mapping_list.append(self._mapping[i])
+            else:
+                mapping_list.append(-1)
+        return mapping_list
+
+    def load_mapping_from_list(self, mapping_list: List[int]):
+        """
+        Load self._mapping from a plain list of channels (which is saved in config)
+        """
+        for i in range(min(self._number_of_model_inputs), len(mapping_list)):
+            proposed_channel = mapping_list[i]
+            if proposed_channel == -1 or proposed_channel >= self._number_of_model_inputs:
+                continue
+
+            self._mapping[i] = proposed_channel

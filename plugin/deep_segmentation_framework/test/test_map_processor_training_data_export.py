@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
-from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType
+from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
+    ModelOutputFormat
 from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
 from deep_segmentation_framework.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
@@ -28,6 +29,8 @@ def test_export_dummy_fotomap():
         input_layer_id=rlayer.id(),
         input_channels_mapping=create_default_input_channels_mapping_for_rgba_bands(),
         processing_overlap_percentage=20,
+        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
+        model_output_format__single_class_number=-1,
     )
 
     map_processor = MapProcessorTrainingDataExport(
