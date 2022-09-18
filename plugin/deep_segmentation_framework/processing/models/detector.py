@@ -162,7 +162,7 @@ class Detector(ModelBase):
 
         return pick
 
-    def _check_loaded_model_outputs(self):
+    def check_loaded_model_outputs(self):
         if len(self.outputs_layers) == 1:
             shape = self.outputs_layers[0].shape
 

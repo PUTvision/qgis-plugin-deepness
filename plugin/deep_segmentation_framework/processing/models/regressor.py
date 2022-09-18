@@ -3,9 +3,9 @@ import numpy as np
 from deep_segmentation_framework.processing.models.model_base import ModelBase
 
 
-class Segmentor(ModelBase):
+class Regressor(ModelBase):
     def __init__(self, model_file_path: str):
-        super(Segmentor, self).__init__(model_file_path)
+        super(Regressor, self).__init__(model_file_path)
 
     def preprocessing(self, image: np.ndarray):
         img = image[:, :, :self.input_shape[-3]]
@@ -18,9 +18,8 @@ class Segmentor(ModelBase):
         return input_batch
 
     def postprocessing(self, model_output):
-        labels = np.clip(model_output[0][0], 0, 1)
-
-        return labels
+        values = np.clip(model_output[0][0], 0, 1)
+        return values
 
     def get_number_of_output_channels(self):
         if len(self.outputs_layers) == 1:
@@ -37,13 +36,13 @@ class Segmentor(ModelBase):
             shape = self.outputs_layers[0].shape
 
             if len(shape) != 4:
-                raise Exception(f'Segmentation model output should have 4 dimensions: (B,C,H,W). Has {shape}')
+                raise Exception(f'Regression model output should have 4 dimensions: (B,C,H,W). Has {shape}')
 
             if shape[0] != 1:
-                raise Exception(f'Segmentation model can handle only 1-Batch outputs. Has {shape}')
+                raise Exception(f'Regression model can handle only 1-Batch outputs. Has {shape}')
 
             if shape[2] != shape[3]:
-                raise Exception(f'Segmentation model can handle only square outputs masks. Has: {shape}')
-            
+                raise Exception(f'Regression model can handle only square outputs masks. Has: {shape}')
+
         else:
             raise NotImplementedError

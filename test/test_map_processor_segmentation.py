@@ -8,7 +8,7 @@ from deep_segmentation_framework.common.processing_parameters.map_processing_par
 from deep_segmentation_framework.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deep_segmentation_framework.processing.models.segmentor import Segmentor
 from test.test_utils import init_qgis, create_rlayer_from_file, \
-    create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, get_dummy_model_path, \
+    create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, get_dummy_segmentation_model_path, \
     create_default_input_channels_mapping_for_rgba_bands
 
 import numpy as np
@@ -18,7 +18,7 @@ RASTER_FILE_PATH = get_dummy_fotomap_small_path()
 
 VLAYER_MASK_FILE_PATH = get_dummy_fotomap_area_path()
 
-MODEL_FILE_PATH = get_dummy_model_path()
+MODEL_FILE_PATH = get_dummy_segmentation_model_path()
 
 INPUT_CHANNELS_MAPPING = create_default_input_channels_mapping_for_rgba_bands()
 

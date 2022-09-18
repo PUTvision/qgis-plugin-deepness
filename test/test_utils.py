@@ -12,12 +12,20 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_DATA_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, 'data'))
 
 
-def get_dummy_model_path():
+def get_dummy_segmentation_model_path():
     """
     Get path of a dummy onnx model. See details in README in model directory.
     Model used for unit tests processing purposes
     """
-    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_model.onnx')
+    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_model.onnx')
+
+
+def get_dummy_regression_model_path():
+    """
+    Get path of a dummy onnx model. See details in README in model directory.
+    Model used for unit tests processing purposes
+    """
+    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_regression_model.onnx')
 
 
 def get_dummy_fotomap_small_path():

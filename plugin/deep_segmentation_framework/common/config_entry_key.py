@@ -23,6 +23,8 @@ class ConfigEntryKey(enum.Enum):
     SEGMENTATION_REMOVE_SMALL_SEGMENT_ENABLED = enum.auto(), True
     SEGMENTATION_REMOVE_SMALL_SEGMENT_SIZE = enum.auto(), 9
 
+    REGRESSION_OUTPUT_SCALING = enum.auto(), 1.0
+
     DETECTION_CONFIDENCE = enum.auto(), 0.5
     DETECTION_IOU = enum.auto(), 0.5
 

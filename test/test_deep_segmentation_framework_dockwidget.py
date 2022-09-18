@@ -22,11 +22,11 @@ from deep_segmentation_framework.deep_segmentation_framework_dockwidget import D
 from deep_segmentation_framework.processing.models.model_types import ModelType
 from deep_segmentation_framework.processing.models.segmentor import Segmentor
 from test.test_utils import init_qgis, create_rlayer_from_file, get_dummy_fotomap_small_path, \
-    get_dummy_fotomap_area_path, get_dummy_model_path, create_vlayer_from_file, SignalCollector
+    get_dummy_fotomap_area_path, get_dummy_segmentation_model_path, create_vlayer_from_file, SignalCollector
 
 RASTER_FILE_PATH = get_dummy_fotomap_small_path()
 VLAYER_MASK_FILE_PATH = get_dummy_fotomap_area_path()
-MODEL_FILE_PATH = get_dummy_model_path()
+MODEL_FILE_PATH = get_dummy_segmentation_model_path()
 
 
 def test_run_inference():

@@ -59,5 +59,6 @@ class ModelBase:
     def get_number_of_output_channels(self):
         return NotImplementedError
 
-    def _check_loaded_model_outputs(self):
+    def check_loaded_model_outputs(self):
         return NotImplementedError
+
