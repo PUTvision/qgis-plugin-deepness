@@ -40,8 +40,6 @@ def get_numpy_data_type_for_qgis_type(data_type_qgis: Qgis.DataType):
         data_type_numpy = np.int16
     elif data_type_qgis in [Qgis.DataType.Float32]:
         data_type_numpy = np.float32
-    elif data_type_qgis in [Qgis.DataType.Float16]:
-        data_type_numpy = np.float16
     else:
         # TODO - maybe add support for more data types (change also the numpy type below then)
         raise Exception("Invalid input layer data type!")

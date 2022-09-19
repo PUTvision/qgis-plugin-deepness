@@ -167,7 +167,8 @@ class Detector(ModelBase):
             shape = self.outputs_layers[0].shape
 
             if len(shape) != 3:
-                raise Exception(f'Detection model output should have 3 dimensions: (B,detections,values). Has {shape}')
+                raise Exception(f'Detection model output should have 3 dimensions: (Batch_size, detections, values). '
+                                f'Actually has: {shape}')
 
             if shape[0] != 1:
                 raise Exception(f'Detection model can handle only 1-Batch outputs. Has {shape}')

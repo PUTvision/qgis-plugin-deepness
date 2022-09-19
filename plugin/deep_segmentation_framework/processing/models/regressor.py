@@ -35,7 +35,8 @@ class Regressor(ModelBase):
             shape = self.outputs_layers[0].shape
 
             if len(shape) != 4:
-                raise Exception(f'Regression model output should have 4 dimensions: (B,C,H,W). Has {shape}')
+                raise Exception(f'Regression model output should have 4 dimensions: (Batch_size, Channels, H, W). \n'
+                                f'Actually has: {shape}')
 
             if shape[0] != 1:
                 raise Exception(f'Regression model can handle only 1-Batch outputs. Has {shape}')
