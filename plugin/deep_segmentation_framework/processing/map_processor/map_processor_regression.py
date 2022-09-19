@@ -1,4 +1,5 @@
 import tempfile
+import uuid
 from typing import List
 import os
 
@@ -43,7 +44,9 @@ class MapProcessorRegression(MapProcessorWithModel):
     def _run(self) -> MapProcessingResult:
         number_of_output_channels = len(self._get_indexes_of_model_output_channels_to_create())
         final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
-        full_result_imgs = [np.zeros(final_shape_px, np.uint8) for i in range(number_of_output_channels)]
+
+        # NOTE: consider whether we can use float16/uint16 as datatype
+        full_result_imgs = [np.zeros(final_shape_px, np.float32) for i in range(number_of_output_channels)]
 
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
@@ -70,11 +73,12 @@ class MapProcessorRegression(MapProcessorWithModel):
             result_img = result_imgs[i]
             average_value = np.mean(result_img)
             std = np.std(result_img)
-            txt += f' - class {channel_id}: average_value = {average_value:.2f} (std = {std:.2f})\n'
+            txt += f' - class {channel_id}: average_value = {average_value:.2f} (std = {std:.2f}, ' \
+                   f'min={np.min(result_img)}, max={np.max(result_img)})\n'
 
         if len(channels) > 0:
             total_area = result_img.shape[0] * result_img.shape[1] * self.params.resolution_m_per_px**2
-            txt += f'Total are is {total_area} m^2'
+            txt += f'Total are is {total_area:.2f} m^2'
         return txt
 
     def limit_extended_extent_images_to_base_extent_with_mask(self, full_imgs: List[np.ndarray]):
@@ -95,7 +99,9 @@ class MapProcessorRegression(MapProcessorWithModel):
         """
         Create raster layer from tif file
         """
-        rlayer = QgsRasterLayer(file_path, os.path.basename(file_path))
+        file_name = os.path.basename(file_path)
+        base_file_name = file_name.split('___')[0]  # we remove the random_id string we created a moment ago
+        rlayer = QgsRasterLayer(file_path, base_file_name)
         if rlayer.width() == 0:
             raise Exception("0 width - rlayer not loaded properly. Probably invalid file path?")
         rlayer.setCrs(self.rlayer.crs())
@@ -110,16 +116,13 @@ class MapProcessorRegression(MapProcessorWithModel):
 
         for i, channel_id in enumerate(self._get_indexes_of_model_output_channels_to_create()):
             result_img = result_imgs[i]
-            file_path = os.path.join(TMP_DIR_PATH, f'channel_{channel_id}.tif')
+            random_id = str(uuid.uuid4()).replace('-', '')
+            file_path = os.path.join(TMP_DIR_PATH, f'channel_{channel_id}___{random_id}.tif')
             self.save_result_img_as_tif(file_path=file_path, img=result_img)
 
             rlayer = self.load_rlayer_from_file(file_path)
-            # TODO set color mapping and transparency
-            # prov = vlayer.dataProvider()
-            # color = rlayer.renderer().symbol().color()
-            # OUTPUT_VLAYER_COLOR_TRANSPARENCY = 80
-            # color.setAlpha(OUTPUT_VLAYER_COLOR_TRANSPARENCY)
-            # rlayer.renderer().symbol().setColor(color)
+            OUTPUT_RLAYER_OPACITY = 0.5
+            rlayer.renderer().setOpacity(OUTPUT_RLAYER_OPACITY)
 
             QgsProject.instance().addMapLayer(rlayer, False)
             group.addLayer(rlayer)
@@ -143,7 +146,8 @@ class MapProcessorRegression(MapProcessorWithModel):
         driver = gdal.GetDriverByName('GTiff')
         n_lines = img.shape[0]
         n_cols = img.shape[1]
-        data_type = gdal.GDT_Byte
+        # data_type = gdal.GDT_Byte
+        data_type = gdal.GDT_Float32
         grid_data = driver.Create('grid_data', n_cols, n_lines, 1, data_type)  # , options)
         grid_data.GetRasterBand(1).WriteArray(img)
 
@@ -161,9 +165,10 @@ class MapProcessorRegression(MapProcessorWithModel):
         result = self.model.process(tile_img)
         result[np.isnan(result)] = 0
         result *= self.regression_parameters.output_scaling
-        result *= 255  # float -> uint8
-        result = np.clip(result, 0, 255)
-        result = result.astype(np.uint8)
+
+        # NOTE - currently we are saving result as float32, so we are losing some accuraccy.
+        # result = np.clip(result, 0, 255)  # old version with uint8_t - not used anymore
+        result = result.astype(np.float32)
 
         return result
 

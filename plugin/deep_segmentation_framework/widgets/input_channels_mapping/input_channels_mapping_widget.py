@@ -110,6 +110,11 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
                         byte_number=3 - i,  # bytes are in reversed order
                         name=band_names[i])
                     image_channels.append(image_channel)
+            elif data_type in [Qgis.DataType.CFloat32, Qgis.DataType.Float32]:  # not tested, make sure it is correct
+                image_channel = ImageChannelStandaloneBand(
+                    band_number=1,
+                    name='value (band 1)')
+                image_channels.append(image_channel)
             else:
                 raise Exception("Invalid input layer data type!")
         else:
