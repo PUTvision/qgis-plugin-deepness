@@ -59,7 +59,8 @@ def test_dummy_model_processing__entire_file():
     )
 
     map_processor.run()
-    result_img = map_processor.get_result_img()
+    result_imgs = map_processor.get_result_imgs()
+    result_img = result_imgs[0]
 
     assert result_img.shape == (561, 829)
     # TODO - add detailed check for pixel values once we have output channels mapping with thresholding

@@ -18,8 +18,7 @@ class Regressor(ModelBase):
         return input_batch
 
     def postprocessing(self, model_output):
-        values = np.clip(model_output[0][0], 0, 1)
-        return values
+        return model_output[0][0]  # 1 output, one image in batch
 
     def get_number_of_output_channels(self):
         if len(self.outputs_layers) == 1:

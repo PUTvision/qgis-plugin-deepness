@@ -112,10 +112,6 @@ class MapProcessorRegression(MapProcessorWithModel):
 
         for i, channel_id in enumerate(self._get_indexes_of_model_output_channels_to_create()):
             result_img = result_imgs[i]
-            result_img *= 255
-            result_img = np.clip(result_img, 0, 255)
-            result_img = result_img.astype(np.uint8)
-
             file_path = os.path.join(tmp_dir_path, f'channel_{channel_id}.tif')
             self.save_result_img_as_tif(file_path=file_path, img=result_img)
 
@@ -135,6 +131,8 @@ class MapProcessorRegression(MapProcessorWithModel):
         #     resx = (extent_minmax[2] - extent_minmax[0]) / ncols
         #     resy = (extent_minmax[3] - extent_minmax[1]) / nlines
         #     return [extent[0], resx, 0, extent[3], 0, -resy]
+
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
         data = img
         extent = self.base_extent
@@ -163,6 +161,11 @@ class MapProcessorRegression(MapProcessorWithModel):
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
         result = self.model.process(tile_img)
+        result[np.isnan(result)] = 0
         result *= self.regression_parameters.output_scaling
+        result *= 255  # float -> uint8
+        result = np.clip(result, 0, 255)
+        result = result.astype(np.uint8)
+
         return result
 
