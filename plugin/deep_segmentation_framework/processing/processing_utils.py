@@ -31,6 +31,24 @@ def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
     return distance_m
 
 
+def get_numpy_data_type_for_qgis_type(data_type_qgis: Qgis.DataType):
+    if data_type_qgis == Qgis.DataType.Byte:
+        data_type_numpy = np.uint8
+    elif data_type_qgis == Qgis.DataType.UInt16:
+        data_type_numpy = np.uint16
+    elif data_type_qgis == Qgis.DataType.Int16:
+        data_type_numpy = np.int16
+    elif data_type_qgis in [Qgis.DataType.Float32]:
+        data_type_numpy = np.float32
+    elif data_type_qgis in [Qgis.DataType.Float16]:
+        data_type_numpy = np.float16
+    else:
+        # TODO - maybe add support for more data types (change also the numpy type below then)
+        raise Exception("Invalid input layer data type!")
+
+    return data_type_numpy
+
+
 def get_tile_image(
         rlayer: QgsRasterLayer,
         extent: QgsRectangle,
@@ -86,13 +104,9 @@ def get_tile_image(
             rb = get_raster_block(band_number)
             raw_data = rb.data()
             bytes_array = bytes(raw_data)
-            dt = rb.dataType()
-            if dt == Qgis.DataType.Byte:
-                pass  # ok
-            else:
-                # TODO - maybe add support for more data types (change also the numpy type below then)
-                raise Exception("Invalid input layer data type!")
-            a = np.frombuffer(bytes_array, dtype=np.uint8)
+            data_type = rb.dataType()
+            data_type_numpy = get_numpy_data_type_for_qgis_type(data_type)
+            a = np.frombuffer(bytes_array, dtype=data_type_numpy)
             b = a.reshape((image_size[1], image_size[0], 1))
             tile_data.append(b)
     elif input_channels_mapping.are_all_inputs_composite_byte():
