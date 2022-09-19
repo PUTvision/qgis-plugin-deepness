@@ -283,7 +283,7 @@ for some models</string>
          </widget>
         </item>
         <item>
-         <widget class="QgsCollapsibleGroupBox" name="mGroupBox_7">
+         <widget class="QgsCollapsibleGroupBox" name="mGroupBox_segmentationParameters">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
             <horstretch>0</horstretch>
@@ -371,7 +371,7 @@ for some models</string>
          </widget>
         </item>
         <item>
-         <widget class="QgsCollapsibleGroupBox" name="mGroupBox_10">
+         <widget class="QgsCollapsibleGroupBox" name="mGroupBox_regressionParameters">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
             <horstretch>0</horstretch>
@@ -407,7 +407,7 @@ for some models</string>
          </widget>
         </item>
         <item>
-         <widget class="QgsCollapsibleGroupBox" name="mGroupBox_9">
+         <widget class="QgsCollapsibleGroupBox" name="mGroupBox_detectionParameters">
           <property name="title">
            <string>Detection parameters</string>
           </property>

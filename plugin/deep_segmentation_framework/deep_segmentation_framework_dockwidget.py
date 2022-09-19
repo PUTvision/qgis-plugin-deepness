@@ -76,7 +76,6 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self._create_connections()
         self._setup_misc_ui()
-
         self._load_ui_from_config()
 
     def _load_ui_from_config(self):
@@ -196,11 +195,32 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.pushButton_runTrainingDataExport.clicked.connect(self._run_training_data_export)
         self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
         self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
+        self.comboBox_modelType.currentIndexChanged.connect(self._model_type_changed)
         self.pushButton_reloadModel.clicked.connect(self._load_model_and_display_info)
         self.mMapLayerComboBox_inputLayer.layerChanged.connect(self._rlayer_updated)
         self.checkBox_pixelClassEnableThreshold.stateChanged.connect(self._set_probability_threshold_enabled)
         self.checkBox_removeSmallAreas.stateChanged.connect(self._set_remove_small_segment_enabled)
         self.comboBox_modelOutputFormat.currentIndexChanged.connect(self._model_output_format_changed)
+
+    def _model_type_changed(self):
+        model_type = ModelType(self.comboBox_modelType.currentText())
+
+        segmentation_enabled = False
+        detection_enabled = False
+        regression_enabled = False
+
+        if model_type == ModelType.SEGMENTATION:
+            segmentation_enabled = True
+        elif model_type == ModelType.DETECTION:
+            detection_enabled = True
+        elif model_type == ModelType.REGRESSION:
+            regression_enabled = True
+        else:
+            raise Exception(f"Unsupported model type ({model_type})!")
+
+        self.mGroupBox_segmentationParameters.setEnabled(segmentation_enabled)
+        self.mGroupBox_detectionParameters.setEnabled(detection_enabled)
+        self.mGroupBox_regressionParameters.setEnabled(regression_enabled)
 
     def _model_output_format_changed(self):
         txt = self.comboBox_modelOutputFormat.currentText()
