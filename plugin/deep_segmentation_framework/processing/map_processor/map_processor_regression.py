@@ -11,6 +11,7 @@ from osgeo import gdal, osr, ogr
 from qgis.core import QgsVectorLayer
 from qgis.core import QgsProject
 
+from deep_segmentation_framework.common.misc import TMP_DIR_PATH
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ModelOutputFormat
 from deep_segmentation_framework.common.processing_parameters.regression_parameters import RegressionParameters
 from deep_segmentation_framework.processing import processing_utils
@@ -107,12 +108,9 @@ class MapProcessorRegression(MapProcessorWithModel):
         # Maybe can we pass ownership of this file to QGis?
         # Or maybe even create vlayer directly from array, without a file?
 
-        tmp_dir = tempfile.TemporaryDirectory()
-        tmp_dir_path = os.path.join(tmp_dir.name, 'qgis')
-
         for i, channel_id in enumerate(self._get_indexes_of_model_output_channels_to_create()):
             result_img = result_imgs[i]
-            file_path = os.path.join(tmp_dir_path, f'channel_{channel_id}.tif')
+            file_path = os.path.join(TMP_DIR_PATH, f'channel_{channel_id}.tif')
             self.save_result_img_as_tif(file_path=file_path, img=result_img)
 
             rlayer = self.load_rlayer_from_file(file_path)
@@ -127,34 +125,34 @@ class MapProcessorRegression(MapProcessorWithModel):
             group.addLayer(rlayer)
 
     def save_result_img_as_tif(self, file_path: str, img: np.ndarray):
-        # def getGeoTransform(extent_minmax, nlines, ncols):
-        #     resx = (extent_minmax[2] - extent_minmax[0]) / ncols
-        #     resy = (extent_minmax[3] - extent_minmax[1]) / nlines
-        #     return [extent[0], resx, 0, extent[3], 0, -resy]
+        """
+        As we cannot pass easily an numpy array to be displayed as raster layer, we create temporary geotif files,
+        which will be loaded as layer later on
 
+        Partially based on example from:
+        https://gis.stackexchange.com/questions/82031/gdal-python-set-projection-of-a-raster-not-working
+        """
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
-        data = img
         extent = self.base_extent
         crs = self.rlayer.crs()
 
         geo_transform = [extent.xMinimum(), self.rlayer_units_per_pixel, 0,
-                         extent.yMinimum(), 0, -self.rlayer_units_per_pixel]
-
+                         extent.yMaximum(), 0, -self.rlayer_units_per_pixel]
 
         driver = gdal.GetDriverByName('GTiff')
-        nlines = data.shape[0]
-        ncols = data.shape[1]
+        n_lines = img.shape[0]
+        n_cols = img.shape[1]
         data_type = gdal.GDT_Byte
-        grid_data = driver.Create('grid_data', ncols, nlines, 1, data_type)  # , options)
-        grid_data.GetRasterBand(1).WriteArray(data)
+        grid_data = driver.Create('grid_data', n_cols, n_lines, 1, data_type)  # , options)
+        grid_data.GetRasterBand(1).WriteArray(img)
 
-        srs = osr.SpatialReference()
-        srs.ImportFromProj4('+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
+        # crs().srsid()  - maybe we can use the ID directly - but how?
         # srs.ImportFromEPSG()
+        srs = osr.SpatialReference()
+        srs.SetFromUserInput(crs.authid())
 
         grid_data.SetProjection(srs.ExportToWkt())
-        # grid_data.SetGeoTransform(getGeoTransform(extent_minmax, nlines, ncols))
         grid_data.SetGeoTransform(geo_transform)
         driver.CreateCopy(file_path, grid_data, 0)
         print(f'***** {file_path = }')
