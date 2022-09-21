@@ -250,6 +250,16 @@ class BoundingBox:
             self.x_max - self.x_min + 1
         ]
 
+    def calculate_overlap_in_pixels(self, other):
+        dx = min(self.x_max, other.x_max) - max(self.x_min, other.x_min)
+        dy = min(self.y_max, other.y_max) - max(self.y_min, other.y_min)
+        if (dx >= 0) and (dy >= 0):
+            return dx * dy
+        return 0
+
+    def get_slice(self):
+        roi_slice = np.s_[self.y_min:self.y_max + 1, self.x_min:self.x_max + 1]
+
 
 def transform_polygon_with_rings_epsg_to_extended_xy_pixels(
         polygons: List[List[QgsPointXY]],

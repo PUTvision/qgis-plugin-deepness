@@ -51,6 +51,8 @@ def test_map_processor_detection_planes_example():
 
     map_processor.run()
 
+    assert len(map_processor.get_all_detections()) == 1
+
 
 if __name__ == '__main__':
     test_map_processor_detection_planes_example()
