@@ -27,6 +27,7 @@ from qgis.PyQt.QtWidgets import QMessageBox
 
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
+from deep_segmentation_framework.images.get_image_path import get_icon_path
 from deep_segmentation_framework.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
 from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResult, MapProcessingResultFailed, \
     MapProcessingResultCanceled, MapProcessingResultSuccess
@@ -88,8 +89,6 @@ class DeepSegmentationFramework:
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'DeepSegmentationFramework')
         self.toolbar.setObjectName(u'DeepSegmentationFramework')
-
-        #print "** INITIALIZING DeepSegmentationFramework"
 
         self.pluginIsActive = False
         self.dockwidget = None
@@ -187,7 +186,7 @@ class DeepSegmentationFramework:
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
         print('2) initGui')
 
-        icon_path = ':/plugins/deep_segmentation_framework/icon.png'
+        icon_path = get_icon_path()
         self.add_action(
             icon_path,
             text=self.tr(u'Deep Segmentation Framework'),
@@ -197,13 +196,9 @@ class DeepSegmentationFramework:
         if IS_DEBUG:
             self.run()
 
-    #--------------------------------------------------------------------------
-
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
         print('3) onClosePlugin')
-
-        #print "** CLOSING DeepSegmentationFramework"
 
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
@@ -220,8 +215,6 @@ class DeepSegmentationFramework:
         """Removes the plugin menu item and icon from QGIS GUI."""
         print('4) unload')
 
-        #print "** UNLOAD DeepSegmentationFramework"
-
         for action in self.actions:
             self.iface.removePluginMenu(
                 self.tr(u'&Deep Segmentation Framework'),
@@ -229,8 +222,6 @@ class DeepSegmentationFramework:
             self.iface.removeToolBarIcon(action)
         # remove the toolbar
         del self.toolbar
-
-    #--------------------------------------------------------------------------
 
     def _layers_changed(self, _):
         pass
@@ -241,8 +232,6 @@ class DeepSegmentationFramework:
 
         if not self.pluginIsActive:
             self.pluginIsActive = True
-
-            #print "** STARTING DeepSegmentationFramework"
 
             # dockwidget may not exist if:
             #    first run of plugin
@@ -339,99 +328,3 @@ class DeepSegmentationFramework:
             message_to_show = result.message
             QMessageBox.information(self.dockwidget, "Processing Result", message_to_show)
         self._map_processor = None
-
-
-"""
-Writing function of the entire image (from Raster Vision plugin).
-But it behaves strangle for e.g. google earth data, and we don't want to create a temporary file for entire map
-(for unlimited map we would need an limit anyway)
-
-from qgis.core import (QgsProject,
-                       QgsRasterFileWriter,
-                       QgsRasterLayer,
-                       QgsRasterPipe)
-
-def export_raster_layer(layer, path):
-    provider = layer.dataProvider()
-    renderer = layer.renderer()
-    pipe = QgsRasterPipe()
-    pipe.set(provider.clone())
-    pipe.set(renderer.clone())
-    
-    file_writer = QgsRasterFileWriter(path)
-    file_writer.writeRaster(
-        pipe,
-        provider.xSize(),
-        provider.ySize(),
-        provider.extent(),
-        provider.crs())        
-        
-with TemporaryDirectory(dir=settings.get_working_dir()) as tmp_dir:
-    path = os.path.join(tmp_dir, "{}.tif".format(layer_name))
-"""
-
-
-"""
-Logging:
-self.iface.messageBar().pushMessage("Info", "hello", level=Qgis.Success)
-QgsMessageLog.logMessage("Widget setup", LOG_TAB_NAME, level=Qgis.Info)
-
-
-QgsProject.instance().mapLayers()
-qgis.utils.iface.activeLayer()
-
-
-Raster Layers:
-rlayer = qgis.utils.iface.activeLayer() # some raster layer
-rlayer.width(), rlayer.height()  # dimension of the layer (in px)
-rlayer.extent()  # get the extent of the layer as QgsRectangle
-
-rlayer.rasterType()  # value 2 is multiband
-rlayer.bandCount()
-print(rlayer.bandName(1))
-
-val, res = rlayer.dataProvider().sample(QgsPointXY(638907, 5802464), 1)  # get data point  [ sample (const QgsPointXY &point, int band, bool *ok=nullptr, const QgsRectangle &boundingBox=QgsRectangle(), int width=0, int height=0, int dpi=96) ]
-rlayer.dataProvider().identify(QgsPointXY(638907, 5802464), QgsRaster.IdentifyFormatValue).results()
-rlayer.rasterUnitsPerPixelX()
-
-
-# seting rendering mode 
-fcn = QgsColorRampShader()
-fcn.setColorRampType(QgsColorRampShader.Discrete)
-lst = [ QgsColorRampShader.ColorRampItem(0, QColor(0,255,0)),
-      QgsColorRampShader.ColorRampItem(255, QColor(255,255,0)) ]
-fcn.setColorRampItemList(lst)
-shader = QgsRasterShader()
-shader.setRasterShaderFunction(fcn)
-renderer = QgsSingleBandPseudoColorRenderer(rlayer.dataProvider(), 1, shader)
-rlayer.setRenderer(renderer)
-
-
-# Editing raster data
-block = QgsRasterBlock(Qgis.Byte, 2, 2)
-block.setData(b'\xaa\xbb\xcc\xdd')
-provider = rlayer.dataProvider()
-provider.setEditable(True)
-provider.writeBlock(block, 1, 0, 0)
-provider.setEditable(False)
-
-
-# Project settings
-proj = QgsProject.instance()
-value, _ = proj.readNumEntry(PLUGIN_NAME, 'testcounter', 0)
-value += 1
-proj.writeEntry(PLUGIN_NAME, 'testcounter', value)
-        
-
-# Running background task:
-
-# e.g. after clicking the button:
-task = TestTask('my task', 10)
-QgsApplication.taskManager().addTask(task)
-
-
-
-# Access plugin in qgis console
-my_plugin = qgis.utils.plugins['My Plugin']
-
-"""

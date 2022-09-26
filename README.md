@@ -1,4 +1,4 @@
-# ![dsf_logo](./plugin/deep_segmentation_framework/icon.png) QGIS: Deep Segmentation Framework
+# ![dsf_logo](plugin/deep_segmentation_framework/images/icon.png) QGIS: Deep Segmentation Framework
 ![main](https://github.com/PUTvision/qgis-deep-segmentation-framework/actions/workflows/python-app.yml/badge.svg)
 [![GitHub contributors](https://img.shields.io/github/contributors/PUTvision/qgis-deep-segmentation-framework)](https://github.com/PUTvision/qgis-deep-segmentation-framework/graphs/contributors)
 [![GitHub stars](https://img.shields.io/github/stars/PUTvision/qgis-deep-segmentation-framework)](https://github.com/PUTvision/qgis-deep-segmentation-framework/stargazers)
@@ -32,6 +32,16 @@ Every time plugin code is modified, use the `Plugin reloader` to reload our plug
 
 # Unit tests
 See [test/README.md](test/README.md)
+
+# Development notes
+ - plugin skeleton was initially generated with `Plugin Builder`, but then refactored and cleaned up a little bit
+ - to recreate resource file (`resource.qrsc`) run:
+    ```
+    cd plugin/deep_segmentation_framework$
+    pyrcc5 -o resources.py resources.qrc
+    ```
+   Though I'm not sure if this file is even needed anymore
+ - 
 
 # Model requirements
 ONNX models are supported.
