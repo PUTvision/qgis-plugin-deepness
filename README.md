@@ -35,6 +35,7 @@ See [test/README.md](test/README.md)
 
 # Development notes
  - plugin skeleton was initially generated with `Plugin Builder`, but then refactored and cleaned up a little bit
+ - Before release: change version number in `metadata.txt` and in docs (?)
  - to recreate resource file (`resource.qrsc`) run:
     ```
     cd plugin/deep_segmentation_framework$
