@@ -73,7 +73,7 @@ class MapProcessor(QgsTask):
         self.img_size_x_pixels = round(self.extended_extent.width() / self.rlayer_units_per_pixel)  # how many columns (x)
         self.img_size_y_pixels = round(self.extended_extent.height() / self.rlayer_units_per_pixel)  # how many rows (y)
 
-        # Coordinate of base image withing extended image (images for base_extent and extended_extent)
+        # Coordinate of base image within extended image (images for base_extent and extended_extent)
         self.base_extent_bbox_in_full_image = extent_utils.calculate_base_extent_bbox_in_full_image(
             image_size_y=self.img_size_y_pixels,
             base_extent=self.base_extent,
@@ -92,7 +92,7 @@ class MapProcessor(QgsTask):
             vlayer_mask=self.vlayer_mask,
             extended_extent=self.extended_extent,
             rlayer_units_per_pixel=self.rlayer_units_per_pixel,
-            image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])
+            image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])  # type: Optional[np.ndarray]
 
     def _assert_qgis_doesnt_need_reload(self):
         # If the plugin is somehow invalid, it cannot compare the enums correctly

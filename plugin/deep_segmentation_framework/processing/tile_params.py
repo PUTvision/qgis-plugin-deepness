@@ -1,3 +1,5 @@
+from typing import Optional
+
 import numpy as np
 import cv2
 
@@ -102,7 +104,7 @@ class TileParams:
                             ]
         return roi_slice_on_tile
 
-    def is_tile_within_mask(self, mask_img: np.ndarray):
+    def is_tile_within_mask(self, mask_img: Optional[np.ndarray]):
         """
         To check if tile
         :param mask_img:

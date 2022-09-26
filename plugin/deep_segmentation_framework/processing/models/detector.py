@@ -5,12 +5,13 @@ import cv2
 import numpy as np
 
 from deep_segmentation_framework.processing.models.model_base import ModelBase
+from deep_segmentation_framework.processing.processing_utils import BoundingBox
 
 
 @dataclass
-class BBox:
+class DetectorBBox:
     """
-    bounding box - rectangle area, describing position in pixels
+    bounding box - rectangle area, describing position in pixels in detection process
     """
     left_upper: Tuple[int, int]  # left upper corner (x, y)
     right_down: Tuple[int, int]  # bottom right corner (x, y)
@@ -20,6 +21,9 @@ class BBox:
         self.left_upper[1] += offset_y
         self.right_down[0] += offset_x
         self.right_down[1] += offset_y
+
+    def get_area(self):
+        return (self.right_down[0] - self.left_upper[0] + 1) * (self.right_down[1] - self.left_upper[0])
 
     def get_4_corners(self) -> List[Tuple]:
         """
@@ -33,10 +37,23 @@ class BBox:
             (self.right_down[0], self.left_upper[1]),
         ]
 
+    def get_slice(self):
+        """
+        Get slice describing bounding box position on an image
+        """
+        return self.to_bounding_box().get_slice()
+
+    def to_bounding_box(self) -> BoundingBox:
+        return BoundingBox(
+            x_min=self.left_upper[0],
+            x_max=self.right_down[0],
+            y_min=self.left_upper[1],
+            y_max=self.right_down[1])
+
 
 @dataclass
 class Detection:
-    bbox: BBox  # bounding box describing the detection rectangle
+    bbox: DetectorBBox  # bounding box describing the detection rectangle
     conf: float  # confidence of the detection
     clss: int  # class of the detected object
 
@@ -105,7 +122,7 @@ class Detector(ModelBase):
 
         for b, c, cl in zip(boxes, conf, classes):
             det = Detection(
-                bbox=BBox(left_upper=b[:2], right_down=b[2:]),
+                bbox=DetectorBBox(left_upper=b[:2], right_down=b[2:]),
                 conf=c,
                 clss=cl
             )
@@ -124,7 +141,6 @@ class Detector(ModelBase):
 
     @staticmethod
     def non_max_suppression_fast(boxes: np.ndarray, iou_threshold: float) -> np.ndarray:
-
         # initialize the list of picked indexes
         pick = []
         # grab the coordinates of the bounding boxes
@@ -167,7 +183,8 @@ class Detector(ModelBase):
             shape = self.outputs_layers[0].shape
 
             if len(shape) != 3:
-                raise Exception(f'Detection model output should have 3 dimensions: (B,detections,values). Has {shape}')
+                raise Exception(f'Detection model output should have 3 dimensions: (Batch_size, detections, values). '
+                                f'Actually has: {shape}')
 
             if shape[0] != 1:
                 raise Exception(f'Detection model can handle only 1-Batch outputs. Has {shape}')

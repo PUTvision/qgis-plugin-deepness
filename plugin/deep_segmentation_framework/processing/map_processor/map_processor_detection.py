@@ -38,6 +38,10 @@ class MapProcessorDetection(MapProcessorWithModel):
             confidence=params.confidence,
             iou_threshold=params.iou_threshold
         )
+        self._all_detections = None
+
+    def get_all_detections(self) -> List[Detection]:
+        return self._all_detections
 
     def _run(self) -> MapProcessingResult:
         all_bounding_boxes = []  # type: List[Detection]
@@ -50,7 +54,6 @@ class MapProcessorDetection(MapProcessorWithModel):
 
         if len(all_bounding_boxes) > 0:
             all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
-
             all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_suppressed)
         else:
             all_bounding_boxes_restricted = []
@@ -58,26 +61,32 @@ class MapProcessorDetection(MapProcessorWithModel):
         self._create_vlayer_for_output_bounding_boxes(all_bounding_boxes_restricted)
 
         result_message = self._create_result_message(all_bounding_boxes_restricted)
+        self._all_detections = all_bounding_boxes_restricted
         return MapProcessingResultSuccess(result_message)
 
-    def limit_bounding_boxes_to_processed_area(self, bounding_boxes):
+    def limit_bounding_boxes_to_processed_area(self, bounding_boxes: List[Detection]) -> List[Detection]:
         """
         Limit all bounding boxes to the constrained area that we process.
         E.g. if we are detecting peoples in a circle, we don't want to count peoples in the entire rectangle
 
-        # TODO! implement!
-
         :return:
         """
+        bounding_boxes_restricted = []
+        for det in bounding_boxes:
+            # if bounding box is not in the area_mask_img (at least in some percentage) - remove it
+            if self.area_mask_img:
+                det_slice = det.bbox.get_slice()
+                area_subimg = self.area_mask_img[det_slice]
+                pixels_in_area = np.count_nonzero(area_subimg)
+            else:
+                det_bounding_box = det.bbox.to_bounding_box()
+                pixels_in_area = self.base_extent_bbox_in_full_image.calculate_overlap_in_pixels(det_bounding_box)
+            total_pixels = det.bbox.get_area()
+            coverage = pixels_in_area / total_pixels
+            if coverage > 0.5:  # some arbitrary value, 50% seems reasonable
+                bounding_boxes_restricted.append(det)
 
-        # self.area_mask_img = processing_utils.create_area_mask_image(
-        #     vlayer_mask=self.vlayer_mask,
-        #     extended_extent=self.extended_extent,
-        #     rlayer_units_per_pixel=self.rlayer_units_per_pixel,
-        #     image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])
-
-        # if bounding box is not in the area_mask_img (at least in some percentage) - remove it
-        return bounding_boxes
+        return bounding_boxes_restricted
 
     def _create_result_message(self, bounding_boxes: List[Detection]) -> str:
         channels = self._get_indexes_of_model_output_channels_to_create()

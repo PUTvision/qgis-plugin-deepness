@@ -93,7 +93,7 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
             # if there is one band, then there is probably more "bands" hidden in a more complex data type (e.g. RGBA)
             data_type = rlayer.dataProvider().dataType(1)
             if data_type in [Qgis.DataType.Byte, Qgis.DataType.UInt16, Qgis.DataType.Int16,
-                             Qgis.DataType.Float16, Qgis.DataType.Float32]:
+                             Qgis.DataType.Float32]:
                 image_channel = ImageChannelStandaloneBand(
                     band_number=1,
                     name=rlayer.bandName(1))
