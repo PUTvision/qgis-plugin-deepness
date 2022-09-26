@@ -74,7 +74,7 @@ def get_tile_image(
     data_provider = rlayer.dataProvider()
     if data_provider is None:
         raise Exception("Somehow invalid rlayer!")
-    if hasattr(QgsRasterDataProvider, 'enableProviderResampling'):
+    if hasattr(data_provider, 'enableProviderResampling'):
         data_provider.enableProviderResampling(True)
     original_resampling_method = data_provider.zoomedInResamplingMethod()
     data_provider.setZoomedInResamplingMethod(data_provider.ResamplingMethod.Bilinear)
