@@ -22,6 +22,7 @@
  ***************************************************************************/
 """
 import os
+import traceback
 
 from qgis.PyQt.QtWidgets import QMessageBox
 
@@ -57,8 +58,7 @@ class DeepSegmentationFramework:
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface: QgisInterface):
-        """Constructor.
-
+        """
         :param iface: An interface instance that will be passed to this class
             which provides the hook by which you can manipulate the QGIS
             application at run time.
@@ -330,13 +330,21 @@ class DeepSegmentationFramework:
     def _map_processor_finished(self, result: MapProcessingResult):
         if isinstance(result, MapProcessingResultFailed):
             msg = f'Error! Processing error: "{result.message}"!'
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical, duration=14)
+            if result.exception is not None:
+                trace = '\n'.join(traceback.format_tb(result.exception.__traceback__)[-1:])
+                msg = f'{msg}\n\n\n' \
+                      f'Details: ' \
+                      f'{str(result.exception.__class__.__name__)} - {result.exception}\n' \
+                      f'Last Traceback: \n' \
+                      f'{trace}'
+                QMessageBox.critical(self.dockwidget, "Unhandled exception", msg)
         elif isinstance(result, MapProcessingResultCanceled):
             msg = f'Info! Processing canceled by user!'
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Info)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Info, duration=7)
         elif isinstance(result, MapProcessingResultSuccess):
             msg = 'Processing finished!'
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Success)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Success, duration=3)
             message_to_show = result.message
             QMessageBox.information(self.dockwidget, "Processing Result", message_to_show)
         self._map_processor = None

@@ -23,6 +23,7 @@ pip install -r requirements.txt
 ```
  - Run QGis in the venv:
 ```
+export IS_DEBUG=true  # to enable some debugging options
 qgis
 ```
  - Enable `Deep Segmentation Framework` the plugin in the `Plugins -> Manage and install plugins`

@@ -25,8 +25,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>416</width>
-         <height>1317</height>
+         <width>434</width>
+         <height>1308</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -39,6 +39,24 @@
         <property name="bottomMargin">
          <number>0</number>
         </property>
+        <item>
+         <widget class="QLabel" name="label_debugModeWarning">
+          <property name="font">
+           <font>
+            <pointsize>9</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
+           </font>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">color:rgb(198, 70, 0)</string>
+          </property>
+          <property name="text">
+           <string>WARNING: Running plugin in DEBUG mode
+(because env variable IS_DEBUG=true)</string>
+          </property>
+         </widget>
+        </item>
         <item>
          <widget class="QgsCollapsibleGroupBox" name="mGroupBox_3">
           <property name="sizePolicy">
