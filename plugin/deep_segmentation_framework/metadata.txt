@@ -27,7 +27,7 @@ tags=segmentation
 
 homepage=http://homepage
 category=Plugins
-icon=icon.png
+icon=images/icon.png
 # experimental flag
 experimental=True
 

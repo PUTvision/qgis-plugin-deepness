@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/plugins/deep_segmentation_framework" >
-        <file>icon.png</file>
+        <file>images/icon.png</file>
     </qresource>
 </RCC>

@@ -1,4 +1,4 @@
-# ![dsf_logo](./plugin/deep_segmentation_framework/icon.png) QGIS: Deep Segmentation Framework
+# ![dsf_logo](plugin/deep_segmentation_framework/images/icon.png) QGIS: Deep Segmentation Framework
 ![main](https://github.com/PUTvision/qgis-deep-segmentation-framework/actions/workflows/python-app.yml/badge.svg)
 [![GitHub contributors](https://img.shields.io/github/contributors/PUTvision/qgis-deep-segmentation-framework)](https://github.com/PUTvision/qgis-deep-segmentation-framework/graphs/contributors)
 [![GitHub stars](https://img.shields.io/github/stars/PUTvision/qgis-deep-segmentation-framework)](https://github.com/PUTvision/qgis-deep-segmentation-framework/stargazers)
