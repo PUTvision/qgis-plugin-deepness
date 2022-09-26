@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    runs-on: [ ubuntu-21.04, ubuntu-22.04]
 
     steps:
     - uses: actions/checkout@v3
@@ -20,9 +20,11 @@ jobs:
         sudo apt update
     - name: Install qgis
       run: |
+        export DEBIAN_FRONTEND=noninteractive && apt install -yq keyboard-configuration
         sudo apt install -yq qgis
     - name: Install dependencies
       run: |
+        sudo apt install -yq python3-pip xvfb
         pip install --upgrade pip
         pip install --upgrade -r requriements.txt
         pip install --upgrade -r requriements_development.txt
