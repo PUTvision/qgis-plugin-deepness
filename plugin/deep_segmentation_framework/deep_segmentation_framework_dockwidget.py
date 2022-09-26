@@ -399,7 +399,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             params = self.get_inference_parameters()
         except OperationFailedException as e:
             msg = str(e)
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning, duration=7)
             QMessageBox.critical(self, "Error!", msg)
             return
 
