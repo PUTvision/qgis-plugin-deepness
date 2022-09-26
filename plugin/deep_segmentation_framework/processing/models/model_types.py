@@ -3,15 +3,19 @@ from dataclasses import dataclass
 
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
+from deep_segmentation_framework.common.processing_parameters.regression_parameters import RegressionParameters
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.processing.map_processor.map_processor_detection import MapProcessorDetection
+from deep_segmentation_framework.processing.map_processor.map_processor_regression import MapProcessorRegression
 from deep_segmentation_framework.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deep_segmentation_framework.processing.models.detector import Detector
+from deep_segmentation_framework.processing.models.regressor import Regressor
 from deep_segmentation_framework.processing.models.segmentor import Segmentor
 
 
 class ModelType(enum.Enum):
     SEGMENTATION = Segmentor.get_class_display_name()
+    REGRESSION = Regressor.get_class_display_name()
     DETECTION = Detector.get_class_display_name()
 
 
@@ -30,6 +34,12 @@ class ModelDefinition:
                 model_class=Segmentor,
                 parameters_class=SegmentationParameters,
                 map_processor_class=MapProcessorSegmentation,
+            ),
+            cls(
+                model_type=ModelType.REGRESSION,
+                model_class=Regressor,
+                parameters_class=RegressionParameters,
+                map_processor_class=MapProcessorRegression,
             ),
             cls(
                 model_type=ModelType.DETECTION,

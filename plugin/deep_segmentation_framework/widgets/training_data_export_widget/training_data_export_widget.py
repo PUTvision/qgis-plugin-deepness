@@ -1,7 +1,6 @@
 import os
 
-from PyQt5.QtWidgets import QFileDialog
-
+from qgis.PyQt.QtWidgets import QFileDialog
 from qgis.PyQt import QtWidgets, uic
 from qgis.core import QgsProject
 from qgis.core import QgsMapLayerProxyModel

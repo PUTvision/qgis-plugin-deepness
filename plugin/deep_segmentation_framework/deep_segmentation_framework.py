@@ -23,7 +23,7 @@
 """
 import os
 
-from PyQt5.QtWidgets import QMessageBox
+from qgis.PyQt.QtWidgets import QMessageBox
 
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters

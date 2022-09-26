@@ -1,5 +1,6 @@
 import os
 
+from qgis.PyQt.QtWidgets import QWidget
 from qgis.core import QgsVectorLayer, QgsProject
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsApplication
 from qgis.core import QgsRasterLayer
@@ -11,12 +12,20 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_DATA_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, 'data'))
 
 
-def get_dummy_model_path():
+def get_dummy_segmentation_model_path():
     """
     Get path of a dummy onnx model. See details in README in model directory.
     Model used for unit tests processing purposes
     """
-    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_model.onnx')
+    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_model.onnx')
+
+
+def get_dummy_regression_model_path():
+    """
+    Get path of a dummy onnx model. See details in README in model directory.
+    Model used for unit tests processing purposes
+    """
+    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_regression_model.onnx')
 
 
 def get_dummy_fotomap_small_path():
@@ -102,6 +111,32 @@ def create_default_input_channels_mapping_for_google_satellite_bands():
         ]
     )
     return channels_mapping
+
+
+class SignalCollector(QWidget):
+    """
+    Allows to intercept a signal and collect its data during unit testing
+    """
+
+    def __init__(self, signal_to_collect):
+        super().__init__()
+        self.was_called = False
+        self.signal_args = None
+        self.signal_kwargs = None
+        signal_to_collect.connect(self.any_slot)
+
+    def any_slot(self, *args, **kwargs):
+        self.signal_kwargs = kwargs
+        self.signal_args = args
+        self.was_called = True
+
+    def get_first_arg(self):
+        assert self.was_called
+        if self.signal_args:
+            return self.signal_args[0]
+        if self.signal_kwargs:
+            return list(self.signal_kwargs.values())[0]
+        raise Exception("No argument were provided for the signal!")
 
 
 def init_qgis():

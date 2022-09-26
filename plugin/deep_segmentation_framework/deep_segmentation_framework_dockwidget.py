@@ -25,8 +25,7 @@ import logging
 import os
 from typing import Optional
 
-from PyQt5.QtWidgets import QMessageBox
-
+from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
@@ -40,6 +39,7 @@ from deep_segmentation_framework.common.config_entry_key import ConfigEntryKey
 from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
 from deep_segmentation_framework.common.errors import OperationFailedException
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
+from deep_segmentation_framework.common.processing_parameters.regression_parameters import RegressionParameters
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
     ProcessedAreaType, ModelOutputFormat
@@ -68,7 +68,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def __init__(self, iface, parent=None):
         super(DeepSegmentationFrameworkDockWidget, self).__init__(parent)
         self.iface = iface
-        self._model_wrapper = None  # type: Optional[ModelBase]
+        self._model = None  # type: Optional[ModelBase]
         self.setupUi(self)
 
         self._input_channels_mapping_widget = InputChannelsMappingWidget(self)
@@ -87,13 +87,14 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if input_layer_id and input_layer_id in layers:
                 self.mMapLayerComboBox_inputLayer.setLayer(layers[input_layer_id])
 
+            processed_area_type_txt = ConfigEntryKey.PROCESSED_AREA_TYPE.get()
+            self.comboBox_processedAreaSelection.setCurrentText(processed_area_type_txt)
+
             model_type_txt = ConfigEntryKey.MODEL_TYPE.get()
             self.comboBox_modelType.setCurrentText(model_type_txt)
 
             model_output_format_txt = ConfigEntryKey.MODEL_OUTPUT_FORMAT.get()
             self.comboBox_modelOutputFormat.setCurrentText(model_output_format_txt)
-
-            self.comboBox_outputFormatClassNumber.setCurrentIndex(ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.get())
 
             self._input_channels_mapping_widget.load_ui_from_config()
             self._training_data_export_widget.load_ui_from_config()
@@ -103,6 +104,9 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if model_file_path:
                 self.lineEdit_modelPath.setText(model_file_path)
                 self._load_model_and_display_info(abort_if_no_file_path=True)  # to prepare other ui components
+
+            # needs to be loaded after the model is set up
+            self.comboBox_outputFormatClassNumber.setCurrentIndex(ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.get())
 
             self.doubleSpinBox_resolution_cm_px.setValue(ConfigEntryKey.PREPROCESSING_RESOLUTION.get())
             self.spinBox_processingTileOverlapPercentage.setValue(ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.get())
@@ -118,6 +122,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 ConfigEntryKey.SEGMENTATION_REMOVE_SMALL_SEGMENT_ENABLED.get())
             self._set_remove_small_segment_enabled()
 
+            self.doubleSpinBox_regressionScaling.setValue(ConfigEntryKey.REGRESSION_OUTPUT_SCALING.get())
+
             self.doubleSpinBox_confidence.setValue(ConfigEntryKey.DETECTION_CONFIDENCE.get())
             self.doubleSpinBox_iouScore.setValue(ConfigEntryKey.DETECTION_IOU.get())
         except:
@@ -127,6 +133,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ConfigEntryKey.MODEL_FILE_PATH.set(self.lineEdit_modelPath.text())
         ConfigEntryKey.INPUT_LAYER_ID.set(self._get_input_layer_id())
         ConfigEntryKey.MODEL_TYPE.set(self.comboBox_modelType.currentText())
+        ConfigEntryKey.PROCESSED_AREA_TYPE.set(self.comboBox_processedAreaSelection.currentText())
 
         model_output_format = self.comboBox_modelOutputFormat.currentText()
         ConfigEntryKey.MODEL_OUTPUT_FORMAT.set(model_output_format)
@@ -141,6 +148,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ConfigEntryKey.SEGMENTATION_REMOVE_SMALL_SEGMENT_ENABLED.set(
             self.checkBox_removeSmallAreas.isChecked())
         ConfigEntryKey.SEGMENTATION_REMOVE_SMALL_SEGMENT_SIZE.set(self.spinBox_dilateErodeSize.value())
+
+        ConfigEntryKey.REGRESSION_OUTPUT_SCALING.set(self.doubleSpinBox_regressionScaling.value())
 
         ConfigEntryKey.DETECTION_CONFIDENCE.set(self.doubleSpinBox_confidence.value())
         ConfigEntryKey.DETECTION_IOU.set(self.doubleSpinBox_iouScore.value())
@@ -229,16 +238,16 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         try:
             model_definition = self.get_selected_model_class_definition()
             model_class = model_definition.model_class
-            self._model_wrapper = model_class(file_path)
-            self._model_wrapper._check_loaded_model_outputs()
-            input_0_shape = self._model_wrapper.get_input_shape()
+            self._model = model_class(file_path)
+            self._model.check_loaded_model_outputs()
+            input_0_shape = self._model.get_input_shape()
             txt += f'Input shape: {input_0_shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
             input_size_px = input_0_shape[-1]
 
             # TODO idk how variable input will be handled
             self.spinBox_tileSize_px.setValue(input_size_px)
             self.spinBox_tileSize_px.setEnabled(False)
-            self._input_channels_mapping_widget.set_model(self._model_wrapper)
+            self._input_channels_mapping_widget.set_model(self._model)
         except Exception as e:
             txt = "Error! Failed to load the model!\n" \
                   "Model may be not usable."
@@ -255,10 +264,10 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _update_model_output_format_mapping(self):
         self.comboBox_outputFormatClassNumber: QComboBox
         self.comboBox_outputFormatClassNumber.clear()
-        if not self._model_wrapper:
+        if not self._model:
             return
 
-        for output_number in range(self._model_wrapper.get_number_of_output_channels()):
+        for output_number in range(self._model.get_number_of_output_channels()):
             name = f'Output channel {output_number}'  # TODO: potentially use channels names from model metaparameters
             self.comboBox_outputFormatClassNumber.addItem(name)
 
@@ -296,12 +305,14 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def get_inference_parameters(self):
         map_processing_parameters = self._get_map_processing_parameters()
 
-        if self._model_wrapper is None:
+        if self._model is None:
             raise OperationFailedException("Please select and load a model first!")
 
         model_type = self.get_selected_model_class_definition().model_type
         if model_type == ModelType.SEGMENTATION:
             params = self.get_segmentation_parameters(map_processing_parameters)
+        elif model_type == ModelType.REGRESSION:
+            params = self.get_regression_parameters(map_processing_parameters)
         elif model_type == ModelType.DETECTION:
             params = self.get_detection_parameters(map_processing_parameters)
         else:
@@ -317,7 +328,15 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             **map_processing_parameters.__dict__,
             postprocessing_dilate_erode_size=postprocessing_dilate_erode_size,
             pixel_classification__probability_threshold=self._get_pixel_classification_threshold(),
-            model=self._model_wrapper,
+            model=self._model,
+        )
+        return params
+
+    def get_regression_parameters(self, map_processing_parameters: MapProcessingParameters) -> RegressionParameters:
+        params = RegressionParameters(
+            **map_processing_parameters.__dict__,
+            output_scaling=self.doubleSpinBox_regressionScaling.value(),
+            model=self._model,
         )
         return params
 
@@ -327,7 +346,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             **map_processing_parameters.__dict__,
             confidence=self.doubleSpinBox_confidence.value(),
             iou_threshold=self.doubleSpinBox_iouScore.value(),
-            model=self._model_wrapper,
+            model=self._model,
         )
 
         return params
