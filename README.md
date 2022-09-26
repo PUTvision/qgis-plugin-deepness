@@ -33,6 +33,16 @@ Every time plugin code is modified, use the `Plugin reloader` to reload our plug
 # Unit tests
 See [test/README.md](test/README.md)
 
+# Development notes
+ - plugin skeleton was initially generated with `Plugin Builder`, but then refactored and cleaned up a little bit
+ - to recreate resource file (`resource.qrsc`) run:
+    ```
+    cd plugin/deep_segmentation_framework$
+    pyrcc5 -o resources.py resources.qrc
+    ```
+   Though I'm not sure if this file is even needed anymore
+ - 
+
 # Model requirements
 ONNX models are supported.
 Model should have one input of size (BATCH_SIZE, CHANNELS, SIZE_PX, SIZE_PX).
