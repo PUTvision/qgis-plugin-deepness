@@ -10,7 +10,15 @@ class ModelBase:
     def __init__(self, model_file_path: str):
         self.model_file_path = model_file_path
 
-        self.sess = ort.InferenceSession(self.model_file_path)
+        options = ort.SessionOptions()
+        options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+
+        providers = [
+            'CUDAExecutionProvider',
+            'CPUExecutionProvider'
+        ]
+
+        self.sess = ort.InferenceSession(self.model_file_path, options=options, providers=providers)
         inputs = self.sess.get_inputs()
         if len(inputs) > 1:
             raise Exception("ONNX model: unsupported number of inputs")
