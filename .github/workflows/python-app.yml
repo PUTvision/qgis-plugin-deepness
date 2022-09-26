@@ -11,7 +11,11 @@ on:
 
 jobs:
   build:
-    runs-on: [ ubuntu-21.04, ubuntu-22.04]
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+            matrix:
+                os: [ubuntu-21.04, ubuntu-22.04]
 
     steps:
     - uses: actions/checkout@v3
