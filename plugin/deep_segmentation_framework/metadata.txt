@@ -4,13 +4,13 @@
 
 [general]
 name=Deep Segmentation Framework
-qgisMinimumVersion=3.0
+qgisMinimumVersion=3.10.14
 description=This plugin allows to perform segmentation with deep neural networks
-version=0.1
-author=Przemyslaw Aszkowski
+version=0.2.0
+author=Przemyslaw Aszkowski & Bartosz Ptak
 email=przemyslaw.aszkowski@gmail.com
 
-about=This plugin is a framework allowing to easily perform segmentation of fotomaps with custom neural network models
+about=This plugin is a framework allowing to easily perform segmentation, detection and regression on orthophotos with custom ONNX Neural Network models
 
 tracker=http://bugs
 repository=http://repo
@@ -23,7 +23,7 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=segmentation
+tags=segmentation,detectiom,classification,machine learning,onnx,neural network,deep learning
 
 homepage=http://homepage
 category=Plugins
@@ -44,4 +44,3 @@ Category of the plugin: Raster, Vector, Database or Web
 
 # If the plugin can run on QGIS Server.
 server=False
-

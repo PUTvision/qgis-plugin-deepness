@@ -90,8 +90,6 @@ class DeepSegmentationFramework:
         self.toolbar = self.iface.addToolBar(u'DeepSegmentationFramework')
         self.toolbar.setObjectName(u'DeepSegmentationFramework')
 
-        #print "** INITIALIZING DeepSegmentationFramework"
-
         self.pluginIsActive = False
         self.dockwidget = None
         self._map_processor = None
@@ -198,13 +196,9 @@ class DeepSegmentationFramework:
         if IS_DEBUG:
             self.run()
 
-    #--------------------------------------------------------------------------
-
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
         print('3) onClosePlugin')
-
-        #print "** CLOSING DeepSegmentationFramework"
 
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
@@ -221,8 +215,6 @@ class DeepSegmentationFramework:
         """Removes the plugin menu item and icon from QGIS GUI."""
         print('4) unload')
 
-        #print "** UNLOAD DeepSegmentationFramework"
-
         for action in self.actions:
             self.iface.removePluginMenu(
                 self.tr(u'&Deep Segmentation Framework'),
@@ -230,8 +222,6 @@ class DeepSegmentationFramework:
             self.iface.removeToolBarIcon(action)
         # remove the toolbar
         del self.toolbar
-
-    #--------------------------------------------------------------------------
 
     def _layers_changed(self, _):
         pass
@@ -242,8 +232,6 @@ class DeepSegmentationFramework:
 
         if not self.pluginIsActive:
             self.pluginIsActive = True
-
-            #print "** STARTING DeepSegmentationFramework"
 
             # dockwidget may not exist if:
             #    first run of plugin
