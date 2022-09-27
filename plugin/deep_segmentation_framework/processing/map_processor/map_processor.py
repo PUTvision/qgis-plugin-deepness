@@ -25,6 +25,16 @@ if IS_DEBUG:
 
 
 class MapProcessor(QgsTask):
+    """
+    Base class for processing the ortophoto with parameters received from the UI.
+
+    Actual processing is done in specialized child classes. Here we have the "core" functionality,
+    like iterating over single tiles.
+
+    Objects of this class are created and managed by the 'DeepSegmentationFramework'.
+    Work is done within QgsTask, for seamless integration with QGis GUI and logic.
+    """
+
     finished_signal = pyqtSignal(MapProcessingResult)  # error message if finished with error, empty string otherwise
     show_img_signal = pyqtSignal(object, str)  # request to show an image. Params: (image, window_name)
 

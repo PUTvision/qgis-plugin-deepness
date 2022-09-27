@@ -18,6 +18,10 @@ if IS_DEBUG:
 
 
 class MapProcessorSegmentation(MapProcessorWithModel):
+    """
+    MapProcessor specialized for Segmentation model (where each pixel is assigned to one class)
+    """
+
     def __init__(self,
                  params: SegmentationParameters,
                  **kwargs):

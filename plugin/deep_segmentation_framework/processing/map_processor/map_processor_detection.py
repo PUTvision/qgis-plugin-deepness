@@ -22,7 +22,8 @@ if IS_DEBUG:
 
 class MapProcessorDetection(MapProcessorWithModel):
     """
-    Process the entire map for the detection models, which produce bounding boxes
+    MapProcessor specialized for detecting objects (where there is a finite list of detected objects
+    of different classes, which area (bounding boxes) may overlap)
     """
 
     def __init__(self,

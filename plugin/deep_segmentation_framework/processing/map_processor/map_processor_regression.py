@@ -27,6 +27,10 @@ if IS_DEBUG:
 
 
 class MapProcessorRegression(MapProcessorWithModel):
+    """
+    MapProcessor specialized for Regression model (where each pixel has a value representing some feature intensity)
+    """
+
     def __init__(self,
                  params: RegressionParameters,
                  **kwargs):

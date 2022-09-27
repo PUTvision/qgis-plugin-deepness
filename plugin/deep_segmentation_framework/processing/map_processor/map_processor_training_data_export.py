@@ -19,6 +19,11 @@ if IS_DEBUG:
 
 
 class MapProcessorTrainingDataExport(MapProcessor):
+    """
+    Map Processor specialized in exporting training data, not doing any prediction with model.
+    Exports tiles for the ortophoto and a mask layer.
+    """
+
     def __init__(self,
                  params: TrainingDataExportParameters,
                  **kwargs):

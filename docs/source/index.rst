@@ -14,6 +14,7 @@ Home
    :maxdepth: 2
    :caption: For Users in QGis
 
+   main/main_features
    main/main_supported_versions
    main/main_installation
    main/main_ui_explanation
