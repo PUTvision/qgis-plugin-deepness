@@ -12,13 +12,8 @@ from qgis.core import QgsRectangle
 from qgis.core import QgsFeature, QgsGeometry, QgsPointXY
 from qgis.core import QgsUnitTypes
 
-
-from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
-
-if IS_DEBUG:
-    pass
 
 
 def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:

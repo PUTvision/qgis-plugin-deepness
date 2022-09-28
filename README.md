@@ -23,6 +23,7 @@ pip install -r requirements.txt
 ```
  - Run QGis in the venv:
 ```
+export IS_DEBUG=true  # to enable some debugging options
 qgis
 ```
  - Enable `Deep Segmentation Framework` the plugin in the `Plugins -> Manage and install plugins`
@@ -35,6 +36,7 @@ See [test/README.md](test/README.md)
 
 # Development notes
  - plugin skeleton was initially generated with `Plugin Builder`, but then refactored and cleaned up a little bit
+ - Before release: change version number in `metadata.txt` and in docs (?)
  - to recreate resource file (`resource.qrsc`) run:
     ```
     cd plugin/deep_segmentation_framework$
