@@ -6,7 +6,6 @@ import numpy as np
 from qgis.core import QgsVectorLayer, QgsProject, QgsGeometry, QgsFeature
 
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
-from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.processing import processing_utils
 from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResultCanceled, \
     MapProcessingResultSuccess, MapProcessingResult
@@ -16,13 +15,11 @@ from deep_segmentation_framework.processing.models.detector import Detector
 from deep_segmentation_framework.processing.tile_params import TileParams
 from deep_segmentation_framework.processing.models.detector import Detection
 
-if IS_DEBUG:
-    pass
-
 
 class MapProcessorDetection(MapProcessorWithModel):
     """
-    Process the entire map for the detection models, which produce bounding boxes
+    MapProcessor specialized for detecting objects (where there is a finite list of detected objects
+    of different classes, which area (bounding boxes) may overlap)
     """
 
     def __init__(self,

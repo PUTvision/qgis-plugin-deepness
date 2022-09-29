@@ -5,11 +5,7 @@ import cv2
 
 from qgis.core import QgsRectangle
 
-from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import MapProcessingParameters
-
-if IS_DEBUG:
-    from matplotlib import pyplot as plt
 
 
 class TileParams:

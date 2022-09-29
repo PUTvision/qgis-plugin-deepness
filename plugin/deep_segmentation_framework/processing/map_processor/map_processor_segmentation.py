@@ -13,11 +13,12 @@ from deep_segmentation_framework.processing.map_processor.map_processing_result 
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
 from deep_segmentation_framework.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 
-if IS_DEBUG:
-    pass
-
 
 class MapProcessorSegmentation(MapProcessorWithModel):
+    """
+    MapProcessor specialized for Segmentation model (where each pixel is assigned to one class)
+    """
+
     def __init__(self,
                  params: SegmentationParameters,
                  **kwargs):

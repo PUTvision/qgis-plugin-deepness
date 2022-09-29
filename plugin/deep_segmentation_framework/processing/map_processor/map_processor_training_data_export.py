@@ -8,17 +8,18 @@ from qgis.core import QgsProject
 from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
 from deep_segmentation_framework.processing import processing_utils
-from deep_segmentation_framework.common.defines import IS_DEBUG
 from deep_segmentation_framework.processing.map_processor.map_processing_result import MapProcessingResultSuccess, \
     MapProcessingResultCanceled
 from deep_segmentation_framework.processing.map_processor.map_processor import MapProcessor
 from deep_segmentation_framework.processing.tile_params import TileParams
 
-if IS_DEBUG:
-    pass
-
 
 class MapProcessorTrainingDataExport(MapProcessor):
+    """
+    Map Processor specialized in exporting training data, not doing any prediction with model.
+    Exports tiles for the ortophoto and a mask layer.
+    """
+
     def __init__(self,
                  params: TrainingDataExportParameters,
                  **kwargs):

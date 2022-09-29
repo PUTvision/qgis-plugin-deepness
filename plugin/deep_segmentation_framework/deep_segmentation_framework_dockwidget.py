@@ -13,7 +13,7 @@ from qgis.core import Qgis
 from qgis.PyQt.QtWidgets import QFileDialog
 
 from deep_segmentation_framework.common.config_entry_key import ConfigEntryKey
-from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME
+from deep_segmentation_framework.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
 from deep_segmentation_framework.common.errors import OperationFailedException
 from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
 from deep_segmentation_framework.common.processing_parameters.regression_parameters import RegressionParameters
@@ -54,6 +54,10 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self._create_connections()
         self._setup_misc_ui()
         self._load_ui_from_config()
+
+    def _show_debug_warning(self):
+        """ Show label with warning if we are running debug mode """
+        self.label_debugModeWarning.setVisible(IS_DEBUG)
 
     def _load_ui_from_config(self):
         layers = QgsProject.instance().mapLayers()
@@ -137,6 +141,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self._input_channels_mapping_widget.set_rlayer(self._get_input_layer())
 
     def _setup_misc_ui(self):
+        self._show_debug_warning()
         combobox = self.comboBox_processedAreaSelection
         for name in ProcessedAreaType.get_all_names():
             combobox.addItem(name)
@@ -371,7 +376,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             params = self.get_inference_parameters()
         except OperationFailedException as e:
             msg = str(e)
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning, duration=7)
             QMessageBox.critical(self, "Error!", msg)
             return
 

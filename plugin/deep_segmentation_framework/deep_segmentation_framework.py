@@ -1,4 +1,5 @@
 import os
+import traceback
 
 from qgis.PyQt.QtWidgets import QMessageBox
 
@@ -34,8 +35,7 @@ class DeepSegmentationFramework:
     """QGIS Plugin Implementation."""
 
     def __init__(self, iface: QgisInterface):
-        """Constructor.
-
+        """
         :param iface: An interface instance that will be passed to this class
             which provides the hook by which you can manipulate the QGIS
             application at run time.
@@ -228,25 +228,33 @@ class DeepSegmentationFramework:
             self.iface.addDockWidget(Qt.RightDockWidgetArea, self.dockwidget)
             self.dockwidget.show()
 
-    def _check_if_map_processing_parameters_are_correct(self, params: MapProcessingParameters):
+    def _are_map_processing_parameters_are_correct(self, params: MapProcessingParameters):
         if self._map_processor and self._map_processor.is_busy():
             msg = "Error! Processing already in progress! Please wait or cancel previous task."
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
-            return
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical, duration=7)
+            return False
 
         rlayer = QgsProject.instance().mapLayers()[params.input_layer_id]
         if rlayer is None:
             msg = "Error! Please select the layer to process first!"
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
-            return
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical, duration=7)
+            return False
 
         if isinstance(rlayer, QgsVectorLayer):
             msg = "Error! Please select a raster layer (vector layer selected)"
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
-            return
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical, duration=7)
+            return False
+
+        return True
+
+    def _display_processing_started_info(self):
+        msg = "Error! Please select the layer to process first!"
+        self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Info, duration=2)
 
     def _run_training_data_export(self, training_data_export_parameters: TrainingDataExportParameters):
-        self._check_if_map_processing_parameters_are_correct(training_data_export_parameters)
+        if not self._are_map_processing_parameters_are_correct(training_data_export_parameters):
+            return
+
         vlayer = None
 
         rlayer = QgsProject.instance().mapLayers()[training_data_export_parameters.input_layer_id]
@@ -262,9 +270,12 @@ class DeepSegmentationFramework:
         self._map_processor.finished_signal.connect(self._map_processor_finished)
         self._map_processor.show_img_signal.connect(self._show_img)
         QgsApplication.taskManager().addTask(self._map_processor)
+        self._display_processing_started_info()
 
     def _run_model_inference(self, params: MapProcessingParameters):
-        self._check_if_map_processing_parameters_are_correct(params)
+        if not self._are_map_processing_parameters_are_correct(params):
+            return
+
         vlayer = None
 
         rlayer = QgsProject.instance().mapLayers()[params.input_layer_id]
@@ -283,6 +294,7 @@ class DeepSegmentationFramework:
         self._map_processor.finished_signal.connect(self._map_processor_finished)
         self._map_processor.show_img_signal.connect(self._show_img)
         QgsApplication.taskManager().addTask(self._map_processor)
+        self._display_processing_started_info()
 
     @staticmethod
     def _show_img(img_rgb, window_name):
@@ -295,13 +307,21 @@ class DeepSegmentationFramework:
     def _map_processor_finished(self, result: MapProcessingResult):
         if isinstance(result, MapProcessingResultFailed):
             msg = f'Error! Processing error: "{result.message}"!'
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical, duration=14)
+            if result.exception is not None:
+                trace = '\n'.join(traceback.format_tb(result.exception.__traceback__)[-1:])
+                msg = f'{msg}\n\n\n' \
+                      f'Details: ' \
+                      f'{str(result.exception.__class__.__name__)} - {result.exception}\n' \
+                      f'Last Traceback: \n' \
+                      f'{trace}'
+                QMessageBox.critical(self.dockwidget, "Unhandled exception", msg)
         elif isinstance(result, MapProcessingResultCanceled):
             msg = f'Info! Processing canceled by user!'
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Info)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Info, duration=7)
         elif isinstance(result, MapProcessingResultSuccess):
             msg = 'Processing finished!'
-            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Success)
+            self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Success, duration=3)
             message_to_show = result.message
             QMessageBox.information(self.dockwidget, "Processing Result", message_to_show)
         self._map_processor = None
