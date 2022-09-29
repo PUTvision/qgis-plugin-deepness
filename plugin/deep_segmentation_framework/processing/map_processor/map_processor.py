@@ -20,9 +20,6 @@ from deep_segmentation_framework.processing.map_processor.map_processing_result 
     MapProcessingResultFailed
 from deep_segmentation_framework.processing.tile_params import TileParams
 
-if IS_DEBUG:
-    from matplotlib import pyplot as plt
-
 
 class MapProcessor(QgsTask):
     """
@@ -117,7 +114,7 @@ class MapProcessor(QgsTask):
         except Exception as e:
             logging.exception("Error occurred in MapProcessor:")
             msg = "Unhandled exception occurred. See Python Console for details"
-            self._processing_result = MapProcessingResultFailed(msg)
+            self._processing_result = MapProcessingResultFailed(msg, exception=e)
             if IS_DEBUG:
                 raise e
 
