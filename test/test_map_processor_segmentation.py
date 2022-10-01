@@ -77,6 +77,7 @@ def test_generic_processing_test__specified_extent_from_vlayer():
     model.process = model_process_mock
     model.get_number_of_channels = lambda: 2
     model.get_number_of_output_channels = lambda: 2
+    model.get_channel_name = lambda x: str(x)
 
     params = SegmentationParameters(
         resolution_cm_per_px=3,
@@ -111,6 +112,7 @@ def test_generic_processing_test__specified_extent_from_active_map_extent():
     model.process = model_process_mock
     model.get_number_of_channels = lambda: 2
     model.get_number_of_output_channels = lambda: 2
+    model.get_channel_name = lambda x: str(x)
 
     params = SegmentationParameters(
         resolution_cm_per_px=3,
