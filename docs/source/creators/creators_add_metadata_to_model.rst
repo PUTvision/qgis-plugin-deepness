@@ -11,7 +11,7 @@ List of parameters parsed by plugin
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | Parameter          |  Type |            Example                    | Description                                                 |
 +====================+=======+=======================================+=============================================================+
-| model_type         |  str  |   :code:`'segmenter'`                  | Types of models available: segmenter, regressor, detector.  |
+| model_type         |  str  |   :code:`'segmenter'`                 | Types of models available: segmenter, regressor, detector.  |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | class_names        |  dict | :code:`{0: 'background', 1: 'field'}` | A dictionary that maps a class id to its name.              |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
