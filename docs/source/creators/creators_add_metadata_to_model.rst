@@ -15,23 +15,23 @@ List of parameters parsed by plugin
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | class_names        |  dict | :code:`{0: 'background', 1: 'field'}` | A dictionary that maps a class id to its name.              |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| resolution         | float |        :code:`100`                    |                                                             |
+| resolution         | float |        :code:`100`                    | Real-world resolution of images (centimeters per pixel).    |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| tiles_size         |  int  |        :code:`512`                    |                                                             |
+| tiles_size         |  int  |        :code:`512`                    | What size (in pixels) is the tile to crop.                  |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| tiles_overlap      |  int  |         :code:`40`                    |                                                             |
+| tiles_overlap      |  int  |         :code:`40`                    | How many percent of the image size overlap.                 |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| seg_argmax         |  bool |      :code:`False`                    |                                                             |
+| seg_argmax         |  bool |      :code:`False`                    | Segmenter: select only the most probable class.             |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| seg_thresh         | float |       :code:`0.5`                     |                                                             |
+| seg_thresh         | float |       :code:`0.5`                     | Segmenter: class confidence threshold.                      |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| seg_small_segment  |  int  |       :code:`7`                       |                                                             |
+| seg_small_segment  |  int  |       :code:`7`                       | Segmenter: remove small occurrences of the class.           |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| reg_output_scaling | float |       :code:`1.0`                     |                                                             |
+| reg_output_scaling | float |       :code:`1.0`                     | Regressor: scaling factor for the model output.             |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| det_conf           | float |       :code:`0.6`                     |                                                             |
+| det_conf           | float |       :code:`0.6`                     | Detector: object confidence threshold.                      |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| det_iou_thresh     | float |       :code:`0.4`                     |                                                             |
+| det_iou_thresh     | float |       :code:`0.4`                     | Detector: IOU threshold for NMS.                            |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
 
 
