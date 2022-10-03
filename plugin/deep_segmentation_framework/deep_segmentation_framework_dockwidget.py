@@ -270,6 +270,23 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if value is not None:
             self.doubleSpinBox_iouScore.setValue(value)
 
+    def _load_model_with_type_from_metadata(self, model_class_from_ui, file_path):
+        """
+        If model has model_type in metadata - use this type to create proper model class.
+        Otherwise model_class_from_ui will be used
+        """
+        model_class = model_class_from_ui
+
+        model_type_str_from_metadata = ModelBase.get_model_type_from_metadata(file_path)
+        if model_type_str_from_metadata is not None:
+            model_type = ModelType(model_type_str_from_metadata)
+            model_class = ModelDefinition.get_definition_for_type(model_type).model_class
+            self.comboBox_modelType.setCurrentText(model_type.value)
+
+        print(f'{model_type_str_from_metadata = }, {model_class = }')
+
+        model = model_class(file_path)
+        return model
 
     def _load_model_and_display_info(self, abort_if_no_file_path: bool = False):
         """
@@ -285,7 +302,9 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         try:
             model_definition = self.get_selected_model_class_definition()
             model_class = model_definition.model_class
-            self._model = model_class(file_path)
+            self._model = self._load_model_with_type_from_metadata(
+                model_class_from_ui=model_class,
+                file_path=file_path)
             self._model.check_loaded_model_outputs()
             input_0_shape = self._model.get_input_shape()
             txt += f'Input shape: {input_0_shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
@@ -296,6 +315,8 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.spinBox_tileSize_px.setEnabled(False)
             self._input_channels_mapping_widget.set_model(self._model)
         except Exception as e:
+            if IS_DEBUG:
+                raise e
             txt = "Error! Failed to load the model!\n" \
                   "Model may be not usable."
             logging.exception(txt)

@@ -32,6 +32,11 @@ class ModelBase:
 
         self.outputs_layers = self.sess.get_outputs()
 
+    @classmethod
+    def get_model_type_from_metadata(cls, model_file_path) -> Optional[str]:
+        model = cls(model_file_path)
+        return model.get_metadata_model_type()
+
     def get_input_shape(self):
         """
         Get shape of the input for the model
