@@ -126,6 +126,23 @@
            <string>ONNX Model</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_7">
+           <item row="1" column="1">
+            <widget class="QLineEdit" name="lineEdit_modelPath">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="toolTip">
+              <string>Path to the model file</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>Model file path:</string>
+             </property>
+            </widget>
+           </item>
            <item row="1" column="2">
             <widget class="QPushButton" name="pushButton_browseModelPath">
              <property name="enabled">
@@ -136,14 +153,28 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
+           <item row="0" column="0">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>Model type:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QComboBox" name="comboBox_modelType">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Type of the model (model class) which you want to use.&lt;br/&gt;You should obtain this information along with the model file.&lt;/p&gt;&lt;p&gt;Please refer to the plugin documentation for more details.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
             <widget class="QLabel" name="label_3">
              <property name="text">
               <string>Model info:</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="1" rowspan="2" colspan="2">
+           <item row="4" column="1" rowspan="2" colspan="2">
             <widget class="QLabel" name="label_modelInfo">
              <property name="font">
               <font>
@@ -161,46 +192,29 @@
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QLineEdit" name="lineEdit_modelPath">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="toolTip">
-              <string>Path to the model file</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0" colspan="3">
-            <widget class="QPushButton" name="pushButton_reloadModel">
-             <property name="toolTip">
-              <string>Reload the model given in the line edit above</string>
-             </property>
-             <property name="text">
-              <string>Reload Model</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_4">
-             <property name="text">
-              <string>Model file path:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label_5">
-             <property name="text">
-              <string>Model type:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QComboBox" name="comboBox_modelType">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Type of the model (model class) which you want to use.&lt;br/&gt;You should obtain this information along with the model file.&lt;/p&gt;&lt;p&gt;Please refer to the plugin documentation for more details.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-            </widget>
+           <item row="3" column="0" colspan="3">
+            <layout class="QHBoxLayout" name="horizontalLayout_10">
+             <item>
+              <widget class="QPushButton" name="pushButton_reloadModel">
+               <property name="toolTip">
+                <string>Reload the model given in the line edit above</string>
+               </property>
+               <property name="text">
+                <string>Reload Model</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="pushButton_loadDefaultModelParameters">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Load default model parameters.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;ONNX Models can have metadata, which can be parsed and used to set default value for fields in UI, w.g. for tile_size or confidence threshold&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Load default parameters</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
           </layout>
          </widget>

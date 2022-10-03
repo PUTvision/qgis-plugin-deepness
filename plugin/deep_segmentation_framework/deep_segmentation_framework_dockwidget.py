@@ -179,6 +179,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
         self.comboBox_modelType.currentIndexChanged.connect(self._model_type_changed)
         self.pushButton_reloadModel.clicked.connect(self._load_model_and_display_info)
+        self.pushButton_loadDefaultModelParameters.clicked.connect(self._load_default_model_parameters)
         self.mMapLayerComboBox_inputLayer.layerChanged.connect(self._rlayer_updated)
         self.checkBox_pixelClassEnableThreshold.stateChanged.connect(self._set_probability_threshold_enabled)
         self.checkBox_removeSmallAreas.stateChanged.connect(self._set_remove_small_segment_enabled)
@@ -226,6 +227,13 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.lineEdit_modelPath.setText(file_path)
             self._load_model_and_display_info()
 
+    def _load_default_model_parameters(self):
+        """
+        Load the default parameters from model metadata
+        """
+        self._model.
+
+
     def _load_model_and_display_info(self, abort_if_no_file_path: bool = False):
         """
         Tries to load the model and display its message.
@@ -270,7 +278,7 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             return
 
         for output_number in range(self._model.get_number_of_output_channels()):
-            name = f'Output channel {output_number}'  # TODO: potentially use channels names from model metaparameters
+            name = f'{output_number} - {self._model.get_channel_name(output_number)}'
             self.comboBox_outputFormatClassNumber.addItem(name)
 
     def get_mask_layer_id(self):
