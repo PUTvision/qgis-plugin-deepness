@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import onnxruntime as ort
 
@@ -40,6 +41,22 @@ class ModelBase:
         Get number of input pixels in x and y direction (the same value)
         """
         return self.input_shape[-2:]
+
+    def get_channel_name(self, channel_id: int) -> str:
+        """
+        Get channel name by id if exists in model metadata
+        """
+        meta = self.sess.get_modelmeta()
+        channel_id_str = str(channel_id)
+        default_return = f'channel_{channel_id_str}'
+
+        if 'class_names' in meta.custom_metadata_map:
+            class_names = json.loads(meta.custom_metadata_map['class_names'])
+
+            return class_names.get(channel_id_str, default_return)
+        else:
+            return default_return
+
 
     def get_number_of_channels(self):
         return self.input_shape[-3]

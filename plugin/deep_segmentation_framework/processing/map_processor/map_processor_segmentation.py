@@ -69,7 +69,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             pixels_count = counts_map.get(channel_id, 0)
             area = pixels_count * self.params.resolution_m_per_px**2
             area_percentage = area / total_area * 100
-            txt += f' - class {channel_id}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
+            txt += f' - {self.model.get_channel_name(channel_id)}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
 
         return txt
 
@@ -99,7 +99,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             else:
                 pass  # just nothing, we already have an empty list of features
 
-            vlayer = QgsVectorLayer("multipolygon", f"channel_{channel_id}", "memory")
+            vlayer = QgsVectorLayer("multipolygon", self.model.get_channel_name(channel_id), "memory")
             vlayer.setCrs(self.rlayer.crs())
             prov = vlayer.dataProvider()
 

@@ -105,7 +105,7 @@ class MapProcessorDetection(MapProcessorWithModel):
             else:
                 counts_percentage = 0
 
-            txt += f' - class {channel_id}: counts = {counts} ({counts_percentage:.2f} %)\n'
+            txt += f' - {self.model.get_channel_name(channel_id)}: counts = {counts} ({counts_percentage:.2f} %)\n'
 
         return txt
 
@@ -132,7 +132,7 @@ class MapProcessorDetection(MapProcessorWithModel):
                 feature.setGeometry(geometry)
                 features.append(feature)
 
-            vlayer = QgsVectorLayer("multipolygon", f"channel_{channel_id}", "memory")
+            vlayer = QgsVectorLayer("multipolygon", self.model.get_channel_name(channel_id), "memory")
             vlayer.setCrs(self.rlayer.crs())
             prov = vlayer.dataProvider()
 
