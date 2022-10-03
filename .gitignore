@@ -335,3 +335,5 @@ compile_commands.json
 
 
 .idea/
+
+_autosummary/

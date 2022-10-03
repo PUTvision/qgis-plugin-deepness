@@ -38,6 +38,7 @@ Home
    creators/creators_requirements
    creators/creators_export_training_data_tool
    creators/creators_example_onnx_model
+   creators/creators_add_metadata_to_model
 
 .. toctree::
    :maxdepth: 2
