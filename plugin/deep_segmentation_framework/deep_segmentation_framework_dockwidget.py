@@ -231,7 +231,44 @@ class DeepSegmentationFrameworkDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """
         Load the default parameters from model metadata
         """
-        self._model.
+        value = self._model.get_metadata_resolution()
+        if value is not None:
+            self.doubleSpinBox_resolution_cm_px.setValue(value)
+
+        value = self._model.get_metadata_tile_size()
+        if value is not None:
+            self.spinBox_tileSize_px.setValue(value)
+
+        value = self._model.get_metadata_tiles_overlap()
+        if value is not None:
+            self.spinBox_processingTileOverlapPercentage.setValue(value)
+
+        value = self._model.get_metadata_model_type()
+        if value is not None:
+            print(f'{value =}')
+            self.comboBox_modelType.setCurrentText(value)
+
+        value = self._model.get_metadata_segmentation_threshold()
+        if value is not None:
+            self.checkBox_pixelClassEnableThreshold.setChecked(bool(value != 0))
+            self.doubleSpinBox_probabilityThreshold.setValue(value)
+
+        value = self._model.get_metadata_segmentation_small_segment()
+        if value is not None:
+            self.checkBox_removeSmallAreas.setChecked(bool(value != 0))
+            self.spinBox_dilateErodeSize.setValue(value)
+
+        value = self._model.get_metadata_regression_output_scaling()
+        if value is not None:
+            self.doubleSpinBox_regressionScaling.setValue(value)
+
+        value = self._model.get_metadata_detection_confidence()
+        if value is not None:
+            self.doubleSpinBox_confidence.setValue(value)
+
+        value = self._model.get_metadata_detection_iou_threshold()
+        if value is not None:
+            self.doubleSpinBox_iouScore.setValue(value)
 
 
     def _load_model_and_display_info(self, abort_if_no_file_path: bool = False):

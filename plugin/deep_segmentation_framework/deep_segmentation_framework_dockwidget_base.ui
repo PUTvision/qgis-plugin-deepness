@@ -301,7 +301,7 @@
            <item row="1" column="1">
             <widget class="QSpinBox" name="spinBox_tileSize_px">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <property name="toolTip">
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Size of the images passed to the model.&lt;/p&gt;&lt;p&gt;Usually needs to be the same as the one used during training.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>

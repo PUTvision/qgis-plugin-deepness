@@ -1,4 +1,6 @@
 import json
+from typing import Optional
+
 import numpy as np
 import onnxruntime as ort
 
@@ -57,6 +59,77 @@ class ModelBase:
         else:
             return default_return
 
+    def get_metadata_model_type(self) -> Optional[str]:
+        meta = self.sess.get_modelmeta()
+        name = 'model_type'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return str(value)
+        return None
+
+    def get_metadata_resolution(self) -> Optional[float]:
+        meta = self.sess.get_modelmeta()
+        name = 'resolution'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return float(value)
+        return None
+
+    def get_metadata_tile_size(self) -> Optional[int]:
+        meta = self.sess.get_modelmeta()
+        name = 'tile_size'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return int(value)
+        return None
+
+    def get_metadata_tiles_overlap(self) -> Optional[int]:
+        meta = self.sess.get_modelmeta()
+        name = 'tiles_overlap'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return int(value)
+        return None
+
+    def get_metadata_segmentation_threshold(self) -> Optional[float]:
+        meta = self.sess.get_modelmeta()
+        name = 'seg_thresh'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return float(value)
+        return None
+
+    def get_metadata_segmentation_small_segment(self) -> Optional[int]:
+        meta = self.sess.get_modelmeta()
+        name = 'seg_small_segment'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return int(value)
+        return None
+
+    def get_metadata_regression_output_scaling(self) -> Optional[float]:
+        meta = self.sess.get_modelmeta()
+        name = 'reg_output_scaling'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return float(value)
+        return None
+
+    def get_metadata_detection_confidence(self) -> Optional[float]:
+        meta = self.sess.get_modelmeta()
+        name = 'det_conf'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return float(value)
+        return None
+
+    def get_metadata_detection_iou_threshold(self) -> Optional[float]:
+        meta = self.sess.get_modelmeta()
+        name = 'det_iou_thresh'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return float(value)
+        return None
 
     def get_number_of_channels(self):
         return self.input_shape[-3]
