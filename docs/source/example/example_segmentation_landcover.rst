@@ -30,7 +30,7 @@ Converting to onnx
 
 When model training is completed, export the model using the script below:
 
-.. code:: 
+.. code-block:: 
 
     model.eval()
     x = next(iter(datamodule.test_dataloader()))[0]
