@@ -23,7 +23,7 @@ class DetectorBBox:
         self.right_down[1] += offset_y
 
     def get_area(self):
-        return (self.right_down[0] - self.left_upper[0] + 1) * (self.right_down[1] - self.left_upper[0])
+        return (self.right_down[0] - self.left_upper[0] + 1) * (self.right_down[1] - self.left_upper[1])
 
     def get_4_corners(self) -> List[Tuple]:
         """
