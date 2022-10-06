@@ -15,6 +15,11 @@ from deep_segmentation_framework.processing.tile_params import TileParams
 
 
 class MapProcessorTrainingDataExport(MapProcessor):
+    """
+    Map Processor specialized in exporting training data, not doing any prediction with model.
+    Exports tiles for the ortophoto and a mask layer.
+    """
+
     def __init__(self,
                  params: TrainingDataExportParameters,
                  **kwargs):

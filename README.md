@@ -34,6 +34,9 @@ Every time plugin code is modified, use the `Plugin reloader` to reload our plug
 # Unit tests
 See [test/README.md](test/README.md)
 
+# Documentation
+See [docs/README.md](docs/README.md)
+
 # Development notes
  - plugin skeleton was initially generated with `Plugin Builder`, but then refactored and cleaned up a little bit
  - Before release: change version number in `metadata.txt` and in docs (?)
@@ -44,12 +47,3 @@ See [test/README.md](test/README.md)
     ```
    Though I'm not sure if this file is even needed anymore
  - 
-
-# Model requirements
-ONNX models are supported.
-Model should have one input of size (BATCH_SIZE, CHANNELS, SIZE_PX, SIZE_PX).
-Size of processed images in pixel is model defined, but needs to be equal in x and y axes.
-Currently, BATCH_SIZE is always equal to 1.
-If processed image needs to be padded (e.g. on map borders) it will be padded with 0 values.
-Model output number 0 should be an image with size (BATCH_SIZE, NUM_CLASSES, SIZE_PX, SIZE_PX).
-Input image data - only uint8_t value for each pixel channel.

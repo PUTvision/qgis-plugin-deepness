@@ -15,6 +15,10 @@ from deep_segmentation_framework.processing.map_processor.map_processor_with_mod
 
 
 class MapProcessorSegmentation(MapProcessorWithModel):
+    """
+    MapProcessor specialized for Segmentation model (where each pixel is assigned to one class)
+    """
+
     def __init__(self,
                  params: SegmentationParameters,
                  **kwargs):
