@@ -1,4 +1,4 @@
-How to convert your model to ONNX format
+Convert custom model to ONNX format
 =====
 
 

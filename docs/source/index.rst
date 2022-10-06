@@ -2,6 +2,14 @@
 
    This project is under active development.
 
+
+Plugin is aimed as a tool for casual QGIS users, which don't need to be familiar with Machine Learning.
+The plugin packs all the complexity behind a simple UI, so that the user can easily process their data with the power of Deep Neural Networks.
+
+Of course, the model needs to be first created by a user familiar with Machine Learning, according to model requirements.
+Nevertheless, the entire complexity of processing is implemented in the plugin.
+
+
 Home
 --------
 
@@ -35,7 +43,6 @@ Home
    :caption: For Model Creators
 
    creators/creators_description_classes
-   creators/creators_requirements
    creators/creators_export_training_data_tool
    creators/creators_example_onnx_model
    creators/creators_add_metadata_to_model
