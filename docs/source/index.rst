@@ -6,12 +6,12 @@ Home
 --------
 
 .. toctree::
-   :hidden:
    
    self
+   license
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: For Users in QGis
 
    main/main_features
@@ -22,7 +22,7 @@ Home
    main/main_model_zoo
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Examples
 
    example/example_segmentation_landcover
@@ -31,7 +31,7 @@ Home
    example/example_regression_vegetation_index_rgb
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: For Model Creators
 
    creators/creators_description_classes
@@ -41,7 +41,7 @@ Home
    creators/creators_add_metadata_to_model
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: For Developers
 
    dev/dev_general_info
