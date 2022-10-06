@@ -70,7 +70,8 @@ class MapProcessorDetection(MapProcessorWithModel):
         bounding_boxes_restricted = []
         for det in bounding_boxes:
             # if bounding box is not in the area_mask_img (at least in some percentage) - remove it
-            if self.area_mask_img:
+
+            if self.area_mask_img is not None:
                 det_slice = det.bbox.get_slice()
                 area_subimg = self.area_mask_img[det_slice]
                 pixels_in_area = np.count_nonzero(area_subimg)
