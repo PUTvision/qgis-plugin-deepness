@@ -1,2 +1,2 @@
-Description of classes of models
+Description of model classes
 =====

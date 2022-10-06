@@ -1,4 +1,4 @@
-dev_unit_tests
+Unit testing
 =====
 
 In order to simplify development and debugging, the code is modular and testable.
