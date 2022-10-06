@@ -1,3 +1,6 @@
+import json
+from typing import Optional
+
 import numpy as np
 import onnxruntime as ort
 
@@ -29,6 +32,11 @@ class ModelBase:
 
         self.outputs_layers = self.sess.get_outputs()
 
+    @classmethod
+    def get_model_type_from_metadata(cls, model_file_path) -> Optional[str]:
+        model = cls(model_file_path)
+        return model.get_metadata_model_type()
+
     def get_input_shape(self):
         """
         Get shape of the input for the model
@@ -40,6 +48,93 @@ class ModelBase:
         Get number of input pixels in x and y direction (the same value)
         """
         return self.input_shape[-2:]
+
+    def get_channel_name(self, channel_id: int) -> str:
+        """
+        Get channel name by id if exists in model metadata
+        """
+        meta = self.sess.get_modelmeta()
+        channel_id_str = str(channel_id)
+        default_return = f'channel_{channel_id_str}'
+
+        if 'class_names' in meta.custom_metadata_map:
+            class_names = json.loads(meta.custom_metadata_map['class_names'])
+
+            return class_names.get(channel_id_str, default_return)
+        else:
+            return default_return
+
+    def get_metadata_model_type(self) -> Optional[str]:
+        meta = self.sess.get_modelmeta()
+        name = 'model_type'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return str(value)
+        return None
+
+    def get_metadata_resolution(self) -> Optional[float]:
+        meta = self.sess.get_modelmeta()
+        name = 'resolution'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return float(value)
+        return None
+
+    def get_metadata_tile_size(self) -> Optional[int]:
+        meta = self.sess.get_modelmeta()
+        name = 'tile_size'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return int(value)
+        return None
+
+    def get_metadata_tiles_overlap(self) -> Optional[int]:
+        meta = self.sess.get_modelmeta()
+        name = 'tiles_overlap'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return int(value)
+        return None
+
+    def get_metadata_segmentation_threshold(self) -> Optional[float]:
+        meta = self.sess.get_modelmeta()
+        name = 'seg_thresh'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return float(value)
+        return None
+
+    def get_metadata_segmentation_small_segment(self) -> Optional[int]:
+        meta = self.sess.get_modelmeta()
+        name = 'seg_small_segment'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return int(value)
+        return None
+
+    def get_metadata_regression_output_scaling(self) -> Optional[float]:
+        meta = self.sess.get_modelmeta()
+        name = 'reg_output_scaling'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return float(value)
+        return None
+
+    def get_metadata_detection_confidence(self) -> Optional[float]:
+        meta = self.sess.get_modelmeta()
+        name = 'det_conf'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return float(value)
+        return None
+
+    def get_metadata_detection_iou_threshold(self) -> Optional[float]:
+        meta = self.sess.get_modelmeta()
+        name = 'det_iou_thresh'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return float(value)
+        return None
 
     def get_number_of_channels(self):
         return self.input_shape[-3]

@@ -1,4 +1,4 @@
-dev_extending_plugin
+Extending plugin functionality
 =====
 
 Plugin is easily extendable for new types of parameters, models and outputs.

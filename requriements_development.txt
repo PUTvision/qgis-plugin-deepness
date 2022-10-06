@@ -2,9 +2,13 @@
 pytest
 pytest-cov
 flake8
+onnx
+
 
 # docs
+sphinx
 sphinxcontrib-youtube
 sphinx-autodoc-typehints
 sphinx-autopackagesummary
 sphinx_rtd_theme
+

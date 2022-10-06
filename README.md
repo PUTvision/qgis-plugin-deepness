@@ -34,6 +34,9 @@ Every time plugin code is modified, use the `Plugin reloader` to reload our plug
 # Unit tests
 See [test/README.md](test/README.md)
 
+# Documentation
+See [docs/README.md](docs/README.md)
+
 # Development notes
  - plugin skeleton was initially generated with `Plugin Builder`, but then refactored and cleaned up a little bit
  - Before release: change version number in `metadata.txt` and in docs (?)

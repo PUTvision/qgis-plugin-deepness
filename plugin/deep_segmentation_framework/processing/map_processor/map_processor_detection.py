@@ -71,7 +71,8 @@ class MapProcessorDetection(MapProcessorWithModel):
         bounding_boxes_restricted = []
         for det in bounding_boxes:
             # if bounding box is not in the area_mask_img (at least in some percentage) - remove it
-            if self.area_mask_img:
+
+            if self.area_mask_img is not None:
                 det_slice = det.bbox.get_slice()
                 area_subimg = self.area_mask_img[det_slice]
                 pixels_in_area = np.count_nonzero(area_subimg)
@@ -105,7 +106,7 @@ class MapProcessorDetection(MapProcessorWithModel):
             else:
                 counts_percentage = 0
 
-            txt += f' - class {channel_id}: counts = {counts} ({counts_percentage:.2f} %)\n'
+            txt += f' - {self.model.get_channel_name(channel_id)}: counts = {counts} ({counts_percentage:.2f} %)\n'
 
         return txt
 
@@ -132,7 +133,7 @@ class MapProcessorDetection(MapProcessorWithModel):
                 feature.setGeometry(geometry)
                 features.append(feature)
 
-            vlayer = QgsVectorLayer("multipolygon", f"channel_{channel_id}", "memory")
+            vlayer = QgsVectorLayer("multipolygon", self.model.get_channel_name(channel_id), "memory")
             vlayer.setCrs(self.rlayer.crs())
             prov = vlayer.dataProvider()
 

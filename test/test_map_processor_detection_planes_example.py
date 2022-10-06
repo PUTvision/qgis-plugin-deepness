@@ -28,7 +28,7 @@ def test_map_processor_detection_planes_example():
     model_wrapper = Detector(MODEL_FILE_PATH)
 
     params = DetectionParameters(
-        resolution_cm_per_px=100,
+        resolution_cm_per_px=70,
         tile_size_px=model_wrapper.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
@@ -37,7 +37,7 @@ def test_map_processor_detection_planes_example():
         processing_overlap_percentage=60,
         model=model_wrapper,
         confidence=0.5,
-        iou_threshold=0.5,
+        iou_threshold=0.4,
         model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
         model_output_format__single_class_number=-1,
     )
@@ -51,7 +51,7 @@ def test_map_processor_detection_planes_example():
 
     map_processor.run()
 
-    assert len(map_processor.get_all_detections()) == 1
+    assert len(map_processor.get_all_detections()) == 2
 
 
 if __name__ == '__main__':

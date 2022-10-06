@@ -11,7 +11,7 @@ List of parameters parsed by plugin
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | Parameter          |  Type |            Example                    | Description                                                 |
 +====================+=======+=======================================+=============================================================+
-| model_type         |  str  |   :code:`'segmenter'`                 | Types of models available: segmenter, regressor, detector.  |
+| model_type         |  str  |   :code:`'Segmentor'`                 | Types of models available: Segmentor, Regressor, Detector.  |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | class_names        |  dict | :code:`{0: 'background', 1: 'field'}` | A dictionary that maps a class id to its name.              |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
@@ -21,11 +21,9 @@ List of parameters parsed by plugin
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | tiles_overlap      |  int  |         :code:`40`                    | How many percent of the image size overlap.                 |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| seg_argmax         |  bool |      :code:`False`                    | Segmenter: select only the most probable class.             |
+| seg_thresh         | float |       :code:`0.5`                     | Segmentor: class confidence threshold.                      |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| seg_thresh         | float |       :code:`0.5`                     | Segmenter: class confidence threshold.                      |
-+--------------------+-------+---------------------------------------+-------------------------------------------------------------+
-| seg_small_segment  |  int  |       :code:`7`                       | Segmenter: remove small occurrences of the class.           |
+| seg_small_segment  |  int  |       :code:`7`                       | Segmentor: remove small occurrences of the class.           |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | reg_output_scaling | float |       :code:`1.0`                     | Regressor: scaling factor for the model output.             |
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
