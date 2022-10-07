@@ -7,7 +7,7 @@ from qgis.core import QgsRectangle
 from deep_segmentation_framework.common.errors import OperationFailedException
 from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
     MapProcessingParameters
-from deep_segmentation_framework.processing.processing_utils import BoundingBox
+from deep_segmentation_framework.processing.processing_utils import BoundingBox, convert_meters_to_rlayer_units
 
 
 def round_extent_to_rlayer_grid(extent: QgsRectangle, rlayer: QgsRasterLayer) -> QgsRectangle:
@@ -77,6 +77,21 @@ def calculate_extended_processing_extent(base_extent: QgsRectangle,
     return extended_extent
 
 
+def is_extent_infinite_or_too_big(rlayer: QgsRasterLayer) -> bool:
+    rlayer_extent = rlayer.extent()
+
+    # empty extent happens for infinite layers
+    if rlayer_extent.isEmpty():
+        return True
+
+    rlayer_area_m2 = rlayer_extent.area() * (1 / convert_meters_to_rlayer_units(rlayer, 1)) ** 2
+
+    if rlayer_area_m2 > (1606006962349394 // 10):  # so 1/3 of the earth (this magic value is from bing aerial map area)
+        return True
+
+    return False
+
+
 def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
                                                    rlayer: QgsRasterLayer,
                                                    vlayer_mask: QgsVectorLayer,
@@ -90,12 +105,14 @@ def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
     """
     rlayer_extent = rlayer.extent()
     processed_area_type = params.processed_area_type
-    rlayer_extent_infinite = rlayer_extent.isEmpty()  # empty extent for infinite layers
+    rlayer_extent_infinite = is_extent_infinite_or_too_big(rlayer)
 
     if processed_area_type == ProcessedAreaType.ENTIRE_LAYER:
         expected_extent = rlayer_extent
         if rlayer_extent_infinite:
-            raise OperationFailedException("Cannot process entire layer - layer extent is not defined!")
+            msg = "Cannot process entire layer - layer extent is not defined or too big. " \
+                  "Make sure you are not processing 'Entire layer' which covers entire earth surface!!"
+            raise OperationFailedException(msg)
     elif processed_area_type == ProcessedAreaType.FROM_POLYGONS:
         expected_extent = vlayer_mask.extent()
         # x = vlayer_mask.getGeometry(0)  # TODO check getting extent
