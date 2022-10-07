@@ -102,6 +102,12 @@ def test_generic_processing_test__specified_extent_from_vlayer():
 
     # just run - we will check the results in a more detailed test
     map_processor.run()
+    result_img = map_processor.get_result_img()
+    assert result_img.shape == (524, 733)
+
+    # just check a few pixels
+    assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
+               np.asarray([0, 1, 1, 1, 1, 0, 0, 1, 0]))
 
 
 def test_generic_processing_test__specified_extent_from_active_map_extent():
