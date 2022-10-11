@@ -62,7 +62,7 @@ class Deepness:
 
         # Declare instance attributes
         self.actions = []
-        self.menu = self.tr(u'&Deep Segmentation Framework')
+        self.menu = self.tr(u'&Deepness')
         # TODO: We are going to let the user set this up in a future iteration
         self.toolbar = self.iface.addToolBar(u'Deepness')
         self.toolbar.setObjectName(u'Deepness')
@@ -166,7 +166,7 @@ class Deepness:
         icon_path = get_icon_path()
         self.add_action(
             icon_path,
-            text=self.tr(u'Deep Segmentation Framework'),
+            text=self.tr(u'Deepness'),
             callback=self.run,
             parent=self.iface.mainWindow())
 
@@ -194,7 +194,7 @@ class Deepness:
 
         for action in self.actions:
             self.iface.removePluginMenu(
-                self.tr(u'&Deep Segmentation Framework'),
+                self.tr(u'&Deepness'),
                 action)
             self.iface.removeToolBarIcon(action)
         # remove the toolbar
