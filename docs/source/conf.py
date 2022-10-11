@@ -14,19 +14,42 @@
 #
 import os
 import sys
+import re
+
 sys.path.insert(0, os.path.abspath('../plugin/deep_segmentation_framework'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'QGIS: Deep Segmentation Framework'
+metadata_file_path = os.path.join('..', '..', 'plugin', 'deep_segmentation_framework', 'metadata.txt')
+metadata_file_path = os.path.abspath(metadata_file_path)
+with open(metadata_file_path, 'rt') as file:
+    file_content = file.read()
+try:
+    versions_from_metadata = re.findall(r'version=(.*)', file_content)[0]
+except Exception as e:
+    raise Exception("Failed to read version from metadata!")
+
+try:
+    author_from_metadata = re.findall(r'author=(.*)', file_content)[0]
+except Exception as e:
+    raise Exception("Failed to read author from metadata!")
+
+try:
+    name_from_metadata = re.findall(r'name=(.*)', file_content)[0]
+except Exception as e:
+    raise Exception("Failed to read name from metadata!")
+
+
+project = f'QGIS: {name_from_metadata}'
+
 copyright = '2022, Przemysław Aszkowski & Bartosz Ptak'
-author = 'Przemysław Aszkowski & Bartosz Ptak'
+author = author_from_metadata
 
 # The short X.Y version
-version = ''
+version = versions_from_metadata
 # The full version, including alpha/beta/rc tags
-release = ''
+release = version
 
 
 # -- General configuration ---------------------------------------------------
