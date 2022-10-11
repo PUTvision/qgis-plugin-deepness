@@ -154,8 +154,8 @@ class MapProcessorDetection(MapProcessorWithModel):
         for det in bounding_boxes:
             bboxes.append(det.get_bbox_xyxy())
 
-        bboxes = np.stack(bboxes, axis=0)
-        pick_ids = self.model.non_max_suppression_fast(bboxes, self.detection_parameters.confidence)
+        bboxes = np.array(bboxes)
+        pick_ids = self.model.non_max_suppression_fast(bboxes, self.detection_parameters.iou_threshold)
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
 
