@@ -1,8 +1,8 @@
-# ![dsf_logo](plugin/gis-plugin-deepness/images/icon.png) Deepness: **Deep** **N**eural r**E**mote **S**en**S**ing QGIS Plugin
-![main](https://github.com/PUTvision/gis-plugin-deepness/actions/workflows/python-app.yml/badge.svg)
-[![GitHub contributors](https://img.shields.io/github/contributors/PUTvision/gis-plugin-deepness)](https://github.com/PUTvision/gis-plugin-deepness/graphs/contributors)
-[![GitHub stars](https://img.shields.io/github/stars/PUTvision/gis-plugin-deepness)](https://github.com/PUTvision/gis-plugin-deepness/stargazers)
-[![GitHub forks](https://img.shields.io/github/forks/PUTvision/gis-plugin-deepness)](https://github.com/PUTvision/gis-plugin-deepness/network/members)
+# ![dsf_logo](plugin/qgis-plugin-deepness/images/icon.png) Deepness: **Deep** **N**eural r**E**mote **S**en**S**ing QGIS Plugin
+![main](https://github.com/PUTvision/qgis-plugin-deepness/actions/workflows/python-app.yml/badge.svg)
+[![GitHub contributors](https://img.shields.io/github/contributors/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/graphs/contributors)
+[![GitHub stars](https://img.shields.io/github/stars/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/network/members)
 
 Plugin for QGis to perform map/image segmentation with neural network models. 
 
