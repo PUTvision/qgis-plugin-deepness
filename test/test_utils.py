@@ -5,7 +5,7 @@ from qgis.core import QgsVectorLayer, QgsProject
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsApplication
 from qgis.core import QgsRasterLayer
 
-from deep_segmentation_framework.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
+from deepness.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
     ImageChannelCompositeByte
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))

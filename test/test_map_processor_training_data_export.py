@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock
 
-from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
+from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
     ModelOutputFormat
-from deep_segmentation_framework.common.processing_parameters.training_data_export_parameters import \
+from deepness.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
-from deep_segmentation_framework.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
+from deepness.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
 from test.test_utils import init_qgis, create_rlayer_from_file, \
     create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, \
     create_default_input_channels_mapping_for_rgba_bands

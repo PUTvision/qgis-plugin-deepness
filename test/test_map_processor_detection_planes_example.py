@@ -1,10 +1,10 @@
 from unittest.mock import MagicMock
 
-from deep_segmentation_framework.common.processing_parameters.detection_parameters import DetectionParameters
-from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
+from deepness.common.processing_parameters.detection_parameters import DetectionParameters
+from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
     ModelOutputFormat
-from deep_segmentation_framework.processing.map_processor.map_processor_detection import MapProcessorDetection
-from deep_segmentation_framework.processing.models.detector import Detector
+from deepness.processing.map_processor.map_processor_detection import MapProcessorDetection
+from deepness.processing.models.detector import Detector
 from test.test_utils import init_qgis, create_rlayer_from_file, \
     create_default_input_channels_mapping_for_rgb_bands
 
