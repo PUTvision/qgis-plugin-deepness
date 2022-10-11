@@ -1,5 +1,5 @@
 Training Data Export Tool
-=====
+=========================
 
 Apart from model inference functionality, the plugin contains :code:`Training Data Export Tool`.
 This tool allows to prepare the following data for the model training process:

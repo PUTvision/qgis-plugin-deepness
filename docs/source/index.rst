@@ -11,7 +11,7 @@ Nevertheless, the entire complexity of processing is implemented in the plugin.
 
 
 Home
---------
+----
 
 .. toctree::
    

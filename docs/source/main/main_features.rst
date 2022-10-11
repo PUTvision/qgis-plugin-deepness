@@ -1,5 +1,5 @@
 Plugin features
-=====
+===============
 
 - processing any raster layer (custom ortophoto from file
 or layers from online providers, e.g Google Satellite.
@@ -13,3 +13,4 @@ or layers from online providers, e.g Google Satellite.
 - parametrization of the processing for advanced users
 
 - integration with layers (both for input data and model output layers). Once an output layer is created, it can be saved as a file manually
+

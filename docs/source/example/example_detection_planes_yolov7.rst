@@ -1,5 +1,5 @@
 YOLOv7 planes object detection
-=========================================
+==============================
 
 The following example shows how to use the YOLOv7 model for object detection on satellite images.
 
@@ -9,9 +9,9 @@ Dataset
 
 The example is based on the `Airbus Aircraft Detection dataset <https://www.kaggle.com/datasets/airbusgeo/airbus-aircrafts-sample-dataset>`_. It provides satellite images with 50 cm/px resolution. Annotation bounding boxes for the planes are provided.
 
-=========================
+======
 YOLOv7
-=========================
+======
 
 We built our pipeline based on the `YOLOv7 repository <https://github.com/WongKinYiu/yolov7>`_ and using the :code:`cfg/training/yolov7-tiny.yaml` config.
 
@@ -26,9 +26,9 @@ When model training is completed, export the model using the command below:
     python export.py --weights yolov7-tiny.pt --grid --simplify --img-size 256 256
     
 
-==================
+=================
 Example inference
-==================
+=================
 
 Run QGIS, next add Google Eart map using :code:`QuickMapServices` plugin.
 

@@ -14,7 +14,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../plugin/deep_segmentation_framework'))
+sys.path.insert(0, os.path.abspath('../../plugin'))
+import deep_segmentation_framework
 
 
 # -- Project information -----------------------------------------------------

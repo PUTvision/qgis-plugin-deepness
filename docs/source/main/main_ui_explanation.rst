@@ -1,5 +1,5 @@
 main_ui_explanation
-=====
+===================
 
 - TODO - describe what can we select in UI
 

@@ -1,2 +1,2 @@
-Multiclass LandCover dataset segmentation
-=====
+Vegetation index regression
+===========================

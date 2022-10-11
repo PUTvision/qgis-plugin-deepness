@@ -44,9 +44,9 @@ When model training is completed, export the model using the script below:
                       output_names=['output'],
                       do_constant_folding=False)
 
-==================
+=================
 Example inference
-==================
+=================
 
 Run QGIS, next add Google Eart map using :code:`QuickMapServices` plugin.
 
