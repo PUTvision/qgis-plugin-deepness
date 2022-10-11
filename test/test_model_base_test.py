@@ -1,4 +1,4 @@
-from deep_segmentation_framework.processing.models.model_base import ModelBase
+from deepness.processing.models.model_base import ModelBase
 from test.test_utils import get_dummy_segmentation_model_path
 
 

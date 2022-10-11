@@ -56,7 +56,7 @@ Plugin installation
 
 * (option 2) Install using downloaded ZIP
 
-  * Go to the plugin repository: `https://github.com/PUTvision/qgis-deep-segmentation-framework <https://github.com/PUTvision/qgis-deep-segmentation-framework>`_
+  * Go to the plugin repository: `https://github.com/PUTvision/qgis-plugin-deepness <https://github.com/PUTvision/qgis-plugin-deepness>`_
 
   * From the right panel, select Release and download the latest version
 

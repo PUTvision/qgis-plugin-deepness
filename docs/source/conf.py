@@ -16,11 +16,11 @@ import os
 import re
 import sys
 sys.path.append(os.path.abspath('../../plugin/'))
-sys.path.append(os.path.abspath('../../plugin/deep_segmentation_framework'))
+sys.path.append(os.path.abspath('../../plugin/deepness'))
 
 # -- Project information -----------------------------------------------------
 
-metadata_file_path = os.path.join('..', '..', 'plugin', 'deep_segmentation_framework', 'metadata.txt')
+metadata_file_path = os.path.join('..', '..', 'plugin', 'deepness', 'metadata.txt')
 metadata_file_path = os.path.abspath(metadata_file_path)
 with open(metadata_file_path, 'rt') as file:
     file_content = file.read()
@@ -136,7 +136,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'QGISDeepSegmentationFrameworkdoc'
+htmlhelp_basename = 'Deepnessdoc'
 
 autosummary_generate = True
 autoclass_content = "class"  # Add __init__ doc (ie. params) to class summaries
@@ -171,7 +171,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'QGISDeepSegmentationFramework.tex', 'QGIS: Deep Segmentation Framework Documentation',
+    (master_doc, 'Deepness.tex', 'Deepness: Deep Neural rEmote SenSing',
      'Przemysław Aszkowski \\& Bartosz Ptak', 'manual'),
 ]
 
@@ -181,7 +181,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'qgisdeepsegmentationframework', 'QGIS: Deep Segmentation Framework Documentation',
+    (master_doc, 'Deepness', 'Deepness: Deep Neural rEmote SenSing',
      [author], 1)
 ]
 
@@ -192,8 +192,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'QGISDeepSegmentationFramework', 'QGIS: Deep Segmentation Framework Documentation',
-     author, 'QGISDeepSegmentationFramework', 'One line description of project.',
+    (master_doc, 'Deepness', 'Deepness: Deep Neural rEmote SenSing',
+     author, 'Deepness', 'One line description of project.',
      'Miscellaneous'),
 ]
 

@@ -2,14 +2,14 @@ from unittest.mock import MagicMock
 
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
-from deep_segmentation_framework.common.processing_parameters.regression_parameters import RegressionParameters
-from deep_segmentation_framework.common.processing_parameters.segmentation_parameters import SegmentationParameters
-from deep_segmentation_framework.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
+from deepness.common.processing_parameters.regression_parameters import RegressionParameters
+from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
+from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
     ModelOutputFormat
-from deep_segmentation_framework.processing.map_processor.map_processor_regression import MapProcessorRegression
-from deep_segmentation_framework.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
-from deep_segmentation_framework.processing.models.regressor import Regressor
-from deep_segmentation_framework.processing.models.segmentor import Segmentor
+from deepness.processing.map_processor.map_processor_regression import MapProcessorRegression
+from deepness.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
+from deepness.processing.models.regressor import Regressor
+from deepness.processing.models.segmentor import Segmentor
 from test.test_utils import init_qgis, create_rlayer_from_file, \
     create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, \
     get_dummy_segmentation_model_path, \
