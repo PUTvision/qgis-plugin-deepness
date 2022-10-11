@@ -1,5 +1,5 @@
 Unit testing
-=====
+============
 
 In order to simplify development and debugging, the code is designed as modular and testable.
 Unit tests can be found in :code:`./test` directory of the main repository.

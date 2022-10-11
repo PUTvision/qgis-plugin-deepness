@@ -69,6 +69,7 @@ Output report contains statistics for each class, that is average, min, max and 
 ================
 Extending Models
 ================
+
 For extending the functionality and adding new model classes, please visit section `Extenging plugin functionality`.
 
 

@@ -1,12 +1,12 @@
 Adding metadata to ONNX model
-=================================
+=============================
 
 The plugin allows you to load the meta parameters of the onnx model automatically. Predefined parameter types are designed for the simplicity of the user's work. The written metadata is especially important for users who are not familiar with the technical details.
 
 
-====================================
+===================================
 List of parameters parsed by plugin
-====================================
+===================================
 
 +--------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | Parameter          |  Type |            Example                    | Description                                                 |
