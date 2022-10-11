@@ -8,15 +8,19 @@ from deep_segmentation_framework.common.processing_parameters.map_processing_par
 from deep_segmentation_framework.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deep_segmentation_framework.processing.models.segmentor import Segmentor
 from test.test_utils import init_qgis, create_rlayer_from_file, \
-    create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, get_dummy_segmentation_model_path, \
-    create_default_input_channels_mapping_for_rgba_bands
+    create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, \
+    get_dummy_segmentation_model_path, \
+    create_default_input_channels_mapping_for_rgba_bands, get_dummy_fotomap_area_crs3857_path
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 RASTER_FILE_PATH = get_dummy_fotomap_small_path()
 
 VLAYER_MASK_FILE_PATH = get_dummy_fotomap_area_path()
+
+VLAYER_MASK_CRS3857_FILE_PATH = get_dummy_fotomap_area_crs3857_path()
 
 MODEL_FILE_PATH = get_dummy_segmentation_model_path()
 
@@ -72,7 +76,6 @@ def test_generic_processing_test__specified_extent_from_vlayer():
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
     vlayer_mask = create_vlayer_from_file(VLAYER_MASK_FILE_PATH)
-    vlayer_mask.setCrs(rlayer.crs())
     model = MagicMock()
     model.process = model_process_mock
     model.get_number_of_channels = lambda: 2
@@ -102,6 +105,57 @@ def test_generic_processing_test__specified_extent_from_vlayer():
 
     # just run - we will check the results in a more detailed test
     map_processor.run()
+    result_img = map_processor.get_result_img()
+    assert result_img.shape == (524, 733)
+
+    # just check a few pixels
+    assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
+               np.asarray([0, 1, 1, 1, 1, 0, 0, 1, 0]))
+
+
+def test_generic_processing_test__specified_extent_from_vlayer_crs3857():
+    qgs = init_qgis()
+
+    rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
+    vlayer_mask = create_vlayer_from_file(VLAYER_MASK_CRS3857_FILE_PATH)
+    model = MagicMock()
+    model.process = model_process_mock
+    model.get_number_of_channels = lambda: 2
+    model.get_number_of_output_channels = lambda: 2
+    model.get_channel_name = lambda x: str(x)
+
+    params = SegmentationParameters(
+        resolution_cm_per_px=3,
+        tile_size_px=512,
+        processed_area_type=ProcessedAreaType.FROM_POLYGONS,
+        mask_layer_id=vlayer_mask.id(),
+        input_layer_id=rlayer.id(),
+        input_channels_mapping=INPUT_CHANNELS_MAPPING,
+        postprocessing_dilate_erode_size=5,
+        processing_overlap_percentage=20,
+        pixel_classification__probability_threshold=0.5,
+        model_output_format=ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER,
+        model_output_format__single_class_number=1,
+        model=model,
+    )
+    map_processor = MapProcessorSegmentation(
+        rlayer=rlayer,
+        vlayer_mask=vlayer_mask,
+        map_canvas=MagicMock(),
+        params=params,
+    )
+
+    # just run - we will check the results in a more detailed test
+    map_processor.run()
+    result_img = map_processor.get_result_img()
+
+    # for the same vlayer_mask, but with a different encoding we had quite different shaep (524, 733).
+    # I'm not sure if it is rounding issue in Qgis Transform or some bug in plugin
+    assert result_img.shape == (550, 723)
+
+    # just check a few pixels
+    assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
+               np.asarray([0, 0, 1, 1, 1, 0, 0, 1, 0]))
 
 
 def test_generic_processing_test__specified_extent_from_active_map_extent():
@@ -151,5 +205,6 @@ def test_generic_processing_test__specified_extent_from_active_map_extent():
 if __name__ == '__main__':
     test_dummy_model_processing__entire_file()
     test_generic_processing_test__specified_extent_from_vlayer()
+    test_generic_processing_test__specified_extent_from_vlayer_crs3857()
     test_generic_processing_test__specified_extent_from_active_map_extent()
     print('Done')

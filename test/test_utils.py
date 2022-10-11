@@ -43,6 +43,13 @@ def get_dummy_fotomap_area_path():
     return os.path.join(TEST_DATA_DIR, 'dummy_fotomap_area.gpkg')
 
 
+def get_dummy_fotomap_area_crs3857_path():
+    """
+    Get path of the file with processing area polygon (but in crs 3857), for dummy_fotomap (see get_dummy_fotomap_small_path)
+    """
+    return os.path.join(TEST_DATA_DIR, 'dummy_fotomap_area_3857.gpkg')
+
+
 def create_rlayer_from_file(file_path):
     """
     Create raster layer from tif file and add it to current QgsProject

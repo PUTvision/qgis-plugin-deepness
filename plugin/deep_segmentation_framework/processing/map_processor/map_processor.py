@@ -51,8 +51,6 @@ class MapProcessor(QgsTask):
         self._processing_finished = False
         self.rlayer = rlayer
         self.vlayer_mask = vlayer_mask
-        if vlayer_mask:
-            assert vlayer_mask.crs() == self.rlayer.crs()  # should be set in higher layer
         self.params = params
         self._assert_qgis_doesnt_need_reload()
         self._processing_result = MapProcessingResultFailed('Failed to get processing result!')
@@ -97,6 +95,7 @@ class MapProcessor(QgsTask):
         # Mask determining area to process (within extended_extent coordinates)
         self.area_mask_img = processing_utils.create_area_mask_image(
             vlayer_mask=self.vlayer_mask,
+            rlayer=self.rlayer,
             extended_extent=self.extended_extent,
             rlayer_units_per_pixel=self.rlayer_units_per_pixel,
             image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])  # type: Optional[np.ndarray]

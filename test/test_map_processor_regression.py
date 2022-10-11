@@ -76,7 +76,6 @@ def test_dummy_model_processing__entire_file():
 #
 #     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
 #     vlayer_mask = create_vlayer_from_file(VLAYER_MASK_FILE_PATH)
-#     vlayer_mask.setCrs(rlayer.crs())
 #     model = MagicMock()
 #     model.process = model_process_mock
 #     model.get_number_of_channels = lambda: 2

@@ -69,7 +69,7 @@ class ModelBase:
         name = 'model_type'
         if name in meta.custom_metadata_map:
             value = json.loads(meta.custom_metadata_map[name])
-            return str(value)
+            return str(value).capitalize()
         return None
 
     def get_metadata_resolution(self) -> Optional[float]:
