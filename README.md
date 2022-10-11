@@ -4,32 +4,38 @@
 [![GitHub stars](https://img.shields.io/github/stars/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/network/members)
 
-Plugin for QGis to perform map/image segmentation with neural network models. 
+Plugin for QGIS to perform map/image segmentation with (ONNX) neural network models. 
 
 # Development
- - Install QGis `apt install qgis` (tested with QGis 3.12)
- - Create virtual environment (with global packages inherited!)
+ - Install QGIS (the plugin was tested with QGIS 3.12)
+   - Debian/Ubuntu based systems: `sudo apt install qgis`
+   - Fedora: `sudo dnf install qgis`
+   - Arch Linux: `sudo pacman -S qgis`
+   - Windows, macOS and others: https://qgis.org/en/site/forusers/download.html
+ - Create virtual environment (with global packages inherited!):
 ```
 python3 -m venv venv --system-site-packages
 ```
- - create a softlink to our plugin in a Qgis plugin directory:
+ - Create a symlink to our plugin in a QGIS plugin directory:
 ```
 ln -s $PROJECT_DIR/plugin/deepness ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/deepness
 ```
- - Activate environment and install requirements:
+ - Activate the environment and install requirements:
 ```
 . venv/bin/activate
 pip install -r requirements.txt
 ```
- - Run QGis in the venv:
+ - Run QGis in the virtual environment:
 ```
 export IS_DEBUG=true  # to enable some debugging options
 qgis
 ```
- - Enable `Deepness` the plugin in the `Plugins -> Manage and install plugins`
- - Install and enable plugin to reload plugins: `Plugin reloader` and to print stack errors: `first aid` plugin
+ - Enable `Deepness` plugin in the `Plugins -> Manage and install plugins`
+ - Install and enable:
+   - `Plugin reloader` plugin - allows plugins reloading
+   - `first aid` plugin - prints stack traces for exceptions 
 
-Every time plugin code is modified, use the `Plugin reloader` to reload our plugin.
+After the plugin code is modified, use the `Plugin reloader` to reload our plugin.
 
 # Unit tests
 See [test/README.md](test/README.md)
