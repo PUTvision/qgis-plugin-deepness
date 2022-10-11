@@ -4,7 +4,7 @@ from typing import Optional, List, Tuple
 
 import numpy as np
 import cv2
-from qgis._core import QgsRasterLayer
+from qgis.core import QgsRasterLayer, QgsCoordinateTransform
 from qgis.core import Qgis
 from qgis.core import QgsWkbTypes
 from qgis.core import QgsRectangle
@@ -292,6 +292,7 @@ def transform_polygon_with_rings_epsg_to_extended_xy_pixels(
 
 
 def create_area_mask_image(vlayer_mask,
+                           rlayer: QgsRasterLayer,
                            extended_extent: QgsRectangle,
                            rlayer_units_per_pixel: float,
                            image_shape_yx) -> Optional[np.ndarray]:
@@ -305,10 +306,19 @@ def create_area_mask_image(vlayer_mask,
     img = np.zeros(shape=image_shape_yx, dtype=np.uint8)
     features = vlayer_mask.getFeatures()
 
+    if vlayer_mask.crs() != rlayer.crs():
+        xform = QgsCoordinateTransform()
+        xform.setSourceCrs(vlayer_mask.crs())
+        xform.setDestinationCrs(rlayer.crs())
+
     # see https://docs.qgis.org/3.22/en/docs/pyqgis_developer_cookbook/vector.html#iterating-over-vector-layer
     for feature in features:
         print("Feature ID: ", feature.id())
         geom = feature.geometry()
+
+        if vlayer_mask.crs() != rlayer.crs():
+            geom.transform(xform)
+
         geom_single_type = QgsWkbTypes.isSingleType(geom.wkbType())
 
         if geom.type() == QgsWkbTypes.PointGeometry:

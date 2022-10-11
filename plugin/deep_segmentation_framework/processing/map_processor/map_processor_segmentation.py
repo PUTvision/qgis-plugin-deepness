@@ -68,7 +68,10 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         for channel_id in channels:
             pixels_count = counts_map.get(channel_id, 0)
             area = pixels_count * self.params.resolution_m_per_px**2
-            area_percentage = area / total_area * 100
+            if total_area:
+                area_percentage = area / total_area * 100
+            else:
+                area_percentage = 0.0
             txt += f' - {self.model.get_channel_name(channel_id)}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
 
         return txt

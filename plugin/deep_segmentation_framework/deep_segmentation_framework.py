@@ -260,7 +260,6 @@ class DeepSegmentationFramework:
         rlayer = QgsProject.instance().mapLayers()[training_data_export_parameters.input_layer_id]
         if training_data_export_parameters.processed_area_type == ProcessedAreaType.FROM_POLYGONS:
             vlayer = QgsProject.instance().mapLayers()[training_data_export_parameters.mask_layer_id]
-            vlayer.setCrs(rlayer.crs())
 
         self._map_processor = MapProcessorTrainingDataExport(
             rlayer=rlayer,
@@ -281,7 +280,6 @@ class DeepSegmentationFramework:
         rlayer = QgsProject.instance().mapLayers()[params.input_layer_id]
         if params.processed_area_type == ProcessedAreaType.FROM_POLYGONS:
             vlayer = QgsProject.instance().mapLayers()[params.mask_layer_id]
-            vlayer.setCrs(rlayer.crs())
 
         model_definition = ModelDefinition.get_definition_for_params(params)
         map_processor_class = model_definition.map_processor_class

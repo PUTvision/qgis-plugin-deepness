@@ -114,10 +114,14 @@ def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
                   "Make sure you are not processing 'Entire layer' which covers entire earth surface!!"
             raise OperationFailedException(msg)
     elif processed_area_type == ProcessedAreaType.FROM_POLYGONS:
-        expected_extent = vlayer_mask.extent()
-        # x = vlayer_mask.getGeometry(0)  # TODO check getting extent
-        # x.convertToSingleType()
-        # active_extent = x.boundingBox()
+        expected_extent_in_vlayer_crs = vlayer_mask.extent()
+        if vlayer_mask.crs() == rlayer.crs():
+            expected_extent = expected_extent_in_vlayer_crs
+        else:
+            t = QgsCoordinateTransform()
+            t.setSourceCrs(vlayer_mask.crs())
+            t.setDestinationCrs(rlayer.crs())
+            expected_extent = t.transform(expected_extent_in_vlayer_crs)
     elif processed_area_type == ProcessedAreaType.VISIBLE_PART:
         # transform visible extent from mapCanvas CRS to layer CRS
         active_extent_in_canvas_crs = map_canvas.extent()
