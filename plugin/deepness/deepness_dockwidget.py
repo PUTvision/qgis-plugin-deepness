@@ -430,7 +430,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             processed_area_type=processed_area_type,
             mask_layer_id=self.get_mask_layer_id(),
             input_layer_id=self._get_input_layer_id(),
-            processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value() / 100,
+            processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value(),
             input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
             model_output_format=ModelOutputFormat(self.comboBox_modelOutputFormat.currentText()),
             model_output_format__single_class_number=self.comboBox_outputFormatClassNumber.currentIndex(),

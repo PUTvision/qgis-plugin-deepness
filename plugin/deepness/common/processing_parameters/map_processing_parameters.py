@@ -40,7 +40,7 @@ class MapProcessingParameters:
     input_layer_id: str  # raster layer to process
     mask_layer_id: Optional[str]  # Processing of masked layer - if processed_area_type is FROM_POLYGONS
 
-    processing_overlap_percentage: float  # aka stride - overlap of neighbouring tiles while processing
+    processing_overlap_percentage: float  # aka stride - overlap of neighbouring tiles while processing (0-100)
 
     input_channels_mapping: ChannelsMapping  # describes mapping of image channels to model inputs
 
