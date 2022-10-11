@@ -14,8 +14,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../../plugin'))
-import deep_segmentation_framework
+sys.path.append(os.path.abspath('../../plugin/'))
+sys.path.append(os.path.abspath('../../plugin/deep_segmentation_framework'))
 
 
 # -- Project information -----------------------------------------------------
@@ -117,7 +117,8 @@ html_static_path = ['_static']
 htmlhelp_basename = 'QGISDeepSegmentationFrameworkdoc'
 
 autosummary_generate = True
-autoclass_content = "both"  # Add __init__ doc (ie. params) to class summaries
+autoclass_content = "class"  # Add __init__ doc (ie. params) to class summaries
+# autodoc_mock_imports = ["qgis"]
 html_show_sourcelink = False  # Remove 'view source code' from top of page (for html, not python)
 autodoc_inherit_docstrings = True  # If no docstring, inherit from base class
 set_type_checking_flag = True  # Enable 'expensive' imports for sphinx_autodoc_typehints

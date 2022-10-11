@@ -9,4 +9,8 @@ Nevertheless, it should be useful for developers and reference.
    :template: custom-module-template.rst
    :recursive:
 
-   deep_segmentation_framework
+      deep_segmentation_framework_dockwidget
+      deep_segmentation_framework
+      common
+      processing
+      widgets
