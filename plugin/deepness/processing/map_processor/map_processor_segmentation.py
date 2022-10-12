@@ -1,16 +1,12 @@
 import cv2
 import numpy as np
-
-from qgis.core import QgsVectorLayer
 from qgis.core import QgsProject
+from qgis.core import QgsVectorLayer
 
-from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat
-from deepness.processing import processing_utils
-from deepness.common.defines import IS_DEBUG
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
+from deepness.processing import processing_utils
 from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
     MapProcessingResultCanceled, MapProcessingResultSuccess
-from deepness.processing.map_processor.map_processor import MapProcessor
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 
 

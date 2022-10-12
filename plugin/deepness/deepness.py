@@ -14,9 +14,9 @@ from qgis.PyQt.QtWidgets import QMessageBox
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deepness.images.get_image_path import get_icon_path
-from deepness.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
 from deepness.processing.map_processor.map_processing_result import MapProcessingResult, MapProcessingResultFailed, \
     MapProcessingResultCanceled, MapProcessingResultSuccess
+from deepness.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
 from deepness.processing.models.model_types import ModelDefinition
 
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2

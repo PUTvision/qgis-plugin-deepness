@@ -2,18 +2,17 @@ import logging
 from dataclasses import dataclass
 from typing import Optional, List, Tuple
 
-import numpy as np
 import cv2
-from qgis.core import QgsRasterLayer, QgsCoordinateTransform
+import numpy as np
 from qgis.core import Qgis
-from qgis.core import QgsWkbTypes
-from qgis.core import QgsRectangle
-
 from qgis.core import QgsFeature, QgsGeometry, QgsPointXY
+from qgis.core import QgsRasterLayer, QgsCoordinateTransform
+from qgis.core import QgsRectangle
 from qgis.core import QgsUnitTypes
+from qgis.core import QgsWkbTypes
 
-from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
+from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 
 
 def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:

@@ -2,7 +2,6 @@
 This file contain common definitions used in the project
 """
 
-
 import os
 
 PLUGIN_NAME = 'Deepness'

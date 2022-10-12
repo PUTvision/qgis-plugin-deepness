@@ -4,13 +4,11 @@ This file contains a single widget, which is embedded in the main dockwiget - to
 
 import os
 
-from qgis.PyQt.QtWidgets import QFileDialog
 from qgis.PyQt import QtWidgets, uic
-from qgis.core import QgsProject
-from qgis.core import QgsMapLayerProxyModel
 from qgis.PyQt.QtWidgets import QFileDialog
+from qgis.core import QgsMapLayerProxyModel
+from qgis.core import QgsProject
 
-from deepness.common.channels_mapping import ChannelsMapping
 from deepness.common.config_entry_key import ConfigEntryKey
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 from deepness.common.processing_parameters.training_data_export_parameters import \

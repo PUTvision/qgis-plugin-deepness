@@ -6,10 +6,9 @@ This file contains a single widget, which is embedded in the main dockwiget - to
 import os
 from typing import Optional, List
 
-from qgis.PyQt.QtWidgets import QLabel
-
-from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtWidgets, uic
+from qgis.PyQt.QtWidgets import QComboBox
+from qgis.PyQt.QtWidgets import QLabel
 from qgis.core import Qgis, QgsRasterLayer
 
 from deepness.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \

@@ -7,24 +7,23 @@ import logging
 import os
 from typing import Optional
 
-from qgis.PyQt.QtWidgets import QMessageBox
-from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
-from qgis.core import QgsProject
-from qgis.core import QgsMapLayerProxyModel
-from qgis.core import QgsMessageLog
-from qgis.core import Qgis
+from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt.QtWidgets import QFileDialog
+from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.core import Qgis
+from qgis.core import QgsMapLayerProxyModel
+from qgis.core import QgsProject
 
 from deepness.common.config_entry_key import ConfigEntryKey
-from deepness.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
+from deepness.common.defines import PLUGIN_NAME, IS_DEBUG
 from deepness.common.errors import OperationFailedException
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters
-from deepness.common.processing_parameters.regression_parameters import RegressionParameters
-from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
     ProcessedAreaType, ModelOutputFormat
+from deepness.common.processing_parameters.regression_parameters import RegressionParameters
+from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
 from deepness.processing.models.model_base import ModelBase

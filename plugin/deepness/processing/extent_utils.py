@@ -1,8 +1,8 @@
 from qgis.core import QgsCoordinateTransform
-from qgis.gui import QgsMapCanvas
-from qgis.core import QgsVectorLayer
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsRectangle
+from qgis.core import QgsVectorLayer
+from qgis.gui import QgsMapCanvas
 
 from deepness.common.errors import OperationFailedException
 from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
