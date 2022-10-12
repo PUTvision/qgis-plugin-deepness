@@ -1,3 +1,7 @@
+"""
+This file contains miscellaneous stuff used in the project
+"""
+
 import os
 import tempfile
 

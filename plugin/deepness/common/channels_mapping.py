@@ -1,3 +1,9 @@
+"""
+Raster layer (ortophoto) which is being processed consist of channels (usually Red, Green, Blue).
+The neural model expects input channels with some model-defined meaning.
+Channel mappings in this file define how the ortophoto channels translate to model inputs (e.g first model input is Red, second Green).
+"""
+
 import copy
 import enum
 from typing import Dict
@@ -5,6 +11,11 @@ from typing import List
 
 
 class ImageChannel:
+    """
+    Defines an image channel - how is it being stored in the data source.
+    See note at top of this file for details.
+    """
+
     def __init__(self, name):
         self.name = name
 
@@ -16,6 +27,11 @@ class ImageChannel:
 
 
 class ImageChannelStandaloneBand(ImageChannel):
+    """
+    Defines an image channel, where each image channel is a separate band in the data source.
+    See note at top of this file for details.
+    """
+
     def __init__(self, band_number: int, name: str):
         super().__init__(name)
         self.band_number = band_number  # index within bands (counted from one)
@@ -33,6 +49,11 @@ class ImageChannelStandaloneBand(ImageChannel):
 
 
 class ImageChannelCompositeByte(ImageChannel):
+    """
+    Defines an image channel, where each image channel is a smaller part of a bigger value (e.g. one byte within uint32 for each pixel).
+    See note at top of this file for details.
+    """
+
     def __init__(self, byte_number: int, name: str):
         super().__init__(name)
         self.byte_number = byte_number  # position in composite byte (byte number in ARGB32, counted from zero)
@@ -51,7 +72,8 @@ class ImageChannelCompositeByte(ImageChannel):
 
 class ChannelsMapping:
     """
-    Defines mapping of model input channels to input image channels (bands)
+    Defines mapping of model input channels to input image channels (bands).
+    See note at top of this file for details.
     """
 
     INVALID_INPUT_CHANNEL = -1
@@ -78,8 +100,14 @@ class ChannelsMapping:
         return True
 
     def get_as_default_mapping(self):
-        # get same channels mapping as we have right now, but without the mapping itself
-        # (so just a definition of inputs and outputs)
+        """
+        Get the same channels mapping as we have right now, but without the mapping itself
+        (so just a definition of inputs and outputs)
+
+        Returns
+        -------
+        ChannelsMapping
+        """
         default_channels_mapping = copy.deepcopy(self)
         default_channels_mapping._mapping = {}
         return default_channels_mapping
@@ -102,30 +130,74 @@ class ChannelsMapping:
                 return False
         return True
 
-    def set_number_of_model_inputs(self, number_of_model_inputs):
+    def set_number_of_model_inputs(self, number_of_model_inputs: int):
+        """ Set how many input channels does the model has
+        Parameters
+        ----------
+        number_of_model_inputs : int
+        """
         self._number_of_model_inputs = number_of_model_inputs
 
-    def set_number_of_model_output_channels(self, number_of_output_channels):
+    def set_number_of_model_output_channels(self, number_of_output_channels: int):
+        """ Set how many output channels does the model has
+
+        Parameters
+        ----------
+        number_of_output_channels : int
+        """
         self._number_of_model_output_channels = number_of_output_channels
 
     def set_number_of_model_inputs_same_as_image_channels(self):
+        """ Set the number of model input channels to be the same as number of image channels
+        """
         self._number_of_model_inputs = len(self._image_channels)
 
-    def get_number_of_model_inputs(self):
+    def get_number_of_model_inputs(self) -> int:
+        """ Get number of model input channels
+
+        Returns
+        -------
+        int
+        """
         return self._number_of_model_inputs
 
-    def get_number_of_model_output_channels(self):
+    def get_number_of_model_output_channels(self) -> int:
+        """ Get number of model output channels
+
+        Returns
+        -------
+        int
+        """
         return self._number_of_model_output_channels
 
     def get_number_of_image_channels(self) -> int:
+        """ Get number of image input channels
+
+        Returns
+        -------
+        int
+        """
         return len(self._image_channels)
 
     def set_image_channels(self, image_channels: List[ImageChannel]):
+        """ Set what are the image channels
+
+        Parameters
+        ----------
+        image_channels : List[ImageChannel]
+            Image channels to set
+        """
         self._image_channels = image_channels
         if not self.are_all_inputs_standalone_bands() and not self.are_all_inputs_composite_byte():
             raise Exception("Unsupported image channels composition!")
 
     def get_image_channels(self) -> List[ImageChannel]:
+        """ Get the current image channels definition
+
+        Returns
+        -------
+        List[ImageChannel]
+        """
         return self._image_channels
 
     def get_image_channel_index_for_model_input(self, model_input_number) -> int:
@@ -140,10 +212,18 @@ class ChannelsMapping:
         image_channel_index = min(image_channel_index, len(self._image_channels) - 1)
         return image_channel_index
 
-    def get_image_channel_for_model_input(self, model_input_number) -> ImageChannel:
+    def get_image_channel_for_model_input(self, model_input_number: int) -> ImageChannel:
         """
-        Get ImageChannel which should be used
-        param: model_input_number Model input number, counted from 0
+        Get ImageChannel which should be used for the specified model input
+
+        Parameters
+        ----------
+        model_input_number : int
+            Model input number, counted from 0
+
+        Returns
+        -------
+        ImageChannel
         """
         image_channel_index = self.get_image_channel_index_for_model_input(model_input_number)
         return self._image_channels[image_channel_index]
@@ -158,6 +238,12 @@ class ChannelsMapping:
         self._mapping[model_input_number] = image_channel_index
 
     def get_mapping_as_list(self) -> List[int]:
+        """ Get the mapping of model input channels to image channels, but as a list (e.g. to store it in QGis configuration)
+
+        Returns
+        -------
+        List[int]
+        """
         mapping_list = []
         for i in range(self._number_of_model_inputs):
             if i in self._mapping:

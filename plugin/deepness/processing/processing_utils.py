@@ -254,6 +254,7 @@ class BoundingBox:
 
     def get_slice(self):
         roi_slice = np.s_[self.y_min:self.y_max + 1, self.x_min:self.x_max + 1]
+        return roi_slice
 
 
 def transform_polygon_with_rings_epsg_to_extended_xy_pixels(
