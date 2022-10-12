@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Tuple, List
 
-import cv2
 import numpy as np
 
 from deepness.processing.models.model_base import ModelBase

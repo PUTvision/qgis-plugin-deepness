@@ -1,3 +1,11 @@
+"""
+Main plugin file - entry point for the plugin.
+
+Links the UI and the processing.
+
+Skeleton of this file was generate with the QGis plugin to create plugin skeleton - QGIS PluginBuilder
+"""
+
 import os
 import traceback
 
@@ -6,9 +14,9 @@ from qgis.PyQt.QtWidgets import QMessageBox
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deepness.images.get_image_path import get_icon_path
-from deepness.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
 from deepness.processing.map_processor.map_processing_result import MapProcessingResult, MapProcessingResultFailed, \
     MapProcessingResultCanceled, MapProcessingResultSuccess
+from deepness.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
 from deepness.processing.models.model_types import ModelDefinition
 
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2
@@ -32,7 +40,9 @@ import os.path
 
 
 class Deepness:
-    """QGIS Plugin Implementation."""
+    """ QGIS Plugin Implementation - main class of the plugin.
+    Creates the UI classes and processing models and links them together.
+    """
 
     def __init__(self, iface: QgisInterface):
         """
@@ -41,7 +51,6 @@ class Deepness:
             application at run time.
         :type iface: QgsInterface
         """
-        print('1) __init__')
         # Save reference to the QGIS interface
         self.iface = iface
 
@@ -295,7 +304,8 @@ class Deepness:
         self._display_processing_started_info()
 
     @staticmethod
-    def _show_img(img_rgb, window_name):
+    def _show_img(img_rgb, window_name: str):
+        """ Helper function to show an image while developing and debugging the plugin """
         img_bgr = img_rgb[..., ::-1]
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(window_name, 800, 800)
@@ -303,6 +313,7 @@ class Deepness:
         cv2.waitKey(1)
 
     def _map_processor_finished(self, result: MapProcessingResult):
+        """ Slot for finished processing of the ortophoto """
         if isinstance(result, MapProcessingResultFailed):
             msg = f'Error! Processing error: "{result.message}"!'
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical, duration=14)

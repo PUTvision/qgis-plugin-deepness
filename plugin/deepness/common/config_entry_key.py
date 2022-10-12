@@ -1,3 +1,7 @@
+"""
+This file contains utilities to write and read configuration parameters to the QGis Project configuration
+"""
+
 import enum
 
 from qgis.core import QgsProject
@@ -41,7 +45,7 @@ class ConfigEntryKey(enum.Enum):
 
     def get(self):
         """
-        Get value store in config (or a default one)
+        Get the value store in config (or a default one) for the specified field
         """
         read_function = None
 
@@ -64,6 +68,13 @@ class ConfigEntryKey(enum.Enum):
         return value
 
     def set(self, value):
+        """ Set the value store in config, for the specified field
+
+        Parameters
+        ----------
+        value :
+            Value to set in the configuration
+        """
         write_function = None
 
         # check the default value to determine the entry type
