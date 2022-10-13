@@ -1,3 +1,7 @@
+"""
+This file contains utilities related to processing of the ortophoto
+"""
+
 import logging
 from dataclasses import dataclass
 from typing import Optional, List, Tuple
@@ -26,6 +30,8 @@ def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
 
 
 def get_numpy_data_type_for_qgis_type(data_type_qgis: Qgis.DataType):
+    """Conver QGIS data type to corresponding numpy data type
+    """
     if data_type_qgis == Qgis.DataType.Byte:
         data_type_numpy = np.uint8
     elif data_type_qgis == Qgis.DataType.UInt16:
@@ -45,12 +51,21 @@ def get_tile_image(
         rlayer: QgsRasterLayer,
         extent: QgsRectangle,
         params: MapProcessingParameters) -> np.ndarray:
-    """
+    """_summary_
 
-    :param rlayer: raster layer from which the image will be extracted
-    :param extent: extent of the image to extract
-    :param params:
-    :return: extracted image [SIZE x SIZE x CHANNELS]. Probably RGBA channels
+    Parameters
+    ----------
+    rlayer : QgsRasterLayer
+        raster layer from which the image will be extracted
+    extent : QgsRectangle
+        extent of the image to extract
+    params : MapProcessingParameters
+        map processing parameters
+
+    Returns
+    -------
+    np.ndarray
+       extracted image [SIZE x SIZE x CHANNELS]. Probably RGBA channels
     """
 
     expected_meters_per_pixel = params.resolution_cm_per_px / 100
@@ -127,6 +142,7 @@ def get_tile_image(
 
 
 def erode_dilate_image(img, segmentation_parameters: SegmentationParameters):
+    """Apply dilate and erode to the input image"""
     # self._show_image(img)
     if segmentation_parameters.postprocessing_dilate_erode_size:
         size = (segmentation_parameters.postprocessing_dilate_erode_size // 2) ** 2 + 1
@@ -144,14 +160,8 @@ def convert_cv_contours_to_features(features,
                                     is_hole,
                                     current_holes):
     """
-    Convert contour found with OpenCV to features accepted by QGis
-    :param features:
-    :param cv_contours:
-    :param hierarchy:
-    :param current_contour_index:
-    :param is_hole:
-    :param current_holes:
-    :return:
+    Convert contour found with OpenCV to features accepted by QGis.
+    Called recursively.
     """
 
     if current_contour_index == -1:
@@ -193,6 +203,7 @@ def transform_points_list_xy_to_target_crs(
         points: List[Tuple],
         extent: QgsRectangle,
         rlayer_units_per_pixel: float):
+    """ Transform points from xy coordinates to the target CRS system coordinates"""
     x_left = extent.xMinimum()
     y_upper = extent.yMaximum()
     points_crs = []
@@ -208,6 +219,7 @@ def transform_contours_yx_pixels_to_target_crs(
         contours,
         extent: QgsRectangle,
         rlayer_units_per_pixel: float):
+    """ Transform countours with points as yx pixels to the target CRS system coordinates"""
     x_left = extent.xMinimum()
     y_upper = extent.yMaximum()
 

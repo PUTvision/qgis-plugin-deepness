@@ -1,3 +1,5 @@
+""" This file implements map processing for the Training Data Export Tool """
+
 import datetime
 import os
 

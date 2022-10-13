@@ -1,3 +1,5 @@
+""" This file implements map processing for detection model """
+
 from typing import List
 
 import numpy as np
@@ -168,4 +170,3 @@ class MapProcessorDetection(MapProcessorWithModel):
         bounding_boxes: List[Detection] = self.model.process(tile_img)
         self.convert_bounding_boxes_to_absolute_positions(bounding_boxes, tile_params)
         return bounding_boxes
-
