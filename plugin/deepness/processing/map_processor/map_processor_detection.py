@@ -77,7 +77,7 @@ class MapProcessorDetection(MapProcessorWithModel):
                 area_subimg = self.area_mask_img[det_slice]
                 pixels_in_area = np.count_nonzero(area_subimg)
             else:
-                det_bounding_box = det.bbox.to_bounding_box()
+                det_bounding_box = det.bbox
                 pixels_in_area = self.base_extent_bbox_in_full_image.calculate_overlap_in_pixels(det_bounding_box)
             total_pixels = det.bbox.get_area()
             coverage = pixels_in_area / total_pixels

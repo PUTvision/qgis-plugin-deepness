@@ -11,97 +11,12 @@ from deepness.processing.processing_utils import BoundingBox
 
 
 @dataclass
-class DetectorBBox:
-    """Bounding box class - rectangle area, describing position in pixels in detection process
-
-    Parameters
-    ----------
-    offset_x : int
-        left upper corner (x, y)
-    offset_y : int
-        bottom right corner (x, y)
-    """
-
-    left_upper: Tuple[int, int]
-    """Tuple[int, int]: left upper corner (x, y)"""
-    right_down: Tuple[int, int]
-    """Tuple[int, int]: bottom right corner (x, y)"""
-
-    def apply_offset(self, offset_x: int, offset_y: int):
-        """Apply (x,y) offset to keeping coordinates
-
-        Parameters
-        ----------
-        offset_x : int
-            x-axis offset in pixels
-        offset_y : int
-            y-axis offset in pixels
-        """
-        self.left_upper[0] += offset_x
-        self.left_upper[1] += offset_y
-        self.right_down[0] += offset_x
-        self.right_down[1] += offset_y
-
-    def get_area(self) -> float:
-        """Calculate bounding box reactangle area
-
-        Returns
-        -------
-        float
-            Bounding box area
-        """
-        return (self.right_down[0] - self.left_upper[0] + 1) * (
-            self.right_down[1] - self.left_upper[1]
-        )
-
-    def get_4_corners(self) -> List[Tuple]:
-        """Get 4 points (corners) describing the detection rectangle, each point in (x, y) format
-
-        Returns
-        -------
-        List[Tuple]
-            List of 4 rectangle corners in (x, y) format
-        """
-        return [
-            (self.left_upper[0], self.left_upper[1]),
-            (self.left_upper[0], self.right_down[1]),
-            (self.right_down[0], self.right_down[1]),
-            (self.right_down[0], self.left_upper[1]),
-        ]
-
-    def get_slice(self) -> List:
-        """Get slice describing bounding box position on an image
-
-        Returns
-        -------
-        List
-            Slice
-        """
-        return self.to_bounding_box().get_slice()
-
-    def to_bounding_box(self) -> BoundingBox:
-        """Convert corner coordinates into BoundingBox class
-
-        Returns
-        -------
-        BoundingBox
-            _description_
-        """
-        return BoundingBox(
-            x_min=self.left_upper[0],
-            x_max=self.right_down[0],
-            y_min=self.left_upper[1],
-            y_max=self.right_down[1],
-        )
-
-
-@dataclass
 class Detection:
     """Class that represents single detection result in object detection model
 
     Parameters
     ----------
-    bbox : DetectorBBox
+    bbox : BoundingBox
         bounding box describing the detection rectangle
     conf : float
         confidence of the detection
@@ -109,8 +24,8 @@ class Detection:
         class of the detected object
     """
 
-    bbox: DetectorBBox
-    """DetectorBBox: bounding box describing the detection rectangle"""
+    bbox: BoundingBox
+    """BoundingBox: bounding box describing the detection rectangle"""
     conf: float
     """float: confidence of the detection"""
     clss: int
@@ -136,14 +51,7 @@ class Detection:
         np.ndarray
             Array in (x1, y1, x2, y2) format
         """
-        return np.array(
-            [
-                self.bbox.left_upper[0],
-                self.bbox.left_upper[1],
-                self.bbox.right_down[0],
-                self.bbox.right_down[1],
-            ]
-        )
+        return self.bbox.get_xyxy()
 
 
 class Detector(ModelBase):
@@ -264,7 +172,13 @@ class Detector(ModelBase):
 
         for b, c, cl in zip(boxes, conf, classes):
             det = Detection(
-                bbox=DetectorBBox(left_upper=b[:2], right_down=b[2:]), conf=c, clss=cl
+                bbox=BoundingBox(
+                            x_min = b[0],
+                            x_max = b[2],
+                            y_min = b[1],
+                            y_max = b[3]),
+                conf=c, 
+                clss=cl
             )
             detections.append(det)
 

@@ -239,11 +239,59 @@ class BoundingBox:
     y_min: int
     y_max: int
 
-    def get_shape(self):
+    def get_shape(self) -> Tuple[int, int]:
+        """ Returns the shape of the bounding box as a tuple (height, width)
+
+        Returns
+        -------
+        tuple
+            (height, width)
+        """
         return [
             self.y_max - self.y_min + 1,
             self.x_max - self.x_min + 1
         ]
+
+    def get_xyxy(self) -> Tuple[int, int, int, int]:
+        """ Returns the bounding box as a tuple (x_min, y_min, x_max, y_max)
+
+        Returns
+        -------
+        Tuple[int, int, int, int]
+            (x_min, y_min, x_max, y_max)
+        """
+        return [
+            self.x_min,
+            self.y_min,
+            self.x_max,
+            self.y_max
+        ]
+
+    def get_xywh(self) -> Tuple[int, int, int, int]:
+        """ Returns the bounding box as a tuple (x_min, y_min, width, height)
+
+        Returns
+        -------
+        Tuple[int, int, int, int]
+            (x_min, y_min, width, height)
+        """
+        return [
+            self.x_min,
+            self.y_min,
+            self.x_max - self.x_min,
+            self.y_max - self.y_min
+        ]
+
+    def get_area(self) -> float:
+        """Calculate bounding box reactangle area
+
+        Returns
+        -------
+        float
+            Bounding box area
+        """
+        shape = self.get_shape()
+        return shape[0] * shape[1]
 
     def calculate_overlap_in_pixels(self, other):
         dx = min(self.x_max, other.x_max) - max(self.x_min, other.x_min)
@@ -254,6 +302,37 @@ class BoundingBox:
 
     def get_slice(self):
         return np.s_[self.y_min:self.y_max + 1, self.x_min:self.x_max + 1]
+
+    def apply_offset(self, offset_x: int, offset_y: int):
+        """Apply (x,y) offset to keeping coordinates
+
+        Parameters
+        ----------
+        offset_x : int
+            x-axis offset in pixels
+        offset_y : int
+            y-axis offset in pixels
+        """
+        self.x_min += offset_x
+        self.y_min += offset_y
+        self.x_max += offset_x
+        self.y_max += offset_y
+
+    def get_4_corners(self) -> List[Tuple]:
+        """Get 4 points (corners) describing the detection rectangle, each point in (x, y) format
+
+        Returns
+        -------
+        List[Tuple]
+            List of 4 rectangle corners in (x, y) format
+        """
+        return [
+            (self.x_min, self.y_min),
+            (self.x_min, self.y_max),
+            (self.x_max, self.y_max),
+            (self.x_max, self.y_min),
+        ]
+
 
 
 def transform_polygon_with_rings_epsg_to_extended_xy_pixels(
