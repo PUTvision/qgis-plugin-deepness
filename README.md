@@ -1,4 +1,9 @@
-# ![dsf_logo](plugin/deepness/images/icon.png) Deepness: **Deep** **N**eural r**E**mote **S**en**S**ing QGIS Plugin
+<p align="center">
+  <img width="250" height="250" src="plugin/deepness/images/icon.png" alt="dsf_logo">
+
+  <h2 align="center">Deepness: <b>Deep</b> <b>N</b>eural r<b>E</b>mote <b>S</b>en<b>S</b>ing QGIS Plugin</h2>
+</p>
+
 ![main](https://github.com/PUTvision/qgis-plugin-deepness/actions/workflows/python-app.yml/badge.svg)
 [![GitHub contributors](https://img.shields.io/github/contributors/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/graphs/contributors)
 [![GitHub stars](https://img.shields.io/github/stars/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/stargazers)

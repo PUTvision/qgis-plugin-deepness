@@ -1,5 +1,6 @@
+""" Module including the base model interfaces and utilities"""
 import json
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 import onnxruntime as ort
@@ -11,6 +12,13 @@ class ModelBase:
     """
 
     def __init__(self, model_file_path: str):
+        """
+
+        Parameters
+        ----------
+        model_file_path : str
+            Path to the model file
+        """
         self.model_file_path = model_file_path
 
         options = ort.SessionOptions()
@@ -33,25 +41,54 @@ class ModelBase:
         self.outputs_layers = self.sess.get_outputs()
 
     @classmethod
-    def get_model_type_from_metadata(cls, model_file_path) -> Optional[str]:
+    def get_model_type_from_metadata(cls, model_file_path: str) -> Optional[str]:
+        """ Get model type from metadata
+
+        Parameters
+        ----------
+        model_file_path : str
+            Path to the model file
+
+        Returns
+        -------
+        Optional[str]
+            Model type or None if not found
+        """
         model = cls(model_file_path)
         return model.get_metadata_model_type()
 
-    def get_input_shape(self):
-        """
-        Get shape of the input for the model
+    def get_input_shape(self) -> tuple:
+        """ Get shape of the input for the model
+
+        Returns
+        -------
+        tuple
+            Shape of the input (batch_size, channels, height, width)
         """
         return self.input_shape
 
-    def get_input_size_in_pixels(self):
-        """
-        Get number of input pixels in x and y direction (the same value)
+    def get_input_size_in_pixels(self) -> int:
+        """ Get number of input pixels in x and y direction (the same value)
+
+        Returns
+        -------
+        int
+            Number of pixels in x and y direction
         """
         return self.input_shape[-2:]
 
     def get_channel_name(self, channel_id: int) -> str:
-        """
-        Get channel name by id if exists in model metadata
+        """ Get channel name by id if exists in model metadata
+
+        Parameters
+        ----------
+        channel_id : int
+            Channel id (means index in the output tensor)
+
+        Returns
+        -------
+        str
+            Channel name or empty string if not found      
         """
         meta = self.sess.get_modelmeta()
         channel_id_str = str(channel_id)
@@ -65,6 +102,13 @@ class ModelBase:
             return default_return
 
     def get_metadata_model_type(self) -> Optional[str]:
+        """ Get model type from metadata
+        
+        Returns
+        -------
+        Optional[str]
+            Model type or None if not found
+        """
         meta = self.sess.get_modelmeta()
         name = 'model_type'
         if name in meta.custom_metadata_map:
@@ -73,6 +117,13 @@ class ModelBase:
         return None
 
     def get_metadata_resolution(self) -> Optional[float]:
+        """ Get resolution from metadata if exists
+
+        Returns
+        -------
+        Optional[float]
+            Resolution or None if not found
+        """
         meta = self.sess.get_modelmeta()
         name = 'resolution'
         if name in meta.custom_metadata_map:
@@ -81,6 +132,13 @@ class ModelBase:
         return None
 
     def get_metadata_tile_size(self) -> Optional[int]:
+        """ Get tile size from metadata if exists
+        
+        Returns
+        -------
+        Optional[int]
+            Tile size or None if not found
+        """
         meta = self.sess.get_modelmeta()
         name = 'tile_size'
         if name in meta.custom_metadata_map:
@@ -89,6 +147,13 @@ class ModelBase:
         return None
 
     def get_metadata_tiles_overlap(self) -> Optional[int]:
+        """ Get tiles overlap from metadata if exists
+
+        Returns
+        -------
+        Optional[int]
+            Tiles overlap or None if not found
+        """
         meta = self.sess.get_modelmeta()
         name = 'tiles_overlap'
         if name in meta.custom_metadata_map:
@@ -97,6 +162,13 @@ class ModelBase:
         return None
 
     def get_metadata_segmentation_threshold(self) -> Optional[float]:
+        """ Get segmentation threshold from metadata if exists
+
+        Returns
+        -------
+        Optional[float]
+            Segmentation threshold or None if not found
+        """
         meta = self.sess.get_modelmeta()
         name = 'seg_thresh'
         if name in meta.custom_metadata_map:
@@ -105,6 +177,13 @@ class ModelBase:
         return None
 
     def get_metadata_segmentation_small_segment(self) -> Optional[int]:
+        """ Get segmentation small segment from metadata if exists
+
+        Returns
+        -------
+        Optional[int]
+            Segmentation small segment or None if not found
+        """
         meta = self.sess.get_modelmeta()
         name = 'seg_small_segment'
         if name in meta.custom_metadata_map:
@@ -113,6 +192,13 @@ class ModelBase:
         return None
 
     def get_metadata_regression_output_scaling(self) -> Optional[float]:
+        """ Get regression output scaling from metadata if exists
+
+        Returns
+        -------
+        Optional[float]
+            Regression output scaling or None if not found
+        """
         meta = self.sess.get_modelmeta()
         name = 'reg_output_scaling'
         if name in meta.custom_metadata_map:
@@ -121,6 +207,13 @@ class ModelBase:
         return None
 
     def get_metadata_detection_confidence(self) -> Optional[float]:
+        """ Get detection confidence from metadata if exists
+
+        Returns
+        -------
+        Optional[float]
+            Detection confidence or None if not found
+        """
         meta = self.sess.get_modelmeta()
         name = 'det_conf'
         if name in meta.custom_metadata_map:
@@ -129,6 +222,13 @@ class ModelBase:
         return None
 
     def get_metadata_detection_iou_threshold(self) -> Optional[float]:
+        """ Get detection iou threshold from metadata if exists
+
+        Returns
+        -------
+        Optional[float]
+            Detection iou threshold or None if not found
+        """
         meta = self.sess.get_modelmeta()
         name = 'det_iou_thresh'
         if name in meta.custom_metadata_map:
@@ -136,16 +236,29 @@ class ModelBase:
             return float(value)
         return None
 
-    def get_number_of_channels(self):
+    def get_number_of_channels(self) -> int:
+        """ Returns number of channels in the input layer
+
+        Returns
+        -------
+        int
+            Number of channels in the input layer
+        """
         return self.input_shape[-3]
 
     def process(self, img):
-        """
-        Process a single tile image
-        :param img: RGB img [TILE_SIZE x TILE_SIZE x channels], type uint8, values 0 to 255
-        :return: single prediction
-        """
+        """ Process a single tile image
 
+        Parameters
+        ----------
+        img : np.ndarray
+            Image to process ([TILE_SIZE x TILE_SIZE x channels], type uint8, values 0 to 255)
+
+        Returns
+        -------
+        np.ndarray
+            Single prediction
+        """
         input_batch = self.preprocessing(img)
         model_output = self.sess.run(
             output_names=None,
@@ -153,15 +266,48 @@ class ModelBase:
         res = self.postprocessing(model_output)
         return res
 
-    def preprocessing(self, img: np.ndarray):
+    def preprocessing(self, img: np.ndarray) -> np.ndarray:
+        """ Abstract method for preprocessing
+
+        Parameters
+        ----------
+        img : np.ndarray
+            Image to process ([TILE_SIZE x TILE_SIZE x channels], type uint8, values 0 to 255, RGB order)
+
+        Returns
+        -------
+        np.ndarray
+            Preprocessed image
+        """
         return NotImplementedError
 
-    def postprocessing(self, outs: np.ndarray):
+    def postprocessing(self, outs: List) -> np.ndarray:
+        """ Abstract method for postprocessing
+
+        Parameters
+        ----------
+        outs : List
+            Output from the model (depends on the model type)
+
+        Returns
+        -------
+        np.ndarray
+            Postprocessed output
+        """
         return NotImplementedError
 
-    def get_number_of_output_channels(self):
+    def get_number_of_output_channels(self) -> int:
+        """ Abstract method for getting number of classes in the output layer
+        
+        Returns
+        -------
+        int
+            Number of channels in the output layer"""
         return NotImplementedError
 
     def check_loaded_model_outputs(self):
+        """ Abstract method for checking if the model outputs are valid
+
+        """
         return NotImplementedError
 
