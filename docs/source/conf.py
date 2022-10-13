@@ -146,6 +146,11 @@ autodoc_inherit_docstrings = True  # If no docstring, inherit from base class
 set_type_checking_flag = True  # Enable 'expensive' imports for sphinx_autodoc_typehints
 nbsphinx_allow_errors = True  # Continue through Jupyter errors
 add_module_names = False # Remove namespaces from class/method signatures
+html_logo = "../../plugin/deepness/images/icon.png"
+html_theme_options = {
+    'logo_only': False,
+    'display_version': True,
+}
 
 # -- Options for LaTeX output ------------------------------------------------
 
