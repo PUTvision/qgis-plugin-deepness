@@ -65,10 +65,9 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'sphinx_autodoc_typehints',
     'sphinx.ext.intersphinx',
-    'sphinxcontrib.youtube',
     'sphinx.ext.napoleon',
+    'sphinxcontrib.youtube',
 ]
 
 # Add any paths that contain templates here, relative to this directory.

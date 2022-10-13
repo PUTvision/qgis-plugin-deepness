@@ -1,21 +1,18 @@
 import logging
 from typing import Optional, Tuple
 
-import numpy as np
 import cv2
-
+import numpy as np
 from qgis.PyQt.QtCore import pyqtSignal
-from qgis.core import QgsVectorLayer
-from qgis.gui import QgsMapCanvas
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsTask
-from qgis.core import QgsProject
+from qgis.core import QgsVectorLayer
+from qgis.gui import QgsMapCanvas
 
+from deepness.common.defines import IS_DEBUG
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
     ProcessedAreaType
 from deepness.processing import processing_utils, extent_utils
-from deepness.common.defines import IS_DEBUG
-from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
     MapProcessingResultFailed
 from deepness.processing.tile_params import TileParams

@@ -2,7 +2,6 @@ import datetime
 import os
 
 import cv2
-
 from qgis.core import QgsProject
 
 from deepness.common.processing_parameters.training_data_export_parameters import \

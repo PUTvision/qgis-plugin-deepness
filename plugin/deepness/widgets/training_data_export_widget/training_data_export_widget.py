@@ -1,12 +1,14 @@
+"""
+This file contains a single widget, which is embedded in the main dockwiget - to select the training data export parameters
+"""
+
 import os
 
-from qgis.PyQt.QtWidgets import QFileDialog
 from qgis.PyQt import QtWidgets, uic
-from qgis.core import QgsProject
-from qgis.core import QgsMapLayerProxyModel
 from qgis.PyQt.QtWidgets import QFileDialog
+from qgis.core import QgsMapLayerProxyModel
+from qgis.core import QgsProject
 
-from deepness.common.channels_mapping import ChannelsMapping
 from deepness.common.config_entry_key import ConfigEntryKey
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 from deepness.common.processing_parameters.training_data_export_parameters import \
@@ -18,7 +20,9 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class TrainingDataExportWidget(QtWidgets.QWidget, FORM_CLASS):
     """
-    Widget responsible for exporting .
+    Widget responsible for defining the parameters for the Trainign Data Export process (not doing the actual export).
+
+    UI design defined in the `training_data_export_widget.ui` file.
     """
 
     def __init__(self, rlayer, parent=None):
@@ -47,12 +51,6 @@ class TrainingDataExportWidget(QtWidgets.QWidget, FORM_CLASS):
         ConfigEntryKey.DATA_EXPORT_SEGMENTATION_MASK_ENABLED.set(
             self.checkBox_exportMaskEnabled.isChecked())
         ConfigEntryKey.DATA_EXPORT_SEGMENTATION_MASK_ID.set(self.get_segmentation_mask_layer_id())
-
-    def get_channels_mapping(self) -> ChannelsMapping:
-        if self.radioButton_defaultMapping.isChecked():
-            return self._channels_mapping.get_as_default_mapping()
-        else:  # advanced mapping
-            return self._channels_mapping
 
     def _browse_output_directory(self):
         current_directory = self.lineEdit_outputDirPath.text()
@@ -83,6 +81,7 @@ class TrainingDataExportWidget(QtWidgets.QWidget, FORM_CLASS):
         return self.mMapLayerComboBox_maskLayer.currentLayer().id()
 
     def get_training_data_export_parameters(self, map_processing_parameters: MapProcessingParameters):
+        """ Get the parameters from the UI for the data exporting process"""
         if self.checkBox_exportMaskEnabled.isChecked():
             segmentation_mask_layer_id = self.mMapLayerComboBox_maskLayer.currentLayer().id()
         else:

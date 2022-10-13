@@ -1,25 +1,29 @@
+"""
+This file contain the main widget of the plugin
+"""
+
+
 import logging
 import os
 from typing import Optional
 
-from qgis.PyQt.QtWidgets import QMessageBox
-from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
-from qgis.core import QgsProject
-from qgis.core import QgsMapLayerProxyModel
-from qgis.core import QgsMessageLog
-from qgis.core import Qgis
+from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt.QtWidgets import QFileDialog
+from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.core import Qgis
+from qgis.core import QgsMapLayerProxyModel
+from qgis.core import QgsProject
 
 from deepness.common.config_entry_key import ConfigEntryKey
-from deepness.common.defines import PLUGIN_NAME, LOG_TAB_NAME, IS_DEBUG
+from deepness.common.defines import PLUGIN_NAME, IS_DEBUG
 from deepness.common.errors import OperationFailedException
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters
-from deepness.common.processing_parameters.regression_parameters import RegressionParameters
-from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
     ProcessedAreaType, ModelOutputFormat
+from deepness.common.processing_parameters.regression_parameters import RegressionParameters
+from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
 from deepness.processing.models.model_base import ModelBase
@@ -30,12 +34,16 @@ from deepness.widgets.training_data_export_widget.training_data_export_widget im
     TrainingDataExportWidget
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'deepness_dockwidget_base.ui'))
+    os.path.dirname(__file__), 'deepness_dockwidget.ui'))
 
 
 class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     """
-    Default values for ui edits are based on 'ConfigEntryKey' default value, not taken from the UI form.
+    Main widget of the plugin.
+    'Dock' means it is a 'dcoked' widget, embedded in the QGis application window.
+
+    The UI design is defined in the `deepness_dockwidget.ui` fiel - recommended to be open in QtDesigner.
+    Note: Default values for ui edits are based on 'ConfigEntryKey' default value, not taken from the UI form.
     """
 
     closingPlugin = pyqtSignal()
@@ -48,8 +56,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self._model = None  # type: Optional[ModelBase]
         self.setupUi(self)
 
-        self._input_channels_mapping_widget = InputChannelsMappingWidget(self)
-        self._training_data_export_widget = TrainingDataExportWidget(self)
+        self._input_channels_mapping_widget = InputChannelsMappingWidget(self)  # mapping of model and input ortophoto channels
+        self._training_data_export_widget = TrainingDataExportWidget(self)  # widget with UI for data export tool
 
         self._create_connections()
         self._setup_misc_ui()
@@ -60,6 +68,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.label_debugModeWarning.setVisible(IS_DEBUG)
 
     def _load_ui_from_config(self):
+        """ Load the UI values from the project configuration
+        """
         layers = QgsProject.instance().mapLayers()
 
         try:
@@ -110,6 +120,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             logging.exception("Failed to load the ui state from config!")
 
     def _save_ui_to_config(self):
+        """ Save value from the UI forms to the project config
+        """
         ConfigEntryKey.MODEL_FILE_PATH.set(self.lineEdit_modelPath.text())
         ConfigEntryKey.INPUT_LAYER_ID.set(self._get_input_layer_id())
         ConfigEntryKey.MODEL_TYPE.set(self.comboBox_modelType.currentText())
@@ -141,6 +153,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self._input_channels_mapping_widget.set_rlayer(self._get_input_layer())
 
     def _setup_misc_ui(self):
+        """ Setup some misceleounous ui forms
+        """
         self._show_debug_warning()
         combobox = self.comboBox_processedAreaSelection
         for name in ProcessedAreaType.get_all_names():
@@ -370,7 +384,10 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         model_definition = ModelDefinition.get_definition_for_type(model_type)
         return model_definition
 
-    def get_inference_parameters(self):
+    def get_inference_parameters(self) -> MapProcessingParameters:
+        """ Get the parameters for the model interface.
+        The returned type is derived from `MapProcessingParameters` class, depending on the selected model type.
+        """
         map_processing_parameters = self._get_map_processing_parameters()
 
         if self._model is None:
@@ -471,4 +488,3 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
-

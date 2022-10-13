@@ -1,10 +1,14 @@
+"""
+This file contains a single widget, which is embedded in the main dockwiget - to select channels mapping
+"""
+
+
 import os
 from typing import Optional, List
 
-from qgis.PyQt.QtWidgets import QLabel
-
-from qgis.PyQt.QtWidgets import QComboBox
 from qgis.PyQt import QtWidgets, uic
+from qgis.PyQt.QtWidgets import QComboBox
+from qgis.PyQt.QtWidgets import QLabel
 from qgis.core import Qgis, QgsRasterLayer
 
 from deepness.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
@@ -20,6 +24,9 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
     """
     Widget responsible for mapping image channels to model input channels.
+    Allows to define the channels mapping (see `deepness.common.channels_mapping` for details).
+
+    UI design defined in `input_channels_mapping_widget.ui` file.
     """
 
     def __init__(self, rlayer, parent=None):
@@ -54,12 +61,16 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
             ConfigEntryKey.INPUT_CHANNELS_MAPPING__MAPPING_LIST_STR.set(mapping_list_str)
 
     def get_channels_mapping(self) -> ChannelsMapping:
+        """ Get the channels mapping currently selected in the UI """
         if self.radioButton_defaultMapping.isChecked():
             return self._channels_mapping.get_as_default_mapping()
         else:  # advanced mapping
             return self._channels_mapping
 
     def get_channels_mapping_for_training_data_export(self) -> ChannelsMapping:
+        """ Get the channels mapping to be used for the `training data export tool`.
+        It is not channels mapping exactly, because we do not have the model, but we can use it
+        """
         mapping = self._channels_mapping.get_as_default_mapping()
         mapping.set_number_of_model_inputs_same_as_image_channels()
         return mapping
@@ -73,13 +84,15 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
         self.widget_mapping.setVisible(is_advanced)
 
     def set_model(self, model_wrapper: ModelBase):
+        """ Set the model for which we are creating the mapping here """
         self._model_wrapper = model_wrapper
         number_of_channels = self._model_wrapper.get_number_of_channels()
         self.label_modelInputs.setText(f'{number_of_channels}')
         self._channels_mapping.set_number_of_model_inputs(number_of_channels)
         self.regenerate_mapping()
 
-    def set_rlayer(self, rlayer):
+    def set_rlayer(self, rlayer: QgsRasterLayer):
+        """ Set the raster layer (ortophoto file) which is selected (for which we create the mapping here)"""
         self._rlayer = rlayer
 
         if rlayer:
@@ -133,6 +146,7 @@ class InputChannelsMappingWidget(QtWidgets.QWidget, FORM_CLASS):
             image_channel_index=image_channel_index)
 
     def regenerate_mapping(self):
+        """ Regenerate the mapping after the model or ortophoto was changed or mapping was read from config"""
         for combobox in self._channels_mapping_comboboxes:
             self.gridLayout_mapping.removeWidget(combobox)
         self._channels_mapping_comboboxes.clear()

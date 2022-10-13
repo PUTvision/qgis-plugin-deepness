@@ -2,18 +2,17 @@ import logging
 from dataclasses import dataclass
 from typing import Optional, List, Tuple
 
-import numpy as np
 import cv2
-from qgis.core import QgsRasterLayer, QgsCoordinateTransform
+import numpy as np
 from qgis.core import Qgis
-from qgis.core import QgsWkbTypes
-from qgis.core import QgsRectangle
-
 from qgis.core import QgsFeature, QgsGeometry, QgsPointXY
+from qgis.core import QgsRasterLayer, QgsCoordinateTransform
+from qgis.core import QgsRectangle
 from qgis.core import QgsUnitTypes
+from qgis.core import QgsWkbTypes
 
-from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
+from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 
 
 def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
@@ -293,15 +292,35 @@ class BoundingBox:
         shape = self.get_shape()
         return shape[0] * shape[1]
 
-    def calculate_overlap_in_pixels(self, other):
+    def calculate_overlap_in_pixels(self, other) -> float:
+        """Calculate overlap between two bounding boxes in pixels
+
+        Parameters
+        ----------
+        other : BoundingBox
+            Other bounding box
+
+        Returns
+        -------
+        float
+            Overlap in pixels
+        """
         dx = min(self.x_max, other.x_max) - max(self.x_min, other.x_min)
         dy = min(self.y_max, other.y_max) - max(self.y_min, other.y_min)
         if (dx >= 0) and (dy >= 0):
             return dx * dy
         return 0
 
-    def get_slice(self):
-        return np.s_[self.y_min:self.y_max + 1, self.x_min:self.x_max + 1]
+    def get_slice(self) -> Tuple[slice, slice]:
+        """ Returns the bounding box as a tuple of slices (y_slice, x_slice)
+
+        Returns
+        -------
+        Tuple[slice, slice]
+            (y_slice, x_slice)
+        """
+        roi_slice = np.s_[self.y_min:self.y_max + 1, self.x_min:self.x_max + 1]
+        return roi_slice
 
     def apply_offset(self, offset_x: int, offset_y: int):
         """Apply (x,y) offset to keeping coordinates
@@ -333,6 +352,8 @@ class BoundingBox:
             (self.x_max, self.y_min),
         ]
 
+        roi_slice = np.s_[self.y_min:self.y_max + 1, self.x_min:self.x_max + 1]
+        return roi_slice
 
 
 def transform_polygon_with_rings_epsg_to_extended_xy_pixels(

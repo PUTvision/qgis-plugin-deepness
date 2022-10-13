@@ -1,25 +1,18 @@
-import tempfile
 import uuid
 from typing import List
 import os
+import uuid
+from typing import List
 
-import cv2
 import numpy as np
-from qgis.core import QgsCoordinateReferenceSystem
-from qgis.core import QgsRasterLayer
-from osgeo import gdal, osr, ogr
-
-from qgis.core import QgsVectorLayer
+from osgeo import gdal, osr
 from qgis.core import QgsProject
+from qgis.core import QgsRasterLayer
 
 from deepness.common.misc import TMP_DIR_PATH
-from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
-from deepness.processing import processing_utils
-from deepness.common.defines import IS_DEBUG
 from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
     MapProcessingResultCanceled, MapProcessingResultSuccess
-from deepness.processing.map_processor.map_processor import MapProcessor
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 
 

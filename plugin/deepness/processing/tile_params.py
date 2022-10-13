@@ -1,8 +1,7 @@
 from typing import Optional
 
-import numpy as np
 import cv2
-
+import numpy as np
 from qgis.core import QgsRectangle
 
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters

@@ -1,7 +1,5 @@
-import copy
 from typing import List
 
-import cv2
 import numpy as np
 from qgis.core import QgsVectorLayer, QgsProject, QgsGeometry, QgsFeature
 
@@ -9,11 +7,10 @@ from deepness.common.processing_parameters.detection_parameters import Detection
 from deepness.processing import processing_utils
 from deepness.processing.map_processor.map_processing_result import MapProcessingResultCanceled, \
     MapProcessingResultSuccess, MapProcessingResult
-from deepness.processing.map_processor.map_processor import MapProcessor
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
+from deepness.processing.models.detector import Detection
 from deepness.processing.models.detector import Detector
 from deepness.processing.tile_params import TileParams
-from deepness.processing.models.detector import Detection
 
 
 class MapProcessorDetection(MapProcessorWithModel):
