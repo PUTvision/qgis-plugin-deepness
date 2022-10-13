@@ -1,3 +1,5 @@
+""" Module including the class for the object detection task and related functions
+"""
 from dataclasses import dataclass
 from typing import Tuple, List
 
@@ -10,25 +12,55 @@ from deepness.processing.processing_utils import BoundingBox
 
 @dataclass
 class DetectorBBox:
+    """Bounding box class - rectangle area, describing position in pixels in detection process
+
+    Parameters
+    ----------
+    offset_x : int
+        left upper corner (x, y)
+    offset_y : int
+        bottom right corner (x, y)
     """
-    bounding box - rectangle area, describing position in pixels in detection process
-    """
-    left_upper: Tuple[int, int]  # left upper corner (x, y)
-    right_down: Tuple[int, int]  # bottom right corner (x, y)
+
+    left_upper: Tuple[int, int]
+    """Tuple[int, int]: left upper corner (x, y)"""
+    right_down: Tuple[int, int]
+    """Tuple[int, int]: bottom right corner (x, y)"""
 
     def apply_offset(self, offset_x: int, offset_y: int):
+        """Apply (x,y) offset to keeping coordinates
+
+        Parameters
+        ----------
+        offset_x : int
+            x-axis offset in pixels
+        offset_y : int
+            y-axis offset in pixels
+        """
         self.left_upper[0] += offset_x
         self.left_upper[1] += offset_y
         self.right_down[0] += offset_x
         self.right_down[1] += offset_y
 
-    def get_area(self):
-        return (self.right_down[0] - self.left_upper[0] + 1) * (self.right_down[1] - self.left_upper[1])
+    def get_area(self) -> float:
+        """Calculate bounding box reactangle area
+
+        Returns
+        -------
+        float
+            Bounding box area
+        """
+        return (self.right_down[0] - self.left_upper[0] + 1) * (
+            self.right_down[1] - self.left_upper[1]
+        )
 
     def get_4_corners(self) -> List[Tuple]:
-        """
-        Get 4 points (corners) describing the detection rectangle, each point in (x, y) format
-        :return:
+        """Get 4 points (corners) describing the detection rectangle, each point in (x, y) format
+
+        Returns
+        -------
+        List[Tuple]
+            List of 4 rectangle corners in (x, y) format
         """
         return [
             (self.left_upper[0], self.left_upper[1]),
@@ -37,61 +69,155 @@ class DetectorBBox:
             (self.right_down[0], self.left_upper[1]),
         ]
 
-    def get_slice(self):
-        """
-        Get slice describing bounding box position on an image
+    def get_slice(self) -> List:
+        """Get slice describing bounding box position on an image
+
+        Returns
+        -------
+        List
+            Slice
         """
         return self.to_bounding_box().get_slice()
 
     def to_bounding_box(self) -> BoundingBox:
+        """Convert corner coordinates into BoundingBox class
+
+        Returns
+        -------
+        BoundingBox
+            _description_
+        """
         return BoundingBox(
             x_min=self.left_upper[0],
             x_max=self.right_down[0],
             y_min=self.left_upper[1],
-            y_max=self.right_down[1])
+            y_max=self.right_down[1],
+        )
 
 
 @dataclass
 class Detection:
-    bbox: DetectorBBox  # bounding box describing the detection rectangle
-    conf: float  # confidence of the detection
-    clss: int  # class of the detected object
+    """Class that represents single detection result in object detection model
+
+    Parameters
+    ----------
+    bbox : DetectorBBox
+        bounding box describing the detection rectangle
+    conf : float
+        confidence of the detection
+    clss : int
+        class of the detected object
+    """
+
+    bbox: DetectorBBox
+    """DetectorBBox: bounding box describing the detection rectangle"""
+    conf: float
+    """float: confidence of the detection"""
+    clss: int
+    """int: class of the detected object"""
 
     def convert_to_global(self, offset_x: int, offset_y: int):
+        """Apply (x,y) offset to bounding box coordinates
+
+        Parameters
+        ----------
+        offset_x : int
+            _description_
+        offset_y : int
+            _description_
+        """
         self.bbox.apply_offset(offset_x=offset_x, offset_y=offset_y)
 
     def get_bbox_xyxy(self) -> np.ndarray:
-        return np.array([
-            self.bbox.left_upper[0], self.bbox.left_upper[1],
-            self.bbox.right_down[0], self.bbox.right_down[1]]
+        """Convert stored bounding box into x1y1x2y2 format
+
+        Returns
+        -------
+        np.ndarray
+            Array in (x1, y1, x2, y2) format
+        """
+        return np.array(
+            [
+                self.bbox.left_upper[0],
+                self.bbox.left_upper[1],
+                self.bbox.right_down[0],
+                self.bbox.right_down[1],
+            ]
         )
 
 
 class Detector(ModelBase):
+    """Class implements object detection features
+    
+    Detector model is used for detection of objects in images. It is based on YOLOv5/YOLOv7 models style.
+    """
+
     def __init__(self, model_file_path: str):
+        """Initialize object detection model
+        
+        Parameters
+        ----------
+        model_file_path : str
+            Path to model file"""
         super(Detector, self).__init__(model_file_path)
 
         self.confidence = None
+        """float: Confidence threshold"""
         self.iou_threshold = None
+        """float: IoU threshold"""
 
     def set_inference_params(self, confidence: float, iou_threshold: float):
+        """Set inference parameters
+
+        Parameters
+        ----------
+        confidence : float
+            Confidence threshold
+        iou_threshold : float
+            IoU threshold
+        """
         self.confidence = confidence
         self.iou_threshold = iou_threshold
 
     @classmethod
     def get_class_display_name(cls):
+        """Get class display name
+        
+        Returns
+        -------
+        str
+            Class display name"""
         return cls.__name__
 
     def get_number_of_output_channels(self):
+        """Get number of output channels
+
+        Returns
+        -------
+        int
+            Number of output channels            
+        """
         if len(self.outputs_layers) == 1:
-            return self.outputs_layers[0].shape[-1] - 4 - 1 # shape - 4 bboxes - 1 conf
+            return self.outputs_layers[0].shape[-1] - 4 - 1  # shape - 4 bboxes - 1 conf
         else:
             return NotImplementedError
 
     def preprocessing(self, image: np.ndarray):
-        img = image[:, :, :self.input_shape[-3]]
+        """Preprocess image before inference
 
-        input_data = (img / 255.0)
+        Parameters
+        ----------
+        image : np.ndarray
+            Image to preprocess in RGB format
+
+        Returns
+        -------
+        np.ndarray
+            Preprocessed image
+        """
+        img = image[:, :, : self.input_shape[-3]]
+
+        input_data = img / 255.0
         input_data = np.transpose(input_data, (2, 0, 1))
         input_batch = np.expand_dims(input_data, 0)
         input_batch = input_batch.astype(np.float32)
@@ -99,12 +225,28 @@ class Detector(ModelBase):
         return input_batch
 
     def postprocessing(self, model_output):
+        """Postprocess model output
+
+        Parameters
+        ----------
+        model_output : list
+            Model output
+        
+        Returns
+        -------
+        list
+            List of detections
+        """
         if self.confidence is None or self.iou_threshold is None:
-            return Exception('Confidence or IOU threshold is not set for model. Use self.set_inference_params')
+            return Exception(
+                "Confidence or IOU threshold is not set for model. Use self.set_inference_params"
+            )
 
         model_output = model_output[0][0]
 
-        outputs_filtered = np.array(list(filter(lambda x: x[4] >= self.confidence, model_output)))
+        outputs_filtered = np.array(
+            list(filter(lambda x: x[4] >= self.confidence, model_output))
+        )
 
         if len(outputs_filtered.shape) < 2:
             return []
@@ -122,16 +264,26 @@ class Detector(ModelBase):
 
         for b, c, cl in zip(boxes, conf, classes):
             det = Detection(
-                bbox=DetectorBBox(left_upper=b[:2], right_down=b[2:]),
-                conf=c,
-                clss=cl
+                bbox=DetectorBBox(left_upper=b[:2], right_down=b[2:]), conf=c, clss=cl
             )
             detections.append(det)
 
         return detections
 
     @staticmethod
-    def xywh2xyxy(x):
+    def xywh2xyxy(x: np.ndarray) -> np.ndarray:
+        """Convert bounding box from (x,y,w,h) to (x1,y1,x2,y2) format
+
+        Parameters
+        ----------
+        x : np.ndarray
+            Bounding box in (x,y,w,h) format
+
+        Returns
+        -------
+        np.ndarray
+            Bounding box in (x1,y1,x2,y2) format
+        """
         y = np.copy(x)
         y[:, 0] = x[:, 0] - x[:, 2] / 2  # top left x
         y[:, 1] = x[:, 1] - x[:, 3] / 2  # top left y
@@ -141,6 +293,20 @@ class Detector(ModelBase):
 
     @staticmethod
     def non_max_suppression_fast(boxes: np.ndarray, iou_threshold: float) -> np.ndarray:
+        """Apply non-maximum suppression to bounding boxes
+
+        Parameters
+        ----------
+        boxes : np.ndarray
+            Bounding boxes in (x1,y1,x2,y2) format
+        iou_threshold : float
+            IoU threshold
+
+        Returns
+        -------
+        np.ndarray
+            Array of indexes of bounding boxes to keep
+        """
         # initialize the list of picked indexes
         pick = []
         # grab the coordinates of the bounding boxes
@@ -173,21 +339,32 @@ class Detector(ModelBase):
             # compute the ratio of overlap
             overlap = (w * h) / area[idxs[:last]]
             # delete all indexes from the index list that have
-            idxs = np.delete(idxs, np.concatenate(([last],
-                                                   np.where(overlap > iou_threshold)[0])))
+            idxs = np.delete(
+                idxs, np.concatenate(([last], np.where(overlap > iou_threshold)[0]))
+            )
 
         return pick
 
     def check_loaded_model_outputs(self):
+        """Check if model outputs are valid.
+        Valid model are: 
+            - has 1 output layer
+            - output layer shape length is 3
+            - batch size is 1 
+        """
         if len(self.outputs_layers) == 1:
             shape = self.outputs_layers[0].shape
 
             if len(shape) != 3:
-                raise Exception(f'Detection model output should have 3 dimensions: (Batch_size, detections, values). '
-                                f'Actually has: {shape}')
+                raise Exception(
+                    f"Detection model output should have 3 dimensions: (Batch_size, detections, values). "
+                    f"Actually has: {shape}"
+                )
 
             if shape[0] != 1:
-                raise Exception(f'Detection model can handle only 1-Batch outputs. Has {shape}')
-            
+                raise Exception(
+                    f"Detection model can handle only 1-Batch outputs. Has {shape}"
+                )
+
         else:
             raise NotImplementedError
