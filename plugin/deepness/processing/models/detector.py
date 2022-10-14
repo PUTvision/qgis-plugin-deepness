@@ -52,6 +52,9 @@ class Detection:
         """
         return self.bbox.get_xyxy()
 
+    def __lt__(self, other):
+        return self.bbox.get_area() < other.bbox.get_area()
+
 
 class Detector(ModelBase):
     """Class implements object detection features
@@ -160,7 +163,7 @@ class Detector(ModelBase):
 
         outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
 
-        pick_indxs = self.non_max_suppression_fast(outputs_x1y1x2y2, self.iou_threshold)
+        pick_indxs = self.non_max_suppression_fast(outputs_x1y1x2y2, outputs_filtered[:, 4], self.iou_threshold)
         outputs_nms = outputs_x1y1x2y2[pick_indxs]
 
         boxes = np.array(outputs_nms[:, :4], dtype=int)
@@ -176,7 +179,7 @@ class Detector(ModelBase):
                             x_max = b[2],
                             y_min = b[1],
                             y_max = b[3]),
-                conf=c, 
+                conf=c,
                 clss=cl
             )
             detections.append(det)
@@ -205,58 +208,80 @@ class Detector(ModelBase):
         return y
 
     @staticmethod
-    def non_max_suppression_fast(boxes: np.ndarray, iou_threshold: float) -> np.ndarray:
+
+    @staticmethod
+    def non_max_suppression_fast(boxes: np.ndarray, probs: np.ndarray, iou_threshold: float) -> List:
         """Apply non-maximum suppression to bounding boxes
+
+        Based on:
+        https://github.com/amusi/Non-Maximum-Suppression/blob/master/nms.py
 
         Parameters
         ----------
         boxes : np.ndarray
             Bounding boxes in (x1,y1,x2,y2) format
+        probs : np.ndarray
+            Confidence scores
         iou_threshold : float
             IoU threshold
 
         Returns
         -------
-        np.ndarray
-            Array of indexes of bounding boxes to keep
+        List
+            List of indexes of bounding boxes to keep
         """
-        # initialize the list of picked indexes
-        pick = []
-        # grab the coordinates of the bounding boxes
-        x1 = boxes[:, 0]
-        y1 = boxes[:, 1]
-        x2 = boxes[:, 2]
-        y2 = boxes[:, 3]
-        # compute the area of the bounding boxes and sort the bounding
-        # boxes by the bottom-right y-coordinate of the bounding box
-        area = (x2 - x1 + 1) * (y2 - y1 + 1)
-        idxs = np.argsort(y2)
-        # keep looping while some indexes still remain in the indexes
-        # list
-        while len(idxs) > 0:
-            # grab the last index in the indexes list and add the
-            # index value to the list of picked indexes
-            last = len(idxs) - 1
-            i = idxs[last]
-            pick.append(i)
-            # find the largest (x, y) coordinates for the start of
-            # the bounding box and the smallest (x, y) coordinates
-            # for the end of the bounding box
-            xx1 = np.maximum(x1[i], x1[idxs[:last]])
-            yy1 = np.maximum(y1[i], y1[idxs[:last]])
-            xx2 = np.minimum(x2[i], x2[idxs[:last]])
-            yy2 = np.minimum(y2[i], y2[idxs[:last]])
-            # compute the width and height of the bounding box
-            w = np.maximum(0, xx2 - xx1 + 1)
-            h = np.maximum(0, yy2 - yy1 + 1)
-            # compute the ratio of overlap
-            overlap = (w * h) / area[idxs[:last]]
-            # delete all indexes from the index list that have
-            idxs = np.delete(
-                idxs, np.concatenate(([last], np.where(overlap > iou_threshold)[0]))
-            )
 
-        return pick
+        # If no bounding boxes, return empty list
+        if len(boxes) == 0:
+            return []
+
+        # Bounding boxes
+        boxes = np.array(boxes)
+
+        # coordinates of bounding boxes
+        start_x = boxes[:, 0]
+        start_y = boxes[:, 1]
+        end_x = boxes[:, 2]
+        end_y = boxes[:, 3]
+
+        # Confidence scores of bounding boxes
+        score = np.array(probs)
+
+        # Picked bounding boxes
+        picked_boxes = []
+
+        # Compute areas of bounding boxes
+        areas = (end_x - start_x + 1) * (end_y - start_y + 1)
+
+        # Sort by confidence score of bounding boxes
+        order = np.argsort(score)
+
+        # Iterate bounding boxes
+        while order.size > 0:
+            # The index of largest confidence score
+            index = order[-1]
+
+            # Pick the bounding box with largest confidence score
+            picked_boxes.append(index)
+
+            # Compute ordinates of intersection-over-union(IOU)
+            x1 = np.maximum(start_x[index], start_x[order[:-1]])
+            x2 = np.minimum(end_x[index], end_x[order[:-1]])
+            y1 = np.maximum(start_y[index], start_y[order[:-1]])
+            y2 = np.minimum(end_y[index], end_y[order[:-1]])
+
+            # Compute areas of intersection-over-union
+            w = np.maximum(0.0, x2 - x1 + 1)
+            h = np.maximum(0.0, y2 - y1 + 1)
+            intersection = w * h
+
+            # Compute the ratio between intersection and union
+            ratio = intersection / (areas[index] + areas[order[:-1]] - intersection)
+
+            left = np.where(ratio < iou_threshold)
+            order = order[left]
+
+        return picked_boxes
 
     def check_loaded_model_outputs(self):
         """Check if model outputs are valid.

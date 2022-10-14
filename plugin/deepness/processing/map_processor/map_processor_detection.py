@@ -148,11 +148,16 @@ class MapProcessorDetection(MapProcessorWithModel):
 
     def apply_non_maximum_suppression(self, bounding_boxes: List[Detection]) -> List[Detection]:
         bboxes = []
+        probs = []
         for det in bounding_boxes:
+            print(det)
             bboxes.append(det.get_bbox_xyxy())
+            probs.append(det.conf)
 
         bboxes = np.array(bboxes)
-        pick_ids = self.model.non_max_suppression_fast(bboxes, self.detection_parameters.iou_threshold)
+        probs = np.array(probs)
+        
+        pick_ids = self.model.non_max_suppression_fast(bboxes, probs, self.detection_parameters.iou_threshold)
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
 
