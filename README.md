@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/network/members)
 
-Plugin for QGIS to perform map/image segmentation with (ONNX) neural network models. 
+Plugin for QGIS to perform map/image segmentation, regression and object detection with (ONNX) neural network models. 
 
 # Development
  - Install QGIS (the plugin was tested with QGIS 3.12)
