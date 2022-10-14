@@ -491,10 +491,10 @@ for some models</string>
              </property>
             </widget>
            </item>
-           <item row="3" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_iouScore">
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_confidence">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Parameter used in Non Maximum Suppression in post processing.&lt;/p&gt;&lt;p&gt;Defines the threshold of overlap between to neighbouring detections, to consider them as the same object.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Minimal confidence of the potential detection, to consider it as a detection.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="decimals">
               <number>2</number>
@@ -514,6 +514,22 @@ for some models</string>
              </property>
             </widget>
            </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_iouScore">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Parameter used in Non Maximum Suppression in post processing.&lt;/p&gt;&lt;p&gt;Defines the threshold of overlap between to neighbouring detections, to consider them as the same object.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="decimals">
+              <number>2</number>
+             </property>
+             <property name="maximum">
+              <double>1.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.050000000000000</double>
+             </property>
+            </widget>
+           </item>
            <item row="0" column="0" colspan="2">
             <widget class="QLabel" name="label_20">
              <property name="font">
@@ -527,19 +543,13 @@ for some models</string>
              </property>
             </widget>
            </item>
-           <item row="1" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_confidence">
+           <item row="4" column="0">
+            <widget class="QCheckBox" name="checkBox_removeOverlappingDetections">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Minimal confidence of the potential detection, to consider it as a detection.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked then the overlapping detections (which may be a artifact of overlapped processing) will be removed&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
-             <property name="decimals">
-              <number>2</number>
-             </property>
-             <property name="maximum">
-              <double>1.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.050000000000000</double>
+             <property name="text">
+              <string>Remove overlapping detections</string>
              </property>
             </widget>
            </item>

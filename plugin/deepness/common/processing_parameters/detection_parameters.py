@@ -18,4 +18,4 @@ class DetectionParameters(MapProcessingParameters):
 
     confidence: float
     iou_threshold: float
-    
+    remove_overlapping_detections: bool  # whether overlapping detections can be deleted
