@@ -323,6 +323,31 @@ class BoundingBox:
             return dx * dy
         return 0
 
+    def calculate_intersection_over_smaler_area(self, other) -> float:
+        """ Calculate intersection over smaler area (IoS) between two bounding boxes
+
+        Parameters
+        ----------
+        other : BoundingBox
+            Other bounding bo
+
+        Returns
+        -------
+        float
+            Value between 0 and 1
+        """
+
+        Aarea = (self.x_max - self.x_min) * (self.y_max - self.y_min)
+        Barea = (other.x_max - other.x_min) * (other.y_max - other.y_min)
+
+        xA = max(self.x_min, other.x_min)
+        yA = max(self.y_min, other.y_min)
+        xB = min(self.x_max, other.x_max)
+        yB = min(self.y_max, other.y_max)
+
+        # compute the area of intersection rectangle
+        return max(0, xB - xA + 1) * max(0, yB - yA + 1) / min(Aarea, Barea)
+
     def get_slice(self) -> Tuple[slice, slice]:
         """ Returns the bounding box as a tuple of slices (y_slice, x_slice)
 

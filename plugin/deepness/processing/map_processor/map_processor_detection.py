@@ -150,13 +150,34 @@ class MapProcessorDetection(MapProcessorWithModel):
 
     def apply_non_maximum_suppression(self, bounding_boxes: List[Detection]) -> List[Detection]:
         bboxes = []
+        probs = []
         for det in bounding_boxes:
             bboxes.append(det.get_bbox_xyxy())
+            probs.append(det.conf)
 
         bboxes = np.array(bboxes)
-        pick_ids = self.model.non_max_suppression_fast(bboxes, self.detection_parameters.iou_threshold)
+        probs = np.array(probs)
+
+        pick_ids = self.model.non_max_suppression_fast(bboxes, probs, self.detection_parameters.iou_threshold)
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
+
+        if self.detection_parameters.remove_overlapping_detections:
+            filtered_bounding_boxes = sorted(filtered_bounding_boxes, reverse=True)
+
+            to_remove = []
+            for i in range(len(filtered_bounding_boxes)):
+                if i in to_remove:
+                    continue
+                for j in range(i + 1, len(filtered_bounding_boxes)):
+                    if j in to_remove:
+                        continue
+                    if i != j:
+                        if filtered_bounding_boxes[i].bbox.calculate_intersection_over_smaler_area(
+                                filtered_bounding_boxes[j].bbox) > self.detection_parameters.iou_threshold:
+                            to_remove.append(j)
+
+            filtered_bounding_boxes = [x for i, x in enumerate(filtered_bounding_boxes) if i not in to_remove]
 
         return filtered_bounding_boxes
 
