@@ -1,4 +1,9 @@
-from typing import Optional
+"""
+This file contains utilities related to processing a tile.
+Tile is a small part of the ortophoto, which is being processed by the model one by one.
+"""
+
+from typing import Optional, Tuple
 
 import cv2
 import numpy as np
@@ -8,14 +13,33 @@ from deepness.common.processing_parameters.map_processing_parameters import MapP
 
 
 class TileParams:
+    """ Defines a single tile parameters - image that's being processed by model"""
     def __init__(self,
-                 x_bin_number,
-                 y_bin_number,
-                 x_bins_number,
-                 y_bins_number,
+                 x_bin_number: int,
+                 y_bin_number: int,
+                 x_bins_number: int,
+                 y_bins_number: int,
                  params: MapProcessingParameters,
                  rlayer_units_per_pixel,
-                 processing_extent):
+                 processing_extent: QgsRectangle):
+        """ init
+
+        Parameters
+        ----------
+        x_bin_number : int
+            what is the tile number in a row, counting from left side
+        y_bin_number : int
+            what is the tile number in a column
+        x_bins_number : int
+            how many tiles are there in a row
+        y_bins_number : int
+            how many tiles are there in a column
+        params : MapProcessingParameters
+            processing parameters
+        rlayer_units_per_pixel : _type_
+            How many rlayer crs units are in a pixel
+        processing_extent : QgsRectangle
+        """
         self.x_bin_number = x_bin_number
         self.y_bin_number = y_bin_number
         self.x_bins_number = x_bins_number
@@ -40,11 +64,14 @@ class TileParams:
         tile_extent.setYMinimum(y_min)
         return tile_extent
 
-    def get_slice_on_full_image_for_entire_tile(self):
-        """
-        Slice to get the entire tile from "full final image,
+    def get_slice_on_full_image_for_entire_tile(self) -> Tuple[slice, slice]:
+        """ Obtain slice to get the entire tile from full final image,
         including the overlapping parts.
-        :return Slice to be used on the full image
+
+        Returns
+        -------
+        Tuple[slice, slice]
+            Slice to be used on the full image
         """
 
         # 'core' part of the tile (not overlapping with other tiles), for sure copied for each tile
@@ -101,9 +128,7 @@ class TileParams:
 
     def is_tile_within_mask(self, mask_img: Optional[np.ndarray]):
         """
-        To check if tile
-        :param mask_img:
-        :return:
+        To check if tile is within the mask image
         """
         if mask_img is None:
             return True  # if we don't have a mask, we are going to process all tiles

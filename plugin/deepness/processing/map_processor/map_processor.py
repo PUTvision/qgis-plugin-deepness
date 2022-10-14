@@ -1,3 +1,5 @@
+""" This file implements core map processing logic """
+
 import logging
 from typing import Optional, Tuple
 
@@ -37,12 +39,17 @@ class MapProcessor(QgsTask):
                  vlayer_mask: Optional[QgsVectorLayer],
                  map_canvas: QgsMapCanvas,
                  params: MapProcessingParameters):
-        """
-
-        :param rlayer: Raster layer which is being processed
-        :param vlayer_mask: Vector layer with outline of area which should be processed (within rlayer)
-        :param map_canvas: active map canvas (in the GUI), required if processing visible map area
-        :param params: see MapProcessingParameters
+        """ init
+        Parameters
+        ----------
+        rlayer : QgsRasterLayer
+            Raster layer which is being processed
+        vlayer_mask : Optional[QgsVectorLayer]
+            Vector layer with outline of area which should be processed (within rlayer)
+        map_canvas : QgsMapCanvas
+            active map canvas (in the GUI), required if processing visible map area
+        params : MapProcessingParameters
+           see MapProcessingParameters
         """
         QgsTask.__init__(self, self.__class__.__name__)
         self._processing_finished = False
@@ -98,9 +105,11 @@ class MapProcessor(QgsTask):
             image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])  # type: Optional[np.ndarray]
 
     def _assert_qgis_doesnt_need_reload(self):
-        # If the plugin is somehow invalid, it cannot compare the enums correctly
-        # I suppose it could be fixed somehow, but no need to investigate it now,
-        # it affects only the development
+        """ If the plugin is somehow invalid, it cannot compare the enums correctly
+        I suppose it could be fixed somehow, but no need to investigate it now,
+        it affects only the development
+    """
+
         if self.params.processed_area_type.__class__ != ProcessedAreaType:
             raise Exception("Disable plugin, restart QGis and enable plugin again!")
 

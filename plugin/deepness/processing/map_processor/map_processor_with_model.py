@@ -1,3 +1,6 @@
+
+""" This file implements map processing functions common for all map processors using nural model """
+
 from typing import List
 
 from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat
@@ -38,4 +41,3 @@ class MapProcessorWithModel(MapProcessor):
             raise Exception(f"Unhandled model output format {self.params.model_output_format}")
 
         return output_channels
-

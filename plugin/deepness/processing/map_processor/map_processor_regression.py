@@ -1,3 +1,5 @@
+""" This file implements map processing for regression model """
+
 import uuid
 from typing import List
 import os
@@ -165,4 +167,3 @@ class MapProcessorRegression(MapProcessorWithModel):
         result = result.astype(np.float32)
 
         return result
-

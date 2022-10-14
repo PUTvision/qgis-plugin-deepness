@@ -1,3 +1,5 @@
+""" This file defines possible outcomes of map processing
+"""
 
 class MapProcessingResult:
     """

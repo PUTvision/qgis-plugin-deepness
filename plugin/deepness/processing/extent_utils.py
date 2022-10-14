@@ -1,3 +1,7 @@
+"""
+This file contains utilities related to Extent processing
+"""
+
 from qgis.core import QgsCoordinateTransform
 from qgis.core import QgsRasterLayer
 from qgis.core import QgsRectangle
@@ -35,6 +39,25 @@ def calculate_extended_processing_extent(base_extent: QgsRectangle,
                                          params: MapProcessingParameters,
                                          rlayer: QgsVectorLayer,
                                          rlayer_units_per_pixel: float) -> QgsRectangle:
+    """Calculate the "extended" processing extent, which is the full processing area, rounded to the tile size and overlap
+
+    Parameters
+    ----------
+    base_extent : QgsRectangle
+        Base extent of the processed ortophoto, which is not rounded to the tile size
+    params : MapProcessingParameters
+        Processing parameters
+    rlayer : QgsVectorLayer
+        mask layer
+    rlayer_units_per_pixel : float
+        how many rlayer CRS units are in 1 pixel
+
+    Returns
+    -------
+    QgsRectangle
+        The "extended" processing extent
+    """
+
     # first try to add pixels at every border - same as half-overlap for other tiles
     additional_pixels = params.processing_overlap_px // 2
     additional_pixels_in_units = additional_pixels * rlayer_units_per_pixel
@@ -78,6 +101,7 @@ def calculate_extended_processing_extent(base_extent: QgsRectangle,
 
 
 def is_extent_infinite_or_too_big(rlayer: QgsRasterLayer) -> bool:
+    """Check whether layer covers whole earth (infinite extent) or or is too big for processing"""
     rlayer_extent = rlayer.extent()
 
     # empty extent happens for infinite layers
@@ -96,13 +120,25 @@ def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
                                                    rlayer: QgsRasterLayer,
                                                    vlayer_mask: QgsVectorLayer,
                                                    params: MapProcessingParameters) -> QgsRectangle:
+    """ Determine the Base Extent of processing (Extent (rectangle) in which the actual required area is contained)
+
+    Parameters
+    ----------
+    map_canvas : QgsMapCanvas
+        currently visible map in the UI
+    rlayer : QgsRasterLayer
+        ortophotomap which is being processed
+    vlayer_mask : QgsVectorLayer
+        mask layer containing the processed area
+    params : MapProcessingParameters
+        Processing parameters
+
+    Returns
+    -------
+    QgsRectangle
+        Base Extent of processing
     """
-    Determine the Base Extent of processing (Extent (rectangle) in which the actual required area is contained)
-    :param map_canvas: active map canvas (in the GUI), required if processing visible map area
-    :param rlayer:
-    :param vlayer_mask:
-    :param params:
-    """
+
     rlayer_extent = rlayer.extent()
     processed_area_type = params.processed_area_type
     rlayer_extent_infinite = is_extent_infinite_or_too_big(rlayer)
@@ -147,14 +183,23 @@ def calculate_base_extent_bbox_in_full_image(image_size_y: int,
                                              base_extent: QgsRectangle,
                                              extended_extent: QgsRectangle,
                                              rlayer_units_per_pixel) -> BoundingBox:
-    """
-    Calculate how base extent fits in extended_extent in terms of pixel position
-    :param image_size_y:
-    :param int:
-    :param base_extent:
-    :param extended_extent:
-    :param rlayer_units_per_pixel:
-    :return:
+    """Calculate how the base extent fits in extended_extent in terms of pixel position
+
+    Parameters
+    ----------
+    image_size_y : int
+        Size of the image in y axis in pixels
+    base_extent : QgsRectangle
+        Base Extent of processing
+    extended_extent : QgsRectangle
+        Extended extent of processing
+    rlayer_units_per_pixel : _type_
+        Number of layer units per a single image pixel
+
+    Returns
+    -------
+    BoundingBox
+        Bounding box describing position of base extent in the extended extent
     """
     base_extent = base_extent
     extended_extent = extended_extent

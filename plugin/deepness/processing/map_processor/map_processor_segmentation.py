@@ -1,3 +1,5 @@
+""" This file implements map processing for segmentation model """
+
 import cv2
 import numpy as np
 from qgis.core import QgsProject
@@ -121,4 +123,3 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         result[result < self.segmentation_parameters.pixel_classification__probability_threshold] = 0.0
         result = np.argmax(result, axis=0)
         return result
-
