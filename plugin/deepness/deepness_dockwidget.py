@@ -146,7 +146,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         ConfigEntryKey.DETECTION_CONFIDENCE.set(self.doubleSpinBox_confidence.value())
         ConfigEntryKey.DETECTION_IOU.set(self.doubleSpinBox_iouScore.value())
-        ConfigEntryKey.DETECTION_REMOVE_OVERLAPPING.set(self.checkBox_removeOverlappingDetections.value())
+        ConfigEntryKey.DETECTION_REMOVE_OVERLAPPING.set(self.checkBox_removeOverlappingDetections.isChecked())
 
         self._input_channels_mapping_widget.save_ui_to_config()
         self._training_data_export_widget.save_ui_to_config()

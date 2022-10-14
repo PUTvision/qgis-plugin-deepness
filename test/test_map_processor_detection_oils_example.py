@@ -41,6 +41,7 @@ def test_map_processor_detection_oil_example():
         model=model_wrapper,
         confidence=0.5,
         iou_threshold=0.1,
+        remove_overlapping_detections=False,
         model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
         model_output_format__single_class_number=-1,
     )
@@ -54,16 +55,38 @@ def test_map_processor_detection_oil_example():
 
     map_processor.run()
 
-    # dets = map_processor.get_all_detections()
-    # im = np.zeros((map_processor.base_extent_bbox_in_full_image.y_max, map_processor.base_extent_bbox_in_full_image.x_max), dtype=np.uint8)
-    #
-    # for bb in dets:
-    #     cv2.rectangle(im, (bb.bbox.x_min, bb.bbox.y_min), (bb.bbox.x_max, bb.bbox.y_max), 255, 2)
-    #
-    # plt.imshow(im)
-    # plt.show()
+def test_map_processor_detection_oil_example_with_remove_small():
+    qgs = init_qgis()
+    rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
 
+    model_wrapper = Detector(MODEL_FILE_PATH)
+
+    params = DetectionParameters(
+        resolution_cm_per_px=150,
+        tile_size_px=model_wrapper.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
+        mask_layer_id=None,
+        input_layer_id=rlayer.id(),
+        input_channels_mapping=INPUT_CHANNELS_MAPPING,
+        processing_overlap_percentage=40,
+        model=model_wrapper,
+        confidence=0.5,
+        iou_threshold=0.3,
+        remove_overlapping_detections=True,
+        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
+        model_output_format__single_class_number=-1,
+    )
+
+    map_processor = MapProcessorDetection(
+        rlayer=rlayer,
+        vlayer_mask=None,
+        map_canvas=MagicMock(),
+        params=params,
+    )
+
+    map_processor.run()
 
 if __name__ == '__main__':
     test_map_processor_detection_oil_example()
+    test_map_processor_detection_oil_example_with_remove_small()
     print('Done')
