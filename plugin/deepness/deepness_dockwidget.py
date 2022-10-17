@@ -19,6 +19,7 @@ from qgis.core import QgsProject
 from deepness.common.config_entry_key import ConfigEntryKey
 from deepness.common.defines import PLUGIN_NAME, IS_DEBUG
 from deepness.common.errors import OperationFailedException
+from deepness.common.install_packages import check_required_packages_and_install_if_necessary
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
     ProcessedAreaType, ModelOutputFormat
@@ -462,6 +463,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         return params
 
     def _run_inference(self):
+        check_required_packages_and_install_if_necessary()
         try:
             params = self.get_inference_parameters()
         except OperationFailedException as e:
@@ -474,6 +476,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.run_model_inference_signal.emit(params)
 
     def _run_training_data_export(self):
+        check_required_packages_and_install_if_necessary()
         try:
             map_processing_parameters = self._get_map_processing_parameters()
             training_data_export_parameters = self._training_data_export_widget.get_training_data_export_parameters(
