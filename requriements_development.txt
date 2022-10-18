@@ -1,9 +1,11 @@
+# Install main requirements
+-r requirements.txt
+
 # Requirements required only to test and debug code while developing
 pytest
 pytest-cov
 flake8
 onnx
-
 
 # docs
 sphinx
