@@ -12,6 +12,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from unittest.mock import MagicMock
 import os
 import re
 import sys
@@ -69,6 +70,10 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinxcontrib.youtube',
 ]
+
+MOCK_MODULES = ['future', 'qgis', 'osgeo', 'qgis.core', 'qgis.gui', 'qgis.utils', 'qgis.PyQt', 'qgis.PyQt.QtWidgets', 'qgis.PyQt.QtGui', 'qgis.PyQt.QtCore', 'PyQt5']
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = MagicMock()
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates/']

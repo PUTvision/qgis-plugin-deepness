@@ -24,8 +24,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --upgrade -r requriements.txt
-        pip install --upgrade -r requriements_development.txt
+        pip install --upgrade -r requirements.txt
+        pip install --upgrade -r requirements_development.txt
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
