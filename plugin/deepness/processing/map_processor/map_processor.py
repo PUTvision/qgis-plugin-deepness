@@ -3,7 +3,6 @@
 import logging
 from typing import Optional, Tuple
 
-import cv2
 import numpy as np
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.core import QgsRasterLayer
@@ -12,12 +11,15 @@ from qgis.core import QgsVectorLayer
 from qgis.gui import QgsMapCanvas
 
 from deepness.common.defines import IS_DEBUG
+from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
     ProcessedAreaType
 from deepness.processing import processing_utils, extent_utils
 from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
     MapProcessingResultFailed
 from deepness.processing.tile_params import TileParams
+
+cv2 = LazyPackageLoader('cv2')
 
 
 class MapProcessor(QgsTask):

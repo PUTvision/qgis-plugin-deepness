@@ -6,7 +6,6 @@ import logging
 from dataclasses import dataclass
 from typing import Optional, List, Tuple
 
-import cv2
 import numpy as np
 from qgis.core import Qgis
 from qgis.core import QgsFeature, QgsGeometry, QgsPointXY
@@ -15,8 +14,13 @@ from qgis.core import QgsRectangle
 from qgis.core import QgsUnitTypes
 from qgis.core import QgsWkbTypes
 
+from deepness.common.defines import IS_DEBUG
+from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
+
+
+cv2 = LazyPackageLoader('cv2')
 
 
 def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:

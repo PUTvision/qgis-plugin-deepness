@@ -9,10 +9,6 @@ Skeleton of this file was generate with the QGis plugin to create plugin skeleto
 import traceback
 import os
 
-# increase limit of pixels (2^30), before importing cv2
-os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()
-import cv2
-
 from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
@@ -24,6 +20,7 @@ from qgis.core import QgsVectorLayer
 from qgis.gui import QgisInterface
 
 from deepness.common.defines import PLUGIN_NAME, IS_DEBUG
+from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deepness.deepness_dockwidget import DeepnessDockWidget
@@ -32,6 +29,8 @@ from deepness.processing.map_processor.map_processing_result import MapProcessin
     MapProcessingResultCanceled, MapProcessingResultSuccess
 from deepness.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
 from deepness.processing.models.model_types import ModelDefinition
+
+cv2 = LazyPackageLoader('cv2')
 
 
 class Deepness:
@@ -281,6 +280,8 @@ class Deepness:
     @staticmethod
     def _show_img(img_rgb, window_name: str):
         """ Helper function to show an image while developing and debugging the plugin """
+        # We are importing it here, because it is debug tool,
+        # and we don't want to have it in the main scope from the project startup
         img_bgr = img_rgb[..., ::-1]
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(window_name, 800, 800)

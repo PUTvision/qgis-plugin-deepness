@@ -1,15 +1,17 @@
 """ This file implements map processing for segmentation model """
 
-import cv2
 import numpy as np
 from qgis.core import QgsProject
 from qgis.core import QgsVectorLayer
 
+from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.processing import processing_utils
 from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
     MapProcessingResultCanceled, MapProcessingResultSuccess
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
+
+cv2 = LazyPackageLoader('cv2')
 
 
 class MapProcessorSegmentation(MapProcessorWithModel):
@@ -76,7 +78,6 @@ class MapProcessorSegmentation(MapProcessorWithModel):
 
     def _create_vlayer_from_mask_for_base_extent(self, mask_img):
         # create vector layer with polygons from the mask image
-
         group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
 
         for channel_id in self._get_indexes_of_model_output_channels_to_create():

@@ -25,7 +25,7 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=segmentation,detection,classification,machine learning,onnx,neural network,deep learning,regression,deepness,analysis,remote sensing,supervised classification
 
-homepage=https://todo_add_link_to_documentation_here
+homepage=https://qgis-plugin-deepness.readthedocs.io/
 category=Plugins
 icon=images/icon.png
 # experimental flag
