@@ -71,8 +71,7 @@ extensions = [
     'sphinxcontrib.youtube',
 ]
 
-MOCK_MODULES = ['cqp_resources_rc', 'osgeo', 'qgis', 'qgis.core', 'qgis.gui', 'qgis.utils',
-                'qgis.PyQt.uic', 'qgis.PyQt.QtWidgets', 'qgis.PyQt.QtGui', 'qgis.PyQt.QtCore', 'PyQt5']
+MOCK_MODULES = ['future', 'qgis', 'qgis.core', 'qgis.gui', 'qgis.utils', 'qgis.PyQt', 'qgis.PyQt.QtWidgets', 'qgis.PyQt.QtGui', 'qgis.PyQt.QtCore', 'PyQt5']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = MagicMock()
 
