@@ -3,9 +3,9 @@
 import datetime
 import os
 
-import cv2
 from qgis.core import QgsProject
 
+from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
 from deepness.processing import processing_utils
@@ -13,6 +13,8 @@ from deepness.processing.map_processor.map_processing_result import MapProcessin
     MapProcessingResultCanceled
 from deepness.processing.map_processor.map_processor import MapProcessor
 from deepness.processing.tile_params import TileParams
+
+cv2 = LazyPackageLoader('cv2')
 
 
 class MapProcessorTrainingDataExport(MapProcessor):
@@ -37,7 +39,6 @@ class MapProcessorTrainingDataExport(MapProcessor):
         return full_path
 
     def _run(self):
-
         export_segmentation_mask = self.params.segmentation_mask_layer_id is not None
         if export_segmentation_mask:
             vlayer_segmentation = QgsProject.instance().mapLayers()[self.params.segmentation_mask_layer_id]

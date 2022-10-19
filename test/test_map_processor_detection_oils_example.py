@@ -1,5 +1,4 @@
 from unittest.mock import MagicMock
-import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 

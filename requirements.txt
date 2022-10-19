@@ -1,4 +1,8 @@
 ## CORE ##
-numpy
-onnxruntime-gpu
-opencv-python-headless  # opencv-python if you would like to display images while debugging
+#numpy  # available already from qgis repo
+#pyqt5  # available already from qgis repo
+
+
+# NOTE - for the time being - keep the same packages and versions in the `package_installer_dialog.py`
+onnxruntime-gpu==1.12.1
+opencv-python-headless==4.6.0.66  # opencv-python if you would like to display images while debugging

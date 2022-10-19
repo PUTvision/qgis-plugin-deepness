@@ -5,11 +5,14 @@ Tile is a small part of the ortophoto, which is being processed by the model one
 
 from typing import Optional, Tuple
 
-import cv2
 import numpy as np
 from qgis.core import QgsRectangle
 
+from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
+
+
+cv2 = LazyPackageLoader('cv2')
 
 
 class TileParams:
