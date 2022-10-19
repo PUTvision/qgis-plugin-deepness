@@ -1,3 +1,6 @@
+"""Main plugin module - entry point for the plugin.
+
+"""
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
     """Load Deepness class from file Deepness.
