@@ -1,0 +1,23 @@
+pytorch1.12.1:Ž
+?
+input_rgb_512x512
+input_rgb_512x512onnx::Mul_1Mul_0"Mul
+3
+onnx::Mul_1
+onnx::Mul_1onnx::Mul_2Mul_1"Mul
+.
+onnx::Mul_2
+onnx::Mul_2outputMul_2"Mul	torch_jitZ-
+input_rgb_512x512
+
+
+
+€
+€b,
+output"
+ 
+
+batch_size
+
+€
+€B

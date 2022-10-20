@@ -1,0 +1,46 @@
+# This file contains metadata for your plugin.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=Deepness: Deep Neural rEmote SenSing
+qgisMinimumVersion=3.10.14
+description=Inference of deep neural network models (ONNX) for segmentation, detection and regression
+version=0.3.0
+author=Przemyslaw Aszkowski & Bartosz Ptak
+email=przemyslaw.aszkowski@gmail.com
+
+about=This plugin allows to easily perform segmentation, detection and regression on raster ortophotos with custom ONNX Neural Network models, bringing the power of deep learning to casual users. Plugin requires external python packages to be installed. After the first plugin startup, a Dialog will show, to assist in this process. Please visit plugin the documentation for details.
+
+tracker=https://github.com/PUTvision/qgis-plugin-deepness/issues
+repository=https://github.com/PUTvision/qgis-plugin-deepness
+# End of mandatory metadata
+
+# Recommended items:
+
+hasProcessingProvider=no
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=segmentation,detection,classification,machine learning,onnx,neural network,deep learning,regression,deepness,analysis,remote sensing,supervised classification
+
+homepage=https://qgis-plugin-deepness.readthedocs.io/
+category=Plugins
+icon=images/icon.png
+# experimental flag
+experimental=True
+
+# deprecated flag (applies to the whole plugin, not just a single version)
+deprecated=False
+
+# Since QGIS 3.8, a comma separated list of plugins to be installed
+# (or upgraded) can be specified.
+# Check the documentation for more information.
+# plugin_dependencies=
+
+Category of the plugin: Raster, Vector, Database or Web
+# category=
+
+# If the plugin can run on QGIS Server.
+server=False
