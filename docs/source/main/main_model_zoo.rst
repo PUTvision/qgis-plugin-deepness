@@ -1,18 +1,20 @@
 Sample Model ZOO
 ================
 
-The Model ZOO is a collection of pre-trained, deep learning models in the ONNX format. It allows for an easy-to-use start with the plugin.
+The `Model ZOO <https://chmura.put.poznan.pl/s/O69QZggRYprk3Ks>`_ is a collection of pre-trained, deep learning models in the ONNX format. It allows for an easy-to-use start with the plugin.
 
 
 ===================
 Segmentation models
 ===================
 
-+-----------------------------------------+-------------------------+----------------------------------------+
-| Task                                    |  Model                  |            ONNX Model                  |
-+=========================================+=========================+========================================+
-| Land Cover segmentation                 |  DeepLabV3+             |   `Link <#>`_                          |
-+-----------------------------------------+-------------------------+----------------------------------------+
++-----------------------------------------+-------------------------+----------------------------------------------------------------+
+| Task                                    |  Model                  |            ONNX Model                                          |
++=========================================+=========================+================================================================+
+| Land Cover segmentation                 |  DeepLabV3+             |   `Link <#>`_                                                  |
++-----------------------------------------+-------------------------+----------------------------------------------------------------+
+| Corn Field Damage Segmentation          |  UNet++                 |   `Link <https://chmura.put.poznan.pl/s/98zo9C5AdTK5ra4>`_     |
++-----------------------------------------+-------------------------+----------------------------------------------------------------+
 
 =======================
 Object detection models
