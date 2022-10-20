@@ -13,6 +13,7 @@ The plugin packs all the complexity behind a simple UI, so that the user can eas
 Of course, the model needs to be first created by a user familiar with Machine Learning, according to model requirements.
 Nevertheless, the entire complexity of processing is implemented in the plugin.
 
+.. youtube:: RCr_ULHHc8A
 
 Home
 ----

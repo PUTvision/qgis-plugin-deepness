@@ -11,6 +11,14 @@
 
 Plugin for QGIS to perform map/image segmentation, regression and object detection with (ONNX) neural network models. 
 
+## Introduction video
+
+[![Video title](http://img.youtube.com/vi/RCr_ULHHc8A/0.jpg)](https://youtu.be/RCr_ULHHc8A "Video Title")
+
+## Documentation
+
+You can find the documentation [here](https://qgis-plugin-deepness.readthedocs.io/).
+
 # Development
  - Install QGIS (the plugin was tested with QGIS 3.12)
    - Debian/Ubuntu based systems: `sudo apt install qgis`
