@@ -43,9 +43,23 @@ class PackageToInstall:
 # Consider merging it into some common file in the future
 # (if we can use a fixed version of pip packages for all python versions)
 packages_to_install = [
-    PackageToInstall(name='onnxruntime-gpu', version='1.12.1', import_name='onnxruntime'),
     PackageToInstall(name='opencv-python-headless', version='4.6.0.66', import_name='cv2'),
 ]
+
+if sys.platform == "linux" or sys.platform == "linux2":
+    packages_to_install += [
+        PackageToInstall(name='onnxruntime-gpu', version='1.12.1', import_name='onnxruntime'),
+    ]
+elif sys.platform == "darwin":  # MacOS
+    packages_to_install += [
+        PackageToInstall(name='onnxruntime', version='1.12.1', import_name='onnxruntime'),
+    ]
+elif sys.platform == "win32":
+    packages_to_install += [
+        PackageToInstall(name='onnxruntime', version='1.12.1', import_name='onnxruntime'),
+    ]
+else:
+    raise Exception("Unsupported operating system!")
 
 
 class PackagesInstallerDialog(QDialog, FORM_CLASS):
@@ -245,8 +259,8 @@ def are_packages_importable() -> bool:
 
 def check_required_packages_and_install_if_necessary(iface):
     print(f'{PACKAGES_INSTALL_DIR = }')
+    os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
     if PACKAGES_INSTALL_DIR not in sys.path:
-        os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
         sys.path.append(PACKAGES_INSTALL_DIR)
 
     if are_packages_importable():
