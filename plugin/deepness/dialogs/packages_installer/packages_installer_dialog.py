@@ -103,6 +103,9 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.signal_log_line.connect(self._log_line)
 
     def _log_line(self, txt):
+        txt = txt\
+            .replace('  ', '&nbsp;&nbsp;')\
+            .replace('\n', '<br>')
         self.tb.append(txt)
 
     def log(self, txt):
@@ -110,15 +113,16 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
 
     def _setup_message(self):
         required_plugins_str = '\n'.join([f'   - {plugin.name}=={plugin.version}' for plugin in packages_to_install])
-        msg1 = f'Plugin {PLUGIN_NAME} - Packages installer \n' \
+        msg1 = f'<h2><span style="color: #000080;"><strong>  ' \
+               f'Plugin {PLUGIN_NAME} - Packages installer </strong></span></h2> \n' \
                f'\n' \
-               f'This plugin requires the following Python packages to be installed:\n' \
+               f'<b>This plugin requires the following Python packages to be installed:</b>\n' \
                f'{required_plugins_str}\n\n' \
                f'If this packages are not installed in the global environment ' \
                f'(or environment in which QGIS is started) ' \
                f'you can install these packages in the local directory (which is included to the Python path).\n\n' \
                f'This Dialog allows to do it for you! (Though you can still install these packages manually instead).\n' \
-               f'Please click "Install packages" button below to install them automatically, ' \
+               f'<b>Please click "Install packages" button below to install them automatically, </b>' \
                f'or "Test and Close" if you installed them manually...\n'
         self.log(msg1)
 
@@ -134,17 +138,18 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
     def _install_packages(self):
         self.log('\n\n')
         self.log('='*60)
-        self.log(f'Attempting to install required packages...\n')
+        self.log(f'<h3><b>Attempting to install required packages...</b></h3>\n')
         os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
 
         for package in packages_to_install:
             if self.aborted:
                 break
-            self.log(f'### Trying to install "{package.name}"...')
+            self.log(f'<b> &rarr; Trying to install "{package.name}"... </b>')
             result = self._install_single_package(package)
             if not result:
-                msg = f'Package "{package.name} installation failed!' \
-                      f'Please try to the install packages again. ' \
+                msg = f'\n <span style="color: #ff0000;"><b> ' \
+                      f'Package "{package.name} installation failed!\n' \
+                      f'Please try to the install packages again. </b></span>' \
                       f'\nCheck if there is no error related to system packages, ' \
                       f'which may be required to be installed by your system package manager, e.g. "apt". ' \
                       f'Copy errors from the stack above into google and look for libraries. ' \
@@ -153,7 +158,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                 break
 
         # finally, validate the installation, if there was no error so far...
-        self.log('\n\n Installation of required packages finished. Validating installation...')
+        self.log('\n\n <b>Installation of required packages finished. Validating installation...</b>')
         self._check_packages_installation_and_log()
         self.INSTALLATION_IN_PROGRESS = False
 
@@ -191,12 +196,14 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
 
         cmd = ['pip', f"install", f"--target={PACKAGES_INSTALL_DIR}", f"{package.name}"]
         msg = ' '.join(cmd)
-        self.log(f'Running command: \n  $ "{msg}"')
-        # cmd = ['echo', f"hello\n{package.name}\nTODO\n"]
-        popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
+        self.log(f'<em>Running command: \n  $ {msg} </em>')
+        popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True, stderr=subprocess.STDOUT)
         for stdout_line in iter(popen.stdout.readline, ""):
-            self.log(stdout_line)
-            time.sleep(0.01)
+            if stdout_line.isspace():
+                continue
+            stdout_line = '    ' + stdout_line.strip('\n')
+            txt = f'<span style="color: #999999;"> {stdout_line} </span>'
+            self.log(txt)
             if self.aborted:
                 self.log('Error! Installation aborted!')
                 return False
@@ -206,7 +213,9 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         if return_code:
             return False
 
-        msg = f'Package "{package.name}" installed correctly!\n\n'
+        msg = f'\n<b>' \
+              f'Package "{package.name}" installed correctly!' \
+              f'<b>\n\n'
         self.log(msg)
 
         return True
@@ -224,12 +233,14 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
             import_packages()
             raise Exception("Unexpected successful import of packages?!? It failed a moment ago, we shouldn't be here!")
         except Exception as e:
-            msg_base = 'Python packages required by the plugin could be loaded due to the following error:'
+            msg_base = '<b>Python packages required by the plugin could be loaded due to the following error:</b>'
             logging.exception(msg_base)
             tb = traceback.format_exc()
-            msg1 = f'{msg_base} \n ' \
+            msg1 = f'<span style="color: #ff0000;">' \
+                   f'{msg_base} \n ' \
                    f'{tb}\n\n' \
-                   f'Please try to install the packages again.'
+                   f'<b>Please try to install the packages again.<b>' \
+                   f'</span>'
             self.log(msg1)
 
         return False
