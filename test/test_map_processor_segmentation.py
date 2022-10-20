@@ -110,7 +110,9 @@ def test_generic_processing_test__specified_extent_from_vlayer():
 
     # just check a few pixels
     assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
-               np.asarray([0, 1, 1, 1, 1, 0, 0, 1, 0]))
+               np.asarray([0, 2, 2, 2, 2, 0, 0, 2, 0]))
+    # and counts of different values
+    assert all(np.unique(result_img, return_counts=True)[1] == np.array([166903,  45270, 171919]))
 
 
 def test_generic_processing_test__specified_extent_from_vlayer_crs3857():
@@ -155,7 +157,8 @@ def test_generic_processing_test__specified_extent_from_vlayer_crs3857():
 
     # just check a few pixels
     assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
-               np.asarray([0, 0, 1, 1, 1, 0, 0, 1, 0]))
+               np.asarray([0, 0, 2, 2, 2, 0, 0, 2, 0]))
+    assert all(np.unique(result_img, return_counts=True)[1] == np.array([182693,  44926, 170031]))
 
 
 def test_generic_processing_test__specified_extent_from_active_map_extent():
@@ -203,7 +206,7 @@ def test_generic_processing_test__specified_extent_from_active_map_extent():
 
 
 if __name__ == '__main__':
-    test_dummy_model_processing__entire_file()
+    # test_dummy_model_processing__entire_file()
     test_generic_processing_test__specified_extent_from_vlayer()
     test_generic_processing_test__specified_extent_from_vlayer_crs3857()
     test_generic_processing_test__specified_extent_from_active_map_extent()
