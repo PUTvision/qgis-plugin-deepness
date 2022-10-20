@@ -8,7 +8,6 @@ import logging
 import os
 import subprocess
 import sys
-import time
 import traceback
 from dataclasses import dataclass
 from threading import Thread
@@ -18,7 +17,7 @@ from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.PyQt.QtGui import QCloseEvent
 from qgis.PyQt.QtWidgets import QTextBrowser
 from qgis.PyQt import uic, QtCore
-from qgis.PyQt.QtWidgets import QVBoxLayout, QProgressBar, QDialog
+from qgis.PyQt.QtWidgets import QDialog
 
 from deepness.common.defines import PLUGIN_NAME
 
@@ -141,6 +140,10 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.log(f'<h3><b>Attempting to install required packages...</b></h3>\n')
         os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
 
+        self._install_pip_if_necessary()
+
+        self.log(f'<h3><b>Attempting to install required packages...</b></h3>\n')
+
         for package in packages_to_install:
             if self.aborted:
                 break
@@ -186,6 +189,42 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         log_msg += '\n'
         self.log(log_msg)
 
+    def _install_pip_if_necessary(self):
+        """
+        Install pip if not present.
+        It happens e.g. in flatpack applications.
+
+        TODO - investigate whether we can also install pip in local directory
+        """
+
+        self.log(f'<h4><b>Making sure pip is installed...</b></h4>')
+        p = subprocess.Popen(['python', '-m', 'pip', '--version'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        (output, err) = p.communicate()
+        if p.returncode == 0:
+            self.log(f'<b> pip is installed and available! <b>\n')
+            return
+        else:
+            self.log(f'<b> pip is not available! <b>\n')
+
+        # install pip. Environmental variable added due to a bug - see https://github.com/pypa/setuptools/issues/2941
+        install_pip_command = "export SETUPTOOLS_USE_DISTUTILS=stdlib && python -m ensurepip"
+        self.log(f'<em>Running command to install pip: \n  $ {install_pip_command} </em>')
+        popen = subprocess.Popen(install_pip_command,
+                                 stdout=subprocess.PIPE,
+                                 universal_newlines=True,
+                                 stderr=subprocess.STDOUT,
+                                 shell=True)
+
+        return_code = self._wait_for_process_to_finish_with_logging(popen)
+        if self.aborted:
+            return False
+
+        if return_code != 0:
+            msg = f'<span style="color: #ff0000;"><b>' \
+                  f'pip installation failed!' \
+                  f'<b></span>\n'
+            self.log(msg)
+
     def _install_single_package(self, package: PackageToInstall) -> bool:
         try:
             import_package(package)
@@ -194,23 +233,18 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         except:
             pass  # we are going to install the package below
 
-        cmd = ['pip', f"install", f"--target={PACKAGES_INSTALL_DIR}", f"{package.name}"]
+        cmd = ['python', '-m', 'pip', f"install", f"--target={PACKAGES_INSTALL_DIR}", f"{package.name}"]
         msg = ' '.join(cmd)
         self.log(f'<em>Running command: \n  $ {msg} </em>')
         popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True, stderr=subprocess.STDOUT)
-        for stdout_line in iter(popen.stdout.readline, ""):
-            if stdout_line.isspace():
-                continue
-            stdout_line = '    ' + stdout_line.strip('\n')
-            txt = f'<span style="color: #999999;"> {stdout_line} </span>'
-            self.log(txt)
-            if self.aborted:
-                self.log('Error! Installation aborted!')
-                return False
 
-        popen.stdout.close()
-        return_code = popen.wait()
-        if return_code:
+        self.log('*'*30)
+        return_code = self._wait_for_process_to_finish_with_logging(popen)
+        self.log('*'*30)
+        if self.aborted:
+            return False
+
+        if return_code != 0:
             return False
 
         msg = f'\n<b>' \
@@ -219,6 +253,25 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.log(msg)
 
         return True
+
+    def _wait_for_process_to_finish_with_logging(self, popen) -> int:
+        """
+        :param popen: instance of 'subprocess.Popen'
+        :return: process return code
+        """
+        for stdout_line in iter(popen.stdout.readline, ""):
+            if stdout_line.isspace():
+                continue
+            stdout_line = '    ' + stdout_line.strip('\n')
+            txt = f'<span style="color: #999999;"> {stdout_line} </span>'
+            self.log(txt)
+            if self.aborted:
+                self.log('Error! Installation aborted!')
+                return -1
+
+        popen.stdout.close()
+        return_code = popen.wait()
+        return return_code
 
     def _check_packages_installation_and_log(self) -> bool:
         packages_ok = are_packages_importable()
@@ -280,5 +333,6 @@ def check_required_packages_and_install_if_necessary(iface):
 
     global dialog
     dialog = PackagesInstallerDialog(iface)
+    dialog.setWindowModality(QtCore.Qt.WindowModal)
     dialog.show()
     dialog.move_to_top()
