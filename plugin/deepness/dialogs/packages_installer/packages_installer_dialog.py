@@ -29,7 +29,7 @@ PACKAGES_INSTALL_DIR = os.path.join(PLUGIN_ROOT_DIR, f'python{PYTHON_VERSION.maj
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'packages_installer.ui'))
+    os.path.dirname(__file__), 'packages_installer_dialog.ui'))
 
 
 @dataclass
@@ -51,7 +51,7 @@ packages_to_install = [
 class PackagesInstallerDialog(QDialog, FORM_CLASS):
     """
     Dialog witch controls the installation process of packages.
-    UI design defined in the `packages_installer.ui` file.
+    UI design defined in the `packages_installer_dialog.ui` file.
     """
 
     signal_log_line = pyqtSignal(str)  # we need to use signal because we cannot edit GUI from another thread
