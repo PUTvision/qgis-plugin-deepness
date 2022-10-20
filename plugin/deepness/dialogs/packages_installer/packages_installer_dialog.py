@@ -17,7 +17,7 @@ from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.PyQt.QtGui import QCloseEvent
 from qgis.PyQt.QtWidgets import QTextBrowser
-from qgis.PyQt import uic
+from qgis.PyQt import uic, QtCore
 from qgis.PyQt.QtWidgets import QVBoxLayout, QProgressBar, QDialog
 
 from deepness.common.defines import PLUGIN_NAME
@@ -67,6 +67,21 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self._setup_message()
         self.aborted = False
         self.thread = None
+
+    def move_to_top(self):
+        """ Move the window to the top.
+        Although if installed from plugin manager, the plugin manager will move itself to the top anyway.
+        """
+        self.setWindowState((self.windowState() & ~QtCore.Qt.WindowMinimized) | QtCore.Qt.WindowActive)
+
+        if sys.platform == "linux" or sys.platform == "linux2":
+            pass
+        elif sys.platform == "darwin":  # MacOS
+            self.raise_()
+        elif sys.platform == "win32":
+            self.activateWindow()
+        else:
+            raise Exception("Unsupported operating system!")
 
     def _create_connections(self):
         self.pushButton_close.clicked.connect(self.close)
@@ -241,3 +256,4 @@ def check_required_packages_and_install_if_necessary(iface):
     global dialog
     dialog = PackagesInstallerDialog(iface)
     dialog.show()
+    dialog.move_to_top()
