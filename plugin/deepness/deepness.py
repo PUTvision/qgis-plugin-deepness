@@ -5,37 +5,31 @@ Links the UI and the processing.
 Skeleton of this file was generate with the QGis plugin to create plugin skeleton - QGIS PluginBuilder
 """
 
-import os
 import traceback
+import os
 
+from qgis.PyQt.QtCore import QCoreApplication, Qt
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction
 from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.core import Qgis
+from qgis.core import QgsApplication
+from qgis.core import QgsProject
+from qgis.core import QgsVectorLayer
+from qgis.gui import QgisInterface
 
+from deepness.common.defines import PLUGIN_NAME, IS_DEBUG
+from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
+from deepness.deepness_dockwidget import DeepnessDockWidget
 from deepness.images.get_image_path import get_icon_path
 from deepness.processing.map_processor.map_processing_result import MapProcessingResult, MapProcessingResultFailed, \
     MapProcessingResultCanceled, MapProcessingResultSuccess
 from deepness.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
 from deepness.processing.models.model_types import ModelDefinition
 
-os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()  # increase limit of pixels (2^30), before importing cv2
-import cv2
-
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
-from qgis.core import QgsVectorLayer
-from qgis.core import QgsApplication
-from qgis.core import QgsProject
-from qgis.gui import QgisInterface
-from qgis.core import Qgis
-
-# Initialize Qt resources from file resources.py
-from deepness.common.defines import PLUGIN_NAME, IS_DEBUG
-
-# Import the code for the DockWidget
-from deepness.deepness_dockwidget import DeepnessDockWidget
-import os.path
+cv2 = LazyPackageLoader('cv2')
 
 
 class Deepness:
@@ -50,28 +44,12 @@ class Deepness:
             application at run time.
         :type iface: QgsInterface
         """
-        # Save reference to the QGIS interface
         self.iface = iface
-
-        # initialize plugin directory
-        self.plugin_dir = os.path.dirname(__file__)
-
-        # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
-        locale_path = os.path.join(
-            self.plugin_dir,
-            'i18n',
-            'Deepness_{}.qm'.format(locale))
-
-        if os.path.exists(locale_path):
-            self.translator = QTranslator()
-            self.translator.load(locale_path)
-            QCoreApplication.installTranslator(self.translator)
 
         # Declare instance attributes
         self.actions = []
         self.menu = self.tr(u'&Deepness')
-        # TODO: We are going to let the user set this up in a future iteration
+
         self.toolbar = self.iface.addToolBar(u'Deepness')
         self.toolbar.setObjectName(u'Deepness')
 
@@ -169,7 +147,6 @@ class Deepness:
 
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
-        print('2) initGui')
 
         icon_path = get_icon_path()
         self.add_action(
@@ -183,7 +160,6 @@ class Deepness:
 
     def onClosePlugin(self):
         """Cleanup necessary items here when plugin dockwidget is closed"""
-        print('3) onClosePlugin')
 
         # disconnects
         self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
@@ -198,7 +174,6 @@ class Deepness:
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
-        print('4) unload')
 
         for action in self.actions:
             self.iface.removePluginMenu(
@@ -213,7 +188,6 @@ class Deepness:
 
     def run(self):
         """Run method that loads and starts the plugin"""
-        print(f'5) run. {self.dockwidget = }')
 
         if not self.pluginIsActive:
             self.pluginIsActive = True
@@ -305,6 +279,8 @@ class Deepness:
     @staticmethod
     def _show_img(img_rgb, window_name: str):
         """ Helper function to show an image while developing and debugging the plugin """
+        # We are importing it here, because it is debug tool,
+        # and we don't want to have it in the main scope from the project startup
         img_bgr = img_rgb[..., ::-1]
         cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(window_name, 800, 800)

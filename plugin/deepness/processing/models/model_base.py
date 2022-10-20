@@ -3,7 +3,10 @@ import json
 from typing import List, Optional
 
 import numpy as np
-import onnxruntime as ort
+
+from deepness.common.lazy_package_loader import LazyPackageLoader
+
+ort = LazyPackageLoader('onnxruntime')
 
 
 class ModelBase:
