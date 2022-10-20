@@ -5,12 +5,12 @@
 [general]
 name=Deepness: Deep Neural rEmote SenSing
 qgisMinimumVersion=3.10.14
-description=Inference of deep neural network models for segmentation, detection and regression as QGIS plugin
-version=0.2.0
+description=Inference of deep neural network models (ONNX) for segmentation, detection and regression
+version=0.3.0
 author=Przemyslaw Aszkowski & Bartosz Ptak
 email=przemyslaw.aszkowski@gmail.com
 
-about=This plugin allows to easily perform segmentation, detection and regression on raster ortophotos with custom ONNX Neural Network models, bringing power of deep learning to casual users
+about=This plugin allows to easily perform segmentation, detection and regression on raster ortophotos with custom ONNX Neural Network models, bringing the power of deep learning to casual users. Plugin requires external python packages to be installed. After the first plugin startup, a Dialog will show, to assist in this process. Please visit plugin the documentation for details.
 
 tracker=https://github.com/PUTvision/qgis-plugin-deepness/issues
 repository=https://github.com/PUTvision/qgis-plugin-deepness
