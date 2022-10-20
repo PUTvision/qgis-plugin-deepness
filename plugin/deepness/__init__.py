@@ -1,3 +1,4 @@
+"""Main plugin module - entry point for the plugin."""
 import os
 
 # increase limit of pixels (2^30), before importing cv2.
@@ -8,7 +9,6 @@ os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = pow(2, 40).__str__()
 # noinspection PyPep8Naming
 def classFactory(iface):  # pylint: disable=invalid-name
     """Load Deepness class from file Deepness.
-
     :param iface: A QGIS interface instance.
     :type iface: QgsInterface
     """

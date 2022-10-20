@@ -1,5 +1,4 @@
-"""
-Main plugin file - entry point for the plugin.
+"""Main plugin file - entry point for the plugin.
 
 Links the UI and the processing.
 

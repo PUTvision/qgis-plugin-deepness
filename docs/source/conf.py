@@ -16,7 +16,7 @@ from unittest.mock import MagicMock
 import os
 import re
 import sys
-sys.path.append(os.path.abspath('../../plugin/'))
+# sys.path.append(os.path.abspath('../../plugin/'))
 sys.path.append(os.path.abspath('../../plugin/deepness'))
 
 # -- Project information -----------------------------------------------------
