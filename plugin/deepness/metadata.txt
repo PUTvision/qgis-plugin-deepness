@@ -3,7 +3,7 @@
 # This file should be included when you package your plugin.# Mandatory items:
 
 [general]
-name=Deepness: Deep Neural rEmote SenSing
+name=Deepness: Deep Neural Remote Sensing
 qgisMinimumVersion=3.10.14
 description=Inference of deep neural network models (ONNX) for segmentation, detection and regression
 version=0.3.0

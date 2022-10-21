@@ -1,4 +1,4 @@
-# Deepness: Deep Neural rEmote SenSing
+# Deepness: Deep Neural Remote Sensing
 
 Plugin for QGIS to perform map/image segmentation, regression and object detection with (ONNX) neural network models. 
 
