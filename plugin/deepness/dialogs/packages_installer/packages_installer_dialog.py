@@ -260,7 +260,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         try:
             import_packages()
             raise Exception("Unexpected successful import of packages?!? It failed a moment ago, we shouldn't be here!")
-        except:
+        except Exception:
             msg_base = '<b>Python packages required by the plugin could not be loaded due to the following error:</b>'
             logging.exception(msg_base)
             tb = traceback.format_exc()
@@ -289,7 +289,7 @@ def import_packages():
 def are_packages_importable() -> bool:
     try:
         import_packages()
-    except:
+    except Exception:
         logging.exception(f'Python packages required by the plugin could not be loaded due to the following error:')
         return False
 
