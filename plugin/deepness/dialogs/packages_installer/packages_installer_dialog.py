@@ -142,7 +142,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
     def _install_packages(self) -> None:
         self.log('\n\n')
         self.log('=' * 60)
-        self.log(f'<h3><b>Attempting to install required packages...</b></h3>\n')
+        self.log(f'<h3><b>Attempting to install required packages...</b></h3>')
         os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
 
         self._install_pip_if_necessary()
@@ -214,8 +214,9 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         if process.returncode != 0:
             msg = f'<span style="color: {_ERROR_COLOR};"><b>' \
                   f'pip installation failed!' \
-                  f'<b></span>\n'
+                  f'<b></span>'
             self.log(msg)
+        self.log('\n')
 
     def _pip_install_packages(self, packages: List[PackageToInstall]) -> None:
         cmd = [sys.executable, '-m', 'pip', 'install', f'--target={PACKAGES_INSTALL_DIR}', *map(str, packages)]
@@ -225,9 +226,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                               stdout=subprocess.PIPE,
                               universal_newlines=True,
                               stderr=subprocess.STDOUT) as process:
-            self.log('*' * 30)
             self._do_process_output_logging(process)
-            self.log('*' * 30)
 
         if process.returncode != 0:
             raise RuntimeError('Installation with pip failed')
@@ -261,9 +260,9 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         try:
             import_packages()
             raise Exception("Unexpected successful import of packages?!? It failed a moment ago, we shouldn't be here!")
-        except Exception as e:
+        except:
             msg_base = '<b>Python packages required by the plugin could not be loaded due to the following error:</b>'
-            logging.exception(e)
+            logging.exception(msg_base)
             tb = traceback.format_exc()
             msg1 = f'<span style="color: {_ERROR_COLOR};">' \
                    f'{msg_base} \n ' \
@@ -290,8 +289,8 @@ def import_packages():
 def are_packages_importable() -> bool:
     try:
         import_packages()
-    except Exception as e:
-        logging.exception(f'Python packages required by the plugin could not be loaded due to the following error: {e}')
+    except:
+        logging.exception(f'Python packages required by the plugin could not be loaded due to the following error:')
         return False
 
     return True
