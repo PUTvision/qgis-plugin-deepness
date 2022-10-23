@@ -17,7 +17,7 @@ from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.PyQt.QtGui import QCloseEvent
 from qgis.PyQt.QtWidgets import QTextBrowser
-from qgis.PyQt import uic
+from qgis.PyQt import uic, QtCore
 from qgis.PyQt.QtWidgets import QVBoxLayout, QProgressBar, QDialog
 
 from deepness.common.defines import PLUGIN_NAME
@@ -29,7 +29,7 @@ PACKAGES_INSTALL_DIR = os.path.join(PLUGIN_ROOT_DIR, f'python{PYTHON_VERSION.maj
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'packages_installer.ui'))
+    os.path.dirname(__file__), 'packages_installer_dialog.ui'))
 
 
 @dataclass
@@ -43,15 +43,29 @@ class PackageToInstall:
 # Consider merging it into some common file in the future
 # (if we can use a fixed version of pip packages for all python versions)
 packages_to_install = [
-    PackageToInstall(name='onnxruntime-gpu', version='1.12.1', import_name='onnxruntime'),
     PackageToInstall(name='opencv-python-headless', version='4.6.0.66', import_name='cv2'),
 ]
+
+if sys.platform == "linux" or sys.platform == "linux2":
+    packages_to_install += [
+        PackageToInstall(name='onnxruntime-gpu', version='1.12.1', import_name='onnxruntime'),
+    ]
+elif sys.platform == "darwin":  # MacOS
+    packages_to_install += [
+        PackageToInstall(name='onnxruntime', version='1.12.1', import_name='onnxruntime'),
+    ]
+elif sys.platform == "win32":
+    packages_to_install += [
+        PackageToInstall(name='onnxruntime', version='1.12.1', import_name='onnxruntime'),
+    ]
+else:
+    raise Exception("Unsupported operating system!")
 
 
 class PackagesInstallerDialog(QDialog, FORM_CLASS):
     """
     Dialog witch controls the installation process of packages.
-    UI design defined in the `packages_installer.ui` file.
+    UI design defined in the `packages_installer_dialog.ui` file.
     """
 
     signal_log_line = pyqtSignal(str)  # we need to use signal because we cannot edit GUI from another thread
@@ -67,6 +81,21 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self._setup_message()
         self.aborted = False
         self.thread = None
+
+    def move_to_top(self):
+        """ Move the window to the top.
+        Although if installed from plugin manager, the plugin manager will move itself to the top anyway.
+        """
+        self.setWindowState((self.windowState() & ~QtCore.Qt.WindowMinimized) | QtCore.Qt.WindowActive)
+
+        if sys.platform == "linux" or sys.platform == "linux2":
+            pass
+        elif sys.platform == "darwin":  # MacOS
+            self.raise_()
+        elif sys.platform == "win32":
+            self.activateWindow()
+        else:
+            raise Exception("Unsupported operating system!")
 
     def _create_connections(self):
         self.pushButton_close.clicked.connect(self.close)
@@ -230,8 +259,8 @@ def are_packages_importable() -> bool:
 
 def check_required_packages_and_install_if_necessary(iface):
     print(f'{PACKAGES_INSTALL_DIR = }')
+    os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
     if PACKAGES_INSTALL_DIR not in sys.path:
-        os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
         sys.path.append(PACKAGES_INSTALL_DIR)
 
     if are_packages_importable():
@@ -241,3 +270,4 @@ def check_required_packages_and_install_if_necessary(iface):
     global dialog
     dialog = PackagesInstallerDialog(iface)
     dialog.show()
+    dialog.move_to_top()
