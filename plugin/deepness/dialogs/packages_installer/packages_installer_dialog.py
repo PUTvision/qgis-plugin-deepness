@@ -27,8 +27,6 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PLUGIN_ROOT_DIR = os.path.realpath(os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..')))
 PACKAGES_INSTALL_DIR = os.path.join(PLUGIN_ROOT_DIR, f'python{PYTHON_VERSION.major}.{PYTHON_VERSION.minor}')
 
-PYTHON_EXECUTABLE_PATH = 'python'  # sys.executable yields QGis.exe on Windows, so just use 'python'
-
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'packages_installer_dialog.ui'))
@@ -58,14 +56,17 @@ if sys.platform == "linux" or sys.platform == "linux2":
     packages_to_install += [
         PackageToInstall(name='onnxruntime-gpu', version=onnx_runtime_version, import_name='onnxruntime'),
     ]
+    PYTHON_EXECUTABLE_PATH = sys.executable
 elif sys.platform == "darwin":  # MacOS
     packages_to_install += [
         PackageToInstall(name='onnxruntime', version=onnx_runtime_version, import_name='onnxruntime'),
     ]
+    PYTHON_EXECUTABLE_PATH = sys.executable
 elif sys.platform == "win32":
     packages_to_install += [
         PackageToInstall(name='onnxruntime', version=onnx_runtime_version, import_name='onnxruntime'),
     ]
+    PYTHON_EXECUTABLE_PATH = 'python'  # sys.executable yields QGis.exe on Windows, so just use 'python'
 else:
     raise Exception("Unsupported operating system!")
 
@@ -300,7 +301,6 @@ def are_packages_importable() -> bool:
 
 
 def check_required_packages_and_install_if_necessary(iface):
-    print(f'{PACKAGES_INSTALL_DIR = }')
     os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
     if PACKAGES_INSTALL_DIR not in sys.path:
         sys.path.append(PACKAGES_INSTALL_DIR)
