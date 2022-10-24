@@ -27,6 +27,9 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PLUGIN_ROOT_DIR = os.path.realpath(os.path.abspath(os.path.join(SCRIPT_DIR, '..', '..')))
 PACKAGES_INSTALL_DIR = os.path.join(PLUGIN_ROOT_DIR, f'python{PYTHON_VERSION.major}.{PYTHON_VERSION.minor}')
 
+PYTHON_EXECUTABLE_PATH = 'python'  # sys.executable yields QGis.exe on Windows, so just use 'python'
+
+
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'packages_installer_dialog.ui'))
 
@@ -198,7 +201,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         """
 
         self.log(f'<h4><b>Making sure pip is installed...</b></h4>')
-        install_pip_command = [sys.executable, '-m', 'ensurepip']
+        install_pip_command = [PYTHON_EXECUTABLE_PATH, '-m', 'ensurepip']
         self.log(f'<em>Running command to install pip: \n  $ {" ".join(install_pip_command)} </em>')
         with subprocess.Popen(install_pip_command,
                               stdout=subprocess.PIPE,
@@ -219,7 +222,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.log('\n')
 
     def _pip_install_packages(self, packages: List[PackageToInstall]) -> None:
-        cmd = [sys.executable, '-m', 'pip', 'install', f'--target={PACKAGES_INSTALL_DIR}', *map(str, packages)]
+        cmd = [PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install', f'--target={PACKAGES_INSTALL_DIR}', *map(str, packages)]
         cmd_string = ' '.join(cmd)
         self.log(f'<em>Running command: \n  $ {cmd_string} </em>')
         with subprocess.Popen(cmd,
