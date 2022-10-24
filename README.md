@@ -6,6 +6,7 @@
 
 ![main](https://github.com/PUTvision/qgis-plugin-deepness/actions/workflows/python-app.yml/badge.svg)
 [![GitHub contributors](https://img.shields.io/github/contributors/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/graphs/contributors)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 [![GitHub stars](https://img.shields.io/github/stars/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/network/members)
 
@@ -63,6 +64,16 @@ After the plugin code is modified, use the `Plugin reloader` to reload our plugi
 
 See [test/README.md](test/README.md)
 
+# Bugs, feature requests and questions
+
+If you encountered some problems or have some feature requests you think will make this project better, consider opening an [issue](https://github.com/PUTvision/qgis-plugin-deepness/issues/new).
+
+If you don't understand something and/or have some questions, ask them in [Discussions](https://github.com/PUTvision/qgis-plugin-deepness/discussions).
+
+# Contributing
+
+PRs are welcome! Consider discussing your plans with maintainers first.
+
 # Development notes
 
 - plugin skeleton was initially generated with `Plugin Builder`, but then refactored and cleaned up a little bit
@@ -75,4 +86,3 @@ See [test/README.md](test/README.md)
   ```
   
   Though I'm not sure if this file is even needed anymore
-
