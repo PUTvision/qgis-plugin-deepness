@@ -17,8 +17,8 @@ jobs:
     - uses: actions/checkout@v3
     - name: Prepare directory for packing with zip
       run: |
-        mkdir out
-        cp -r plugin/deepness/ out/deepness
+        mkdir -p out/deepness
+        cp -r plugin/deepness/ out/deepness/deepness
     - name: Update
       run: |
         sudo apt update
@@ -63,4 +63,4 @@ jobs:
       with:
         name: deepness
         path: out/deepness
-        retention-days: 1000
+        retention-days: 89
