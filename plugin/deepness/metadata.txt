@@ -13,9 +13,9 @@ email=przemyslaw.aszkowski@gmail.com
 about=
     Deepness plugin allows to easily perform segmentation, detection and regression on raster ortophotos with custom ONNX Neural Network models, bringing the power of deep learning to casual users.
     Features highlights:
-     - processing any raster layer ((custom ortophoto from file or layers from online providers, e.g Google Satellite)
+     - processing any raster layer (custom ortophoto from file or layers from online providers, e.g Google Satellite)
      - limiting processing range to predefined area (visible part or area defined by vector layer polygons)
-     - main types of models are supported: segmentation, regression, detection
+     - common types of models are supported: segmentation, regression, detection
      - integration with layers (both for input data and model output layers). Once an output layer is created, it can be saved as a file manually
      - model ZOO under development (planes detection on Bing Aerial, Corn field damage, Oil Storage tanks detection, ...)
      - training data Export Tool - exporting raster and mask as small tiles
