@@ -10,6 +10,7 @@ import subprocess
 import sys
 import traceback
 from dataclasses import dataclass
+from pathlib import Path
 from threading import Thread
 from typing import List
 
@@ -61,12 +62,12 @@ elif sys.platform == "darwin":  # MacOS
     packages_to_install += [
         PackageToInstall(name='onnxruntime', version=onnx_runtime_version, import_name='onnxruntime'),
     ]
-    PYTHON_EXECUTABLE_PATH = sys.executable
+    PYTHON_EXECUTABLE_PATH = str(Path(sys.prefix) / 'bin' / 'python3')  # sys.executable yields QGIS in macOS
 elif sys.platform == "win32":
     packages_to_install += [
         PackageToInstall(name='onnxruntime', version=onnx_runtime_version, import_name='onnxruntime'),
     ]
-    PYTHON_EXECUTABLE_PATH = 'python'  # sys.executable yields QGis.exe on Windows, so just use 'python'
+    PYTHON_EXECUTABLE_PATH = 'python'  # sys.executable yields QGis.exe in Windows
 else:
     raise Exception("Unsupported operating system!")
 
@@ -303,7 +304,7 @@ def are_packages_importable() -> bool:
 def check_required_packages_and_install_if_necessary(iface):
     os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
     if PACKAGES_INSTALL_DIR not in sys.path:
-        sys.path.append(PACKAGES_INSTALL_DIR)
+        sys.path.insert(0, PACKAGES_INSTALL_DIR)  # TODO: check for a less intrusive way to do this
 
     if are_packages_importable():
         # if packages are importable we are fine, nothing more to do then
