@@ -101,7 +101,7 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         if sys.platform == "linux" or sys.platform == "linux2":
             pass
         elif sys.platform == "darwin":  # MacOS
-            self.raise_()
+            self.raise_()  # FIXME: this does not really work, the window is still behind the plugin manager
         elif sys.platform == "win32":
             self.activateWindow()
         else:
