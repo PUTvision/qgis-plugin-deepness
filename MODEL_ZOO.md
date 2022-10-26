@@ -1,13 +1,27 @@
 # Deepness Model ZOO
 
-The [Model ZOO](#) is a collection of pre-trained, deep learning models in the ONNX format. It allows for an easy-to-use start with the plugin.
+The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection of pre-trained, deep learning models in the ONNX format. It allows for an easy-to-use start with the plugin.
 
 ## Segmentation models
 
+| Model name | Input size | Resolution [cm/px] | Description |
+|---|---|---|---|
+| [Corn Field Damage Segmentation](https://chmura.put.poznan.pl/s/abWFTVYSDIcncWs) | 512 | 3 | [PUT Vision](https://putvision.github.io/) model for Corn Field Damage Segmentation created on own dataset labeled by experts. We used the classical UNet++ model. It generates 3 outputs: healthy crop, damaged crop, and out-of-field area. |
+| [Land Cover segmentation](https://chmura.put.poznan.pl/s/PnAFJw27uneROkV) | 512 | 40 | The model is trained on the [LandCover.ai dataset](https://landcover.ai.linuxpolska.com/). It provides satellite images with 25 cm/px and 50 cm/px resolution. Annotation masks for the following classes are provided for the images: building (1), woodland (2), water(3), road(4). We use `DeepLabV3+` model with `tu-semnasnet_100` backend and `FocalDice` as a loss function. |
+
 ## Regression models
+
+| Model name | Input size | Resolution | Description |
+|---|---|---|---|
+|  |  |  |  |
+|  |  |  |  |
 
 ## Object detection models
 
+| Model name | Input size | Resolution | Description |
+|---|---|---|---|
+| [Airbus Planes Detection](https://chmura.put.poznan.pl/s/bBIJ5FDPgyQvJ49) | 256 | 70 | YOLOv7 tiny model for object detection on satellite images. Based on the [Airbus Aircraft Detection dataset](https://www.kaggle.com/datasets/airbusgeo/airbus-aircrafts-sample-dataset). |
+| [Airbus Oil Storage Detection](https://chmura.put.poznan.pl/s/gMundpKsYUC7sNb) | 512 | 150 | YOLOv5-m model for object detection on satellite images. Based on the [Airbus Oil Storage Detection dataset](https://www.kaggle.com/datasets/airbusgeo/airbus-oil-storage-detection-dataset). |
 
 ## Contributing
 
