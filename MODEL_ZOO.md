@@ -7,7 +7,8 @@ The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection 
 | Model name | Input size | CM/PX | Description |
 |---|---|---|---|
 | [Corn Field Damage Segmentation](https://chmura.put.poznan.pl/s/abWFTVYSDIcncWs) | 512 | 3 | [PUT Vision](https://putvision.github.io/) model for Corn Field Damage Segmentation created on own dataset labeled by experts. We used the classical UNet++ model. It generates 3 outputs: healthy crop, damaged crop, and out-of-field area. |
-| [Land Cover segmentation](https://chmura.put.poznan.pl/s/PnAFJw27uneROkV) | 512 | 40 | The model is trained on the [LandCover.ai dataset](https://landcover.ai.linuxpolska.com/). It provides satellite images with 25 cm/px and 50 cm/px resolution. Annotation masks for the following classes are provided for the images: building (1), woodland (2), water(3), road(4). We use `DeepLabV3+` model with `tu-semnasnet_100` backend and `FocalDice` as a loss function. |
+| [Land Cover Segmentation](https://chmura.put.poznan.pl/s/PnAFJw27uneROkV) | 512 | 40 | The model is trained on the [LandCover.ai dataset](https://landcover.ai.linuxpolska.com/). It provides satellite images with 25 cm/px and 50 cm/px resolution. Annotation masks for the following classes are provided for the images: building (1), woodland (2), water(3), road(4). We use `DeepLabV3+` model with `tu-semnasnet_100` backend and `FocalDice` as a loss function. |
+| [Roads Segmentation](https://chmura.put.poznan.pl/s/y6S3CmodPy1fYYz) | 512 | 21 | The model segments the Google Earth satellite images into 'road' and 'not-road' classes. Model works best on wide car roads, crossroads and roundabouts.  |
 
 ## Regression models
 
@@ -25,10 +26,10 @@ The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection 
 
 ## Contributing
 
-* PRs with models are welcome! Please follow the [general model information](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_description_classes.html). 
+* PRs with models are welcome! Please follow the [general model information](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_description_classes.html).
 
 * Use `MODEL_ZOO` tag in your PRs to make it easier to find them.
 
-* If you need, you can check [how to export the model to ONNX](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_example_onnx_model.html). 
+* If you need, you can check [how to export the model to ONNX](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_example_onnx_model.html).
 
 * And do not forget to [add metadata to the ONNX model](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_add_metadata_to_model.html). You can host your model yourself or ask us to do it.
