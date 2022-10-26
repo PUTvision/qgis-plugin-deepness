@@ -20,7 +20,7 @@ Plugin for QGIS to perform map/image segmentation, regression and object detecti
 
 You can find the documentation [here](https://qgis-plugin-deepness.readthedocs.io/).
 
-# Development
+## Development
 
 - Install QGIS (the plugin was tested with QGIS 3.12)
   - Debian/Ubuntu based systems: `sudo apt install qgis`
@@ -60,21 +60,21 @@ qgis
 
 After the plugin code is modified, use the `Plugin reloader` to reload our plugin.
 
-# Unit tests
+## Unit tests
 
 See [test/README.md](test/README.md)
 
-# Bugs, feature requests and questions
+## Bugs, feature requests and questions
 
 If you encountered some problems or have some feature requests you think will make this project better, consider opening an [issue](https://github.com/PUTvision/qgis-plugin-deepness/issues/new).
 
 If you don't understand something and/or have some questions, ask them in [Discussions](https://github.com/PUTvision/qgis-plugin-deepness/discussions).
 
-# Contributing
+## Contributing
 
 PRs are welcome! Consider discussing your plans with maintainers first.
 
-# Development notes
+## Development notes
 
 - plugin skeleton was initially generated with `Plugin Builder`, but then refactored and cleaned up a little bit
 - Before release: change version number in `metadata.txt` and in docs (?)
