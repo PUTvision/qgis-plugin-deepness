@@ -58,7 +58,7 @@ The example below shows how to add string, float, and dictionary metadata into a
 
     m1 = model.metadata_props.add()
     m1.key = 'model_type'
-    m1.value = json.dumps('segmenter')
+    m1.value = json.dumps('Segmentor')
 
     m2 = model.metadata_props.add()
     m2.key = 'class_names'
@@ -69,3 +69,6 @@ The example below shows how to add string, float, and dictionary metadata into a
     m3.value = json.dumps(50)
 
     onnx.save(model, 'deeplabv3_landcover_4c.onnx')
+
+
+You can also use a script setting the most important parameters in the plugin repository (file :code:`tools/add_model_metadata.py`).
