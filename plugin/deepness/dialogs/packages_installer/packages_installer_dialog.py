@@ -156,13 +156,13 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         try:
             self._pip_install_packages(packages_to_install)
         except Exception as e:
-            msg = f'\n <span style="color: {_ERROR_COLOR};"><b> ' \
-                  f'Packages installation failed with exception: {e}!\n' \
-                  f'Please try to install the packages again. </b></span>' \
-                  f'\nCheck if there is no error related to system packages, ' \
-                  f'which may be required to be installed by your system package manager, e.g. "apt". ' \
-                  f'Copy errors from the stack above and google for possible solutions. ' \
-                  f'Please report these as an issue on the plugin repository tracker!'
+            msg = (f'\n <span style="color: {_ERROR_COLOR};"><b> '
+                   f'Packages installation failed with exception: {e}!\n'
+                   f'Please try to install the packages again. </b></span>'
+                   f'\nCheck if there is no error related to system packages, '
+                   f'which may be required to be installed by your system package manager, e.g. "apt". '
+                   f'Copy errors from the stack above and google for possible solutions. '
+                   f'Please report these as an issue on the plugin repository tracker!')
             self.log(msg)
 
         # finally, validate the installation, if there was no error so far...
@@ -203,6 +203,10 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         """
 
         self.log(f'<h4><b>Making sure pip is installed...</b></h4>')
+        if check_pip_installed():
+            self.log(f'<em>Pip is installed, skipping installation...</em>\n')
+            return
+
         install_pip_command = [PYTHON_EXECUTABLE_PATH, '-m', 'ensurepip']
         self.log(f'<em>Running command to install pip: \n  $ {" ".join(install_pip_command)} </em>')
         with subprocess.Popen(install_pip_command,
@@ -217,9 +221,9 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                 return False
 
         if process.returncode != 0:
-            msg = f'<span style="color: {_ERROR_COLOR};"><b>' \
-                  f'pip installation failed!' \
-                  f'<b></span>'
+            msg = (f'<span style="color: {_ERROR_COLOR};"><b>'
+                   f'pip installation failed! Consider installing it manually.'
+                   f'<b></span>')
             self.log(msg)
         self.log('\n')
 
@@ -236,9 +240,9 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         if process.returncode != 0:
             raise RuntimeError('Installation with pip failed')
 
-        msg = f'\n<b>' \
-              f'Packages installed correctly!' \
-              f'<b>\n\n'
+        msg = (f'\n<b>'
+               f'Packages installed correctly!'
+               f'<b>\n\n')
         self.log(msg)
 
     def _do_process_output_logging(self, process: subprocess.Popen) -> None:
@@ -269,11 +273,11 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
             msg_base = '<b>Python packages required by the plugin could not be loaded due to the following error:</b>'
             logging.exception(msg_base)
             tb = traceback.format_exc()
-            msg1 = f'<span style="color: {_ERROR_COLOR};">' \
-                   f'{msg_base} \n ' \
-                   f'{tb}\n\n' \
-                   f'<b>Please try installing the packages again.<b>' \
-                   f'</span>'
+            msg1 = (f'<span style="color: {_ERROR_COLOR};">'
+                    f'{msg_base} \n '
+                    f'{tb}\n\n'
+                    f'<b>Please try installing the packages again.<b>'
+                    f'</span>')
             self.log(msg1)
 
         return False
@@ -301,10 +305,18 @@ def are_packages_importable() -> bool:
     return True
 
 
+def check_pip_installed() -> bool:
+    try:
+        subprocess.check_output([PYTHON_EXECUTABLE_PATH, '-m', 'pip', '--version'])
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
 def check_required_packages_and_install_if_necessary(iface):
     os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
     if PACKAGES_INSTALL_DIR not in sys.path:
-        sys.path.insert(0, PACKAGES_INSTALL_DIR)  # TODO: check for a less intrusive way to do this
+        sys.path.append(PACKAGES_INSTALL_DIR)  # TODO: check for a less intrusive way to do this
 
     if are_packages_importable():
         # if packages are importable we are fine, nothing more to do then
