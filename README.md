@@ -20,11 +20,11 @@ Plugin for QGIS to perform map/image segmentation, regression and object detecti
 
 You can find the documentation [here](https://qgis-plugin-deepness.readthedocs.io/).
 
-# Development
+## Development
 
 - Install QGIS (the plugin was tested with QGIS 3.12)
   - Debian/Ubuntu based systems: `sudo apt install qgis`
-  - Fedora: `sudo dnf install qgis`
+  - Fedora: `sudo dnf install qgis-devel`
   - Arch Linux: `sudo pacman -S qgis`
   - [Windows, macOS and others](https://qgis.org/en/site/forusers/download.html)
 - Create virtual environment (with global packages inherited!):
@@ -60,29 +60,16 @@ qgis
 
 After the plugin code is modified, use the `Plugin reloader` to reload our plugin.
 
-# Unit tests
+## Unit tests
 
 See [test/README.md](test/README.md)
 
-# Bugs, feature requests and questions
+## Bugs, feature requests and questions
 
 If you encountered some problems or have some feature requests you think will make this project better, consider opening an [issue](https://github.com/PUTvision/qgis-plugin-deepness/issues/new).
 
 If you don't understand something and/or have some questions, ask them in [Discussions](https://github.com/PUTvision/qgis-plugin-deepness/discussions).
 
-# Contributing
+## Contributing
 
-PRs are welcome! Consider discussing your plans with maintainers first.
-
-# Development notes
-
-- plugin skeleton was initially generated with `Plugin Builder`, but then refactored and cleaned up a little bit
-- Before release: change version number in `metadata.txt` and in docs (?)
-- to recreate resource file (`resource.qrsc`) run:
-  
-  ```bash
-  cd plugin/deepness
-  pyrcc5 -o resources.py resources.qrc
-  ```
-  
-  Though I'm not sure if this file is even needed anymore
+PRs are welcome! Read our [General Information for Developers](https://qgis-plugin-deepness.readthedocs.io/en/latest/dev/dev_general_info.html). Consider discussing your plans with maintainers.
