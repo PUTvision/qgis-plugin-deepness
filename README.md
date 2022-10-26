@@ -24,7 +24,7 @@ You can find the documentation [here](https://qgis-plugin-deepness.readthedocs.i
 
 - Install QGIS (the plugin was tested with QGIS 3.12)
   - Debian/Ubuntu based systems: `sudo apt install qgis`
-  - Fedora: `sudo dnf install qgis`
+  - Fedora: `sudo dnf install qgis-devel`
   - Arch Linux: `sudo pacman -S qgis`
   - [Windows, macOS and others](https://qgis.org/en/site/forusers/download.html)
 - Create virtual environment (with global packages inherited!):
