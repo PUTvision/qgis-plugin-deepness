@@ -68,6 +68,7 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinxcontrib.youtube',
+    'm2r2'
 ]
 
 MOCK_MODULES = ['future', 'qgis', 'osgeo', 'qgis.core', 'qgis.gui', 'qgis.utils', 'qgis.PyQt', 'qgis.PyQt.QtWidgets', 'qgis.PyQt.QtGui', 'qgis.PyQt.QtCore', 'PyQt5']
