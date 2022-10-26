@@ -73,16 +73,3 @@ If you don't understand something and/or have some questions, ask them in [Discu
 ## Contributing
 
 PRs are welcome! Read our [General Information for Developers](https://qgis-plugin-deepness.readthedocs.io/en/latest/dev/dev_general_info.html). Consider discussing your plans with maintainers.
-
-## Development notes
-
-- plugin skeleton was initially generated with `Plugin Builder`, but then refactored and cleaned up a little bit
-- Before release: change version number in `metadata.txt` and in docs (?)
-- to recreate resource file (`resource.qrsc`) run:
-  
-  ```bash
-  cd plugin/deepness
-  pyrcc5 -o resources.py resources.qrc
-  ```
-  
-  Though I'm not sure if this file is even needed anymore
