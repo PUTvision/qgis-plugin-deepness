@@ -68,7 +68,8 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.napoleon',
     'sphinxcontrib.youtube',
-    'm2r2'
+    'm2r2',
+    'sphinx_rtd_size',
 ]
 
 MOCK_MODULES = ['future', 'qgis', 'osgeo', 'qgis.core', 'qgis.gui', 'qgis.utils', 'qgis.PyQt', 'qgis.PyQt.QtWidgets', 'qgis.PyQt.QtGui', 'qgis.PyQt.QtCore', 'PyQt5']
@@ -110,6 +111,7 @@ pygments_style = 'sphinx'
 #
 # html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
+sphinx_rtd_size_width = "60%"
 
 html_theme_options = {
   'collapse_navigation': False,

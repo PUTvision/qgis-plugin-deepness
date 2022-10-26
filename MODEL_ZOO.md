@@ -4,21 +4,21 @@ The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection 
 
 ## Segmentation models
 
-| Model name | Input size | Resolution [cm/px] | Description |
+| Model name | Input size | CM/PX | Description |
 |---|---|---|---|
 | [Corn Field Damage Segmentation](https://chmura.put.poznan.pl/s/abWFTVYSDIcncWs) | 512 | 3 | [PUT Vision](https://putvision.github.io/) model for Corn Field Damage Segmentation created on own dataset labeled by experts. We used the classical UNet++ model. It generates 3 outputs: healthy crop, damaged crop, and out-of-field area. |
 | [Land Cover segmentation](https://chmura.put.poznan.pl/s/PnAFJw27uneROkV) | 512 | 40 | The model is trained on the [LandCover.ai dataset](https://landcover.ai.linuxpolska.com/). It provides satellite images with 25 cm/px and 50 cm/px resolution. Annotation masks for the following classes are provided for the images: building (1), woodland (2), water(3), road(4). We use `DeepLabV3+` model with `tu-semnasnet_100` backend and `FocalDice` as a loss function. |
 
 ## Regression models
 
-| Model name | Input size | Resolution | Description |
+| Model name | Input size | CM/PX | Description |
 |---|---|---|---|
 |  |  |  |  |
 |  |  |  |  |
 
 ## Object detection models
 
-| Model name | Input size | Resolution | Description |
+| Model name | Input size | CM/PX | Description |
 |---|---|---|---|
 | [Airbus Planes Detection](https://chmura.put.poznan.pl/s/bBIJ5FDPgyQvJ49) | 256 | 70 | YOLOv7 tiny model for object detection on satellite images. Based on the [Airbus Aircraft Detection dataset](https://www.kaggle.com/datasets/airbusgeo/airbus-aircrafts-sample-dataset). |
 | [Airbus Oil Storage Detection](https://chmura.put.poznan.pl/s/gMundpKsYUC7sNb) | 512 | 150 | YOLOv5-m model for object detection on satellite images. Based on the [Airbus Oil Storage Detection dataset](https://www.kaggle.com/datasets/airbusgeo/airbus-oil-storage-detection-dataset). |
@@ -26,6 +26,9 @@ The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection 
 ## Contributing
 
 * PRs with models are welcome! Please follow the [general model information](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_description_classes.html). 
+
 * Use `MODEL_ZOO` tag in your PRs to make it easier to find them.
+
 * If you need, you can check [how to export the model to ONNX](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_example_onnx_model.html). 
+
 * And do not forget to [add metadata to the ONNX model](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_add_metadata_to_model.html). You can host your model yourself or ask us to do it.

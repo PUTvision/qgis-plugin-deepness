@@ -14,4 +14,4 @@ sphinx-autodoc-typehints
 sphinx-autopackagesummary
 sphinx_rtd_theme
 m2r2
-
+sphinx-rtd-size
