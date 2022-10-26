@@ -72,7 +72,7 @@ If you don't understand something and/or have some questions, ask them in [Discu
 
 ## Contributing
 
-PRs are welcome! Consider discussing your plans with maintainers first.
+PRs are welcome! Read our [General Information for Developers](https://qgis-plugin-deepness.readthedocs.io/en/latest/dev/dev_general_info.html). Consider discussing your plans with maintainers.
 
 ## Development notes
 
