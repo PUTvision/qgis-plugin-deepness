@@ -230,7 +230,7 @@ class Deepness:
         return True
 
     def _display_processing_started_info(self):
-        msg = "Error! Please select the layer to process first!"
+        msg = "Processing in progress... Cool! It's tea time!"
         self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Info, duration=2)
 
     def _run_training_data_export(self, training_data_export_parameters: TrainingDataExportParameters):
