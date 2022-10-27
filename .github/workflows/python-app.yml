@@ -15,6 +15,10 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: Prepare directory for packing with zip
+      run: |
+        mkdir -p out/deepness
+        cp -r plugin/deepness/ out/deepness/deepness
     - name: Update
       run: |
         sudo apt update
@@ -48,9 +52,15 @@ jobs:
         
         # run the actual tests
         xvfb-run python3 -m pytest --cov=plugin/deepness/ --cov-report html test/
-    - name: 'Upload Artifact'
+    - name: 'Upload Artifact - test coverage'
       uses: actions/upload-artifact@v3
       with:
         name: htmlcov
         path: htmlcov/
         retention-days: 30
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: deepness
+        path: out/deepness
+        retention-days: 89

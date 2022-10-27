@@ -146,14 +146,12 @@ def get_tile_image(
 
 
 def erode_dilate_image(img, segmentation_parameters: SegmentationParameters):
-    """Apply dilate and erode to the input image"""
-    # self._show_image(img)
+    """Apply to dilate and erode to the input image"""
     if segmentation_parameters.postprocessing_dilate_erode_size:
         size = (segmentation_parameters.postprocessing_dilate_erode_size // 2) ** 2 + 1
         kernel = np.ones((size, size), np.uint8)
         img = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
         img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
-        # self._show_image(img, 'opened')
     return img
 
 

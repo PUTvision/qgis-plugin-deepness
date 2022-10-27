@@ -8,17 +8,18 @@ import logging
 import os
 import subprocess
 import sys
-import time
 import traceback
 from dataclasses import dataclass
+from pathlib import Path
 from threading import Thread
+from typing import List
 
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.PyQt.QtGui import QCloseEvent
 from qgis.PyQt.QtWidgets import QTextBrowser
-from qgis.PyQt import uic
-from qgis.PyQt.QtWidgets import QVBoxLayout, QProgressBar, QDialog
+from qgis.PyQt import uic, QtCore
+from qgis.PyQt.QtWidgets import QDialog
 
 from deepness.common.defines import PLUGIN_NAME
 
@@ -29,7 +30,9 @@ PACKAGES_INSTALL_DIR = os.path.join(PLUGIN_ROOT_DIR, f'python{PYTHON_VERSION.maj
 
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'packages_installer.ui'))
+    os.path.dirname(__file__), 'packages_installer_dialog.ui'))
+
+_ERROR_COLOR = '#ff0000'
 
 
 @dataclass
@@ -38,20 +41,41 @@ class PackageToInstall:
     version: str
     import_name: str  # name while importing package
 
+    def __str__(self):
+        return f'{self.name}=={self.version}'
+
 
 # NOTE! For the time being requirement are repeated as in `requirements.txt` file
 # Consider merging it into some common file in the future
 # (if we can use a fixed version of pip packages for all python versions)
 packages_to_install = [
-    PackageToInstall(name='onnxruntime-gpu', version='1.12.1', import_name='onnxruntime'),
     PackageToInstall(name='opencv-python-headless', version='4.6.0.66', import_name='cv2'),
 ]
+
+onnx_runtime_version = '1.12.1'
+if sys.platform == "linux" or sys.platform == "linux2":
+    packages_to_install += [
+        PackageToInstall(name='onnxruntime-gpu', version=onnx_runtime_version, import_name='onnxruntime'),
+    ]
+    PYTHON_EXECUTABLE_PATH = sys.executable
+elif sys.platform == "darwin":  # MacOS
+    packages_to_install += [
+        PackageToInstall(name='onnxruntime', version=onnx_runtime_version, import_name='onnxruntime'),
+    ]
+    PYTHON_EXECUTABLE_PATH = str(Path(sys.prefix) / 'bin' / 'python3')  # sys.executable yields QGIS in macOS
+elif sys.platform == "win32":
+    packages_to_install += [
+        PackageToInstall(name='onnxruntime', version=onnx_runtime_version, import_name='onnxruntime'),
+    ]
+    PYTHON_EXECUTABLE_PATH = 'python'  # sys.executable yields QGis.exe in Windows
+else:
+    raise Exception("Unsupported operating system!")
 
 
 class PackagesInstallerDialog(QDialog, FORM_CLASS):
     """
     Dialog witch controls the installation process of packages.
-    UI design defined in the `packages_installer.ui` file.
+    UI design defined in the `packages_installer_dialog.ui` file.
     """
 
     signal_log_line = pyqtSignal(str)  # we need to use signal because we cannot edit GUI from another thread
@@ -68,30 +92,48 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.aborted = False
         self.thread = None
 
+    def move_to_top(self):
+        """ Move the window to the top.
+        Although if installed from plugin manager, the plugin manager will move itself to the top anyway.
+        """
+        self.setWindowState((self.windowState() & ~QtCore.Qt.WindowMinimized) | QtCore.Qt.WindowActive)
+
+        if sys.platform == "linux" or sys.platform == "linux2":
+            pass
+        elif sys.platform == "darwin":  # MacOS
+            self.raise_()  # FIXME: this does not really work, the window is still behind the plugin manager
+        elif sys.platform == "win32":
+            self.activateWindow()
+        else:
+            raise Exception("Unsupported operating system!")
+
     def _create_connections(self):
         self.pushButton_close.clicked.connect(self.close)
         self.pushButton_install_packages.clicked.connect(self._run_packages_installation)
         self.signal_log_line.connect(self._log_line)
 
     def _log_line(self, txt):
+        txt = txt \
+            .replace('  ', '&nbsp;&nbsp;') \
+            .replace('\n', '<br>')
         self.tb.append(txt)
 
     def log(self, txt):
         self.signal_log_line.emit(txt)
 
-    def _setup_message(self):
-        required_plugins_str = '\n'.join([f'   - {plugin.name}=={plugin.version}' for plugin in packages_to_install])
-        msg1 = f'Plugin {PLUGIN_NAME} - Packages installer \n' \
-               f'\n' \
-               f'This plugin requires the following Python packages to be installed:\n' \
-               f'{required_plugins_str}\n\n' \
-               f'If this packages are not installed in the global environment ' \
-               f'(or environment in which QGIS is started) ' \
-               f'you can install these packages in the local directory (which is included to the Python path).\n\n' \
-               f'This Dialog allows to do it for you! (Though you can still install these packages manually instead).\n' \
-               f'Please click "Install packages" button below to install them automatically, ' \
-               f'or "Test and Close" if you installed them manually...\n'
-        self.log(msg1)
+    def _setup_message(self) -> None:
+        required_plugins_str = '\n'.join([f'   - {plugin}' for plugin in packages_to_install])
+        self.log(f'<h2><span style="color: #000080;"><strong>  '
+                 f'Plugin {PLUGIN_NAME} - Packages installer </strong></span></h2> \n'
+                 f'\n'
+                 f'<b>This plugin requires the following Python packages to be installed:</b>\n'
+                 f'{required_plugins_str}\n\n'
+                 f'If this packages are not installed in the global environment '
+                 f'(or environment in which QGIS is started) '
+                 f'you can install these packages in the local directory (which is included to the Python path).\n\n'
+                 f'This Dialog does it for you! (Though you can still install these packages manually instead).\n'
+                 f'<b>Please click "Install packages" button below to install them automatically, </b>'
+                 f'or "Test and Close" if you installed them manually...\n')
 
     def _run_packages_installation(self):
         if self.INSTALLATION_IN_PROGRESS:
@@ -102,29 +144,29 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.thread = Thread(target=self._install_packages)
         self.thread.start()
 
-    def _install_packages(self):
+    def _install_packages(self) -> None:
         self.log('\n\n')
-        self.log('='*60)
-        self.log(f'Attempting to install required packages...\n')
+        self.log('=' * 60)
+        self.log(f'<h3><b>Attempting to install required packages...</b></h3>')
         os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
 
-        for package in packages_to_install:
-            if self.aborted:
-                break
-            self.log(f'### Trying to install "{package.name}"...')
-            result = self._install_single_package(package)
-            if not result:
-                msg = f'Package "{package.name} installation failed!' \
-                      f'Please try to the install packages again. ' \
-                      f'\nCheck if there is no error related to system packages, ' \
-                      f'which may be required to be installed by your system package manager, e.g. "apt". ' \
-                      f'Copy errors from the stack above into google and look for libraries. ' \
-                      f'Please report these as an issue on the plugin repository tracker!'
-                self.log(msg)
-                break
+        self._install_pip_if_necessary()
+
+        self.log(f'<h3><b>Attempting to install required packages...</b></h3>\n')
+        try:
+            self._pip_install_packages(packages_to_install)
+        except Exception as e:
+            msg = (f'\n <span style="color: {_ERROR_COLOR};"><b> '
+                   f'Packages installation failed with exception: {e}!\n'
+                   f'Please try to install the packages again. </b></span>'
+                   f'\nCheck if there is no error related to system packages, '
+                   f'which may be required to be installed by your system package manager, e.g. "apt". '
+                   f'Copy errors from the stack above and google for possible solutions. '
+                   f'Please report these as an issue on the plugin repository tracker!')
+            self.log(msg)
 
         # finally, validate the installation, if there was no error so far...
-        self.log('\n\n Installation of required packages finished. Validating installation...')
+        self.log('\n\n <b>Installation of required packages finished. Validating installation...</b>')
         self._check_packages_installation_and_log()
         self.INSTALLATION_IN_PROGRESS = False
 
@@ -144,43 +186,76 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
                                    QMessageBox.No, QMessageBox.Yes)
         log_msg = 'User requested to close the dialog, but the packages are not installed correctly!\n'
         if res == QMessageBox.Yes:
-            log_msg += 'And the user confirmed to close the dialog, knowing the risc!'
+            log_msg += 'And the user confirmed to close the dialog, knowing the risk!'
             event.accept()
         else:
-            log_msg += 'Fortunately the user reconsidered their decision, and will tr to install the packages again!'
+            log_msg += 'The user reconsidered their decision, and will try to install the packages again!'
             event.ignore()
         log_msg += '\n'
         self.log(log_msg)
 
-    def _install_single_package(self, package: PackageToInstall) -> bool:
-        try:
-            import_package(package)
-            self.log(f'  No need to install, "{package.name}" already installed\n\n')
-            return True
-        except:
-            pass  # we are going to install the package below
+    def _install_pip_if_necessary(self):
+        """
+        Install pip if not present.
+        It happens e.g. in flatpak applications.
 
-        cmd = ['pip', f"install", f"--target={PACKAGES_INSTALL_DIR}", f"{package.name}"]
-        msg = ' '.join(cmd)
-        self.log(f'Running command: \n  $ "{msg}"')
-        # cmd = ['echo', f"hello\n{package.name}\nTODO\n"]
-        popen = subprocess.Popen(cmd, stdout=subprocess.PIPE, universal_newlines=True)
-        for stdout_line in iter(popen.stdout.readline, ""):
-            self.log(stdout_line)
-            time.sleep(0.01)
-            if self.aborted:
-                self.log('Error! Installation aborted!')
+        TODO - investigate whether we can also install pip in local directory
+        """
+
+        self.log(f'<h4><b>Making sure pip is installed...</b></h4>')
+        if check_pip_installed():
+            self.log(f'<em>Pip is installed, skipping installation...</em>\n')
+            return
+
+        install_pip_command = [PYTHON_EXECUTABLE_PATH, '-m', 'ensurepip']
+        self.log(f'<em>Running command to install pip: \n  $ {" ".join(install_pip_command)} </em>')
+        with subprocess.Popen(install_pip_command,
+                              stdout=subprocess.PIPE,
+                              universal_newlines=True,
+                              stderr=subprocess.STDOUT,
+                              env={'SETUPTOOLS_USE_DISTUTILS': 'stdlib'}) as process:
+            try:
+                self._do_process_output_logging(process)
+            except InterruptedError as e:
+                self.log(str(e))
                 return False
 
-        popen.stdout.close()
-        return_code = popen.wait()
-        if return_code:
-            return False
+        if process.returncode != 0:
+            msg = (f'<span style="color: {_ERROR_COLOR};"><b>'
+                   f'pip installation failed! Consider installing it manually.'
+                   f'<b></span>')
+            self.log(msg)
+        self.log('\n')
 
-        msg = f'Package "{package.name}" installed correctly!\n\n'
+    def _pip_install_packages(self, packages: List[PackageToInstall]) -> None:
+        cmd = [PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install', f'--target={PACKAGES_INSTALL_DIR}', *map(str, packages)]
+        cmd_string = ' '.join(cmd)
+        self.log(f'<em>Running command: \n  $ {cmd_string} </em>')
+        with subprocess.Popen(cmd,
+                              stdout=subprocess.PIPE,
+                              universal_newlines=True,
+                              stderr=subprocess.STDOUT) as process:
+            self._do_process_output_logging(process)
+
+        if process.returncode != 0:
+            raise RuntimeError('Installation with pip failed')
+
+        msg = (f'\n<b>'
+               f'Packages installed correctly!'
+               f'<b>\n\n')
         self.log(msg)
 
-        return True
+    def _do_process_output_logging(self, process: subprocess.Popen) -> None:
+        """
+        :param process: instance of 'subprocess.Popen'
+        """
+        for stdout_line in iter(process.stdout.readline, ""):
+            if stdout_line.isspace():
+                continue
+            txt = f'<span style="color: #999999;">{stdout_line.rstrip(os.linesep)}</span>'
+            self.log(txt)
+            if self.aborted:
+                raise InterruptedError('Installation aborted by user')
 
     def _check_packages_installation_and_log(self) -> bool:
         packages_ok = are_packages_importable()
@@ -194,13 +269,15 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         try:
             import_packages()
             raise Exception("Unexpected successful import of packages?!? It failed a moment ago, we shouldn't be here!")
-        except Exception as e:
-            msg_base = 'Python packages required by the plugin could be loaded due to the following error:'
+        except Exception:
+            msg_base = '<b>Python packages required by the plugin could not be loaded due to the following error:</b>'
             logging.exception(msg_base)
             tb = traceback.format_exc()
-            msg1 = f'{msg_base} \n ' \
-                   f'{tb}\n\n' \
-                   f'Please try to install the packages again.'
+            msg1 = (f'<span style="color: {_ERROR_COLOR};">'
+                    f'{msg_base} \n '
+                    f'{tb}\n\n'
+                    f'<b>Please try installing the packages again.<b>'
+                    f'</span>')
             self.log(msg1)
 
         return False
@@ -221,18 +298,25 @@ def import_packages():
 def are_packages_importable() -> bool:
     try:
         import_packages()
-    except:
-        logging.exception('Python packages required by the plugin could be loaded due to the following error:')
+    except Exception:
+        logging.exception(f'Python packages required by the plugin could not be loaded due to the following error:')
         return False
 
     return True
 
 
+def check_pip_installed() -> bool:
+    try:
+        subprocess.check_output([PYTHON_EXECUTABLE_PATH, '-m', 'pip', '--version'])
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
+
 def check_required_packages_and_install_if_necessary(iface):
-    print(f'{PACKAGES_INSTALL_DIR = }')
+    os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
     if PACKAGES_INSTALL_DIR not in sys.path:
-        os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
-        sys.path.append(PACKAGES_INSTALL_DIR)
+        sys.path.append(PACKAGES_INSTALL_DIR)  # TODO: check for a less intrusive way to do this
 
     if are_packages_importable():
         # if packages are importable we are fine, nothing more to do then
@@ -240,4 +324,6 @@ def check_required_packages_and_install_if_necessary(iface):
 
     global dialog
     dialog = PackagesInstallerDialog(iface)
+    dialog.setWindowModality(QtCore.Qt.WindowModal)
     dialog.show()
+    dialog.move_to_top()

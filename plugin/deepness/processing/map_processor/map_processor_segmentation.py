@@ -16,7 +16,11 @@ cv2 = LazyPackageLoader('cv2')
 
 class MapProcessorSegmentation(MapProcessorWithModel):
     """
-    MapProcessor specialized for Segmentation model (where each pixel is assigned to one class)
+    MapProcessor specialized for Segmentation model (where each pixel is assigned to one class).
+
+    Implementation note: due to opencv operations on arrays, it is easier to use value 0 for special meaning,
+    (that is pixel out of processing area) instead of just a class with number 0.
+    Therefore, internally during processing, pixels representing classes have value `class_number + 1`.
     """
 
     def __init__(self,
@@ -40,16 +44,15 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
-            tile_result = self._process_tile(tile_img)
-            # self._show_image(tile_result)
+            # See note in the class description why are we adding/subtracting 1 here
+            tile_result = self._process_tile(tile_img) + 1
+
             tile_params.set_mask_on_full_img(
                 tile_result=tile_result,
                 full_result_img=full_result_img)
 
-        full_result_img = processing_utils.erode_dilate_image(
-            img=full_result_img,
-            segmentation_parameters=self.segmentation_parameters)
-        # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
+        blur_size = int(self.segmentation_parameters.postprocessing_dilate_erode_size // 2) * 2 + 1  # needs to be odd
+        full_result_img = cv2.medianBlur(full_result_img, blur_size)
         self._result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
         self._create_vlayer_from_mask_for_base_extent(self._result_img)
 
@@ -64,9 +67,13 @@ class MapProcessorSegmentation(MapProcessorWithModel):
 
         channels = self._get_indexes_of_model_output_channels_to_create()
         txt = f'Segmentation done for {len(channels)} model output channels, with the following statistics:\n'
-        total_area = result_img.shape[0] * result_img.shape[1] * self.params.resolution_m_per_px**2
+
+        # we cannot simply take image dimensions, because we may have irregular processing area from polygon
+        number_of_pixels_in_processing_area = np.sum([counts_map[k] for k in counts_map.keys() if k != 0])
+        total_area = number_of_pixels_in_processing_area * self.params.resolution_m_per_px**2
         for channel_id in channels:
-            pixels_count = counts_map.get(channel_id, 0)
+            # See note in the class description why are we adding/subtracting 1 here
+            pixels_count = counts_map.get(channel_id + 1, 0)
             area = pixels_count * self.params.resolution_m_per_px**2
             if total_area:
                 area_percentage = area / total_area * 100
@@ -81,7 +88,14 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
 
         for channel_id in self._get_indexes_of_model_output_channels_to_create():
-            local_mask_img = np.uint8(mask_img == channel_id)
+            # See note in the class description why are we adding/subtracting 1 here
+            local_mask_img = np.uint8(mask_img == (channel_id + 1))
+
+            # remove small areas - old implementation. Now we decided to do median blur, because the method below
+            # was producing pixels not belonging to any class
+            # local_mask_img = processing_utils.erode_dilate_image(
+            #     img=local_mask_img,
+            #     segmentation_parameters=self.segmentation_parameters)
 
             contours, hierarchy = cv2.findContours(local_mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
             contours = processing_utils.transform_contours_yx_pixels_to_target_crs(

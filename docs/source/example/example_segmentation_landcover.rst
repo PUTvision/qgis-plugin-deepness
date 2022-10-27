@@ -48,7 +48,7 @@ When model training is completed, export the model using the script below:
 Example inference
 =================
 
-Run QGIS, next add Google Eart map using :code:`QuickMapServices` plugin.
+Run QGIS, next add Google Earth map using :code:`QuickMapServices` plugin.
 
 .. image:: ../images/example_landcover_input_image.webp
 
