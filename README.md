@@ -20,6 +20,10 @@ Plugin for QGIS to perform map/image segmentation, regression and object detecti
 
 You can find the documentation [here](https://qgis-plugin-deepness.readthedocs.io/).
 
+## Deepness Model ZOO
+
+Check our example models in the [Model ZOO](./docs/source/main/model_zoo/MODEL_ZOO.md).
+
 ## Development
 
 - Install QGIS (the plugin was tested with QGIS 3.12)
