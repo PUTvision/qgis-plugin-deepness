@@ -22,7 +22,7 @@ You can find the documentation [here](https://qgis-plugin-deepness.readthedocs.i
 
 ## Deepness Model ZOO
 
-Check our example models in the [Model ZOO](./MODEL_ZOO.md).
+Check our example models in the [Model ZOO](./docs/source/main/model_zoo/MODEL_ZOO.md).
 
 ## Development
 
