@@ -51,7 +51,8 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                 tile_result=tile_result,
                 full_result_img=full_result_img)
 
-        full_result_img = cv2.medianBlur(full_result_img, self.segmentation_parameters.postprocessing_dilate_erode_size)
+        blur_size = int(self.segmentation_parameters.postprocessing_dilate_erode_size // 2) * 2 + 1  # needs to be odd
+        full_result_img = cv2.medianBlur(full_result_img, blur_size)
         self._result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
         self._create_vlayer_from_mask_for_base_extent(self._result_img)
 
