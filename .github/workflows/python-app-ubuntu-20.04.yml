@@ -24,6 +24,11 @@ jobs:
         sudo apt update
     - name: Install qgis
       run: |
+        sudo apt install gnupg software-properties-common
+        sudo mkdir -m755 -p /etc/apt/keyrings
+        sudo wget -O /etc/apt/keyrings/qgis-archive-keyring.gpg https://download.qgis.org/downloads/qgis-archive-keyring.gpg
+        sudo echo $'Types: deb deb-src\nURIs: https://qgis.org/debian\nSuites: focal\nArchitectures: amd64\nComponents: main\nSigned-By: /etc/apt/keyrings/qgis-archive-keyring.gpg' > /etc/apt/sources.list.d/qgis.sources
+        sudo apt update
         sudo apt install -yq qgis
     - name: Install dependencies
       run: |
