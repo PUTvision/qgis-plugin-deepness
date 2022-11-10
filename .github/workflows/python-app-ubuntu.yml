@@ -11,7 +11,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, ubuntu-22.04]
+
+    runs-on: ${{ matrix.version }}
 
     steps:
     - uses: actions/checkout@v3
@@ -21,6 +25,13 @@ jobs:
         cp -r plugin/deepness/ out/deepness/deepness
     - name: Update
       run: |
+        sudo apt update
+    - if: matrix.os == 'ubuntu-20.04'
+      run: |
+        sudo apt install gnupg software-properties-common
+        sudo mkdir -m755 -p /etc/apt/keyrings
+        sudo wget -O /etc/apt/keyrings/qgis-archive-keyring.gpg https://download.qgis.org/downloads/qgis-archive-keyring.gpg
+        echo $'Types: deb deb-src\nURIs: https://qgis.org/debian\nSuites: focal\nArchitectures: amd64\nComponents: main\nSigned-By: /etc/apt/keyrings/qgis-archive-keyring.gpg' | sudo tee -a /etc/apt/sources.list.d/qgis.sources
         sudo apt update
     - name: Install qgis
       run: |
