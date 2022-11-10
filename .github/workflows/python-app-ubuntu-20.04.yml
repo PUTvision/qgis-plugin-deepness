@@ -1,0 +1,66 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python application
+
+on:
+  push:
+    branches: [ master, devel ]
+  pull_request:
+    branches: [ master, devel ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Prepare directory for packing with zip
+      run: |
+        mkdir -p out/deepness
+        cp -r plugin/deepness/ out/deepness/deepness
+    - name: Update
+      run: |
+        sudo apt update
+    - name: Install qgis
+      run: |
+        sudo apt install -yq qgis
+    - name: Install dependencies
+      run: |
+        pip install --upgrade pip
+        pip install --upgrade -r requirements.txt
+        pip install --upgrade -r requirements_development.txt
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        python3 -m flake8 plugin/deepness/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        python3 -m flake8 plugin/deepness/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+    - name: Test with pytest
+      run: |
+        export PYTHONPATH="/usr/lib/python3/dist-packages":PYTHONPATH && echo "import qgis" | python3
+        export PYTHONPATH="$PYTHONPATH:$(pwd)/plugin"
+        export PYTHONPATH="$PYTHONPATH:$(pwd)"
+        
+        # apparently there is some issue with opencv-python-headless, we need to reinstall it 
+        pip uninstall opencv-python-headless --yes
+        pip install opencv-python-headless
+        
+        # run one this without pytest, because pytest creates obfuscated error messages
+        # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
+        xvfb-run python3 test/test_map_processor_segmentation.py
+        
+        # run the actual tests
+        xvfb-run python3 -m pytest --cov=plugin/deepness/ --cov-report html test/
+    - name: 'Upload Artifact - test coverage'
+      uses: actions/upload-artifact@v3
+      with:
+        name: htmlcov
+        path: htmlcov/
+        retention-days: 30
+    - name: 'Upload Artifact'
+      uses: actions/upload-artifact@v3
+      with:
+        name: deepness
+        path: out/deepness
+        retention-days: 89
