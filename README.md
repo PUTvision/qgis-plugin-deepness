@@ -4,7 +4,7 @@
   <h2 align="center">Deepness: Deep Neural Remote Sensing QGIS Plugin</h2>
 </p>
 
-![main](https://github.com/PUTvision/qgis-plugin-deepness/actions/workflows/python-app.yml/badge.svg)
+![main](https://github.com/PUTvision/qgis-plugin-deepness/actions/workflows/python-app-ubuntu.yml/badge.svg)
 [![GitHub contributors](https://img.shields.io/github/contributors/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/graphs/contributors)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://makeapullrequest.com)
 [![GitHub stars](https://img.shields.io/github/stars/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/stargazers)
