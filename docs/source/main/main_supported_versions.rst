@@ -18,7 +18,7 @@ Supported Operating Systems
 +---------------+------------------------------------+
 | Windows       |  Windows 10                        |
 +---------------+------------------------------------+
-| Mac OS        |  *                                  |
+| Mac OS        |  Big Sur                           |
 +---------------+------------------------------------+
 
 :code:`*` means that it should work but has not beed tested yet
