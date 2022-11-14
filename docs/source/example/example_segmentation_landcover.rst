@@ -22,7 +22,8 @@ We built our pipeline based on `Pytorch <https://github.com/pytorch/pytorch>`_, 
 * Model :code:`DeepLabV3+` with :code:`tu-semnasnet_100` backend
 * Loss function: balanced :code:`FocalDiceLoss`
 * Input image size: :code:`512x512`
-* Normalization: :code:`mean=[0.485, 0.456, 0.406]`, :code:`std=[0.229, 0.224, 0.225]`
+* Normalization: :code:`1./255.`
+* Color order: :code:`RGB`
 
 ==================
 Converting to onnx

@@ -6,6 +6,7 @@ This tool allows to install them in a local directory, if they are not installed
 import importlib
 import logging
 import os
+import platform
 import subprocess
 import sys
 import traceback
@@ -48,8 +49,15 @@ class PackageToInstall:
 # NOTE! For the time being requirement are repeated as in `requirements.txt` file
 # Consider merging it into some common file in the future
 # (if we can use a fixed version of pip packages for all python versions)
+
+opencv_version = '4.6.0.66'
+if sys.platform == "linux" or sys.platform == "linux2":
+    import lsb_release
+    if lsb_release.get_os_release()['CODENAME'] == 'focal':
+        opencv_version = '4.5.5.64'
+    
 packages_to_install = [
-    PackageToInstall(name='opencv-python-headless', version='4.6.0.66', import_name='cv2'),
+    PackageToInstall(name='opencv-python-headless', version=opencv_version, import_name='cv2'),
 ]
 
 onnx_runtime_version = '1.12.1'

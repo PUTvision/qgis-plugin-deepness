@@ -20,16 +20,20 @@ The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection 
 ## Object detection models
 
 | Model name | Input size | CM/PX | Description | Example image |
-|---|---|---|---|
+|---|---|---|---|---|
 | [Airbus Planes Detection](https://chmura.put.poznan.pl/s/bBIJ5FDPgyQvJ49) | 256 | 70 | YOLOv7 tiny model for object detection on satellite images. Based on the [Airbus Aircraft Detection dataset](https://www.kaggle.com/datasets/airbusgeo/airbus-aircrafts-sample-dataset). | [Image](https://chmura.put.poznan.pl/s/VfLmcWhvWf0UJfI) |
 | [Airbus Oil Storage Detection](https://chmura.put.poznan.pl/s/gMundpKsYUC7sNb) | 512 | 150 | YOLOv5-m model for object detection on satellite images. Based on the [Airbus Oil Storage Detection dataset](https://www.kaggle.com/datasets/airbusgeo/airbus-oil-storage-detection-dataset). | [Image](https://chmura.put.poznan.pl/s/T3pwaKlbFDBB2C3) |
 
 ## Contributing
 
-* PRs with models are welcome! Please follow the [general model information](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_description_classes.html).
+PRs with models are welcome! 
+
+* Please follow the [general model information](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_description_classes.html).
 
 * Use `MODEL_ZOO` tag in your PRs to make it easier to find them.
 
 * If you need, you can check [how to export the model to ONNX](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_example_onnx_model.html).
 
-* And do not forget to [add metadata to the ONNX model](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_add_metadata_to_model.html). You can host your model yourself or ask us to do it.
+* And do not forget to [add metadata to the ONNX model](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_add_metadata_to_model.html). 
+
+* You can host your model yourself or ask us to do it.

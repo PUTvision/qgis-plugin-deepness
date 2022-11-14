@@ -208,8 +208,6 @@ class Detector(ModelBase):
         return y
 
     @staticmethod
-
-    @staticmethod
     def non_max_suppression_fast(boxes: np.ndarray, probs: np.ndarray, iou_threshold: float) -> List:
         """Apply non-maximum suppression to bounding boxes
 
