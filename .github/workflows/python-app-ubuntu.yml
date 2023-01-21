@@ -22,7 +22,7 @@ jobs:
     - name: Prepare directory for packing with zip
       run: |
         mkdir -p out/deepness
-        cp -r plugin/deepness/ out/deepness/deepness
+        cp -r src/deepness/ out/deepness/deepness
     - name: Update
       run: |
         sudo apt update
@@ -44,13 +44,13 @@ jobs:
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
-        python3 -m flake8 plugin/deepness/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        python3 -m flake8 src/deepness/ --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        python3 -m flake8 plugin/deepness/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        python3 -m flake8 src/deepness/ --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
         export PYTHONPATH="/usr/lib/python3/dist-packages":PYTHONPATH && echo "import qgis" | python3
-        export PYTHONPATH="$PYTHONPATH:$(pwd)/plugin"
+        export PYTHONPATH="$PYTHONPATH:$(pwd)/src"
         export PYTHONPATH="$PYTHONPATH:$(pwd)"
         
         # apparently there is some issue with opencv-python-headless, we need to reinstall it 
@@ -62,7 +62,7 @@ jobs:
         xvfb-run python3 test/test_map_processor_segmentation.py
         
         # run the actual tests
-        xvfb-run python3 -m pytest --cov=plugin/deepness/ --cov-report html test/
+        xvfb-run python3 -m pytest --cov=src/deepness/ --cov-report html test/
     - name: 'Upload Artifact - test coverage'
       uses: actions/upload-artifact@v3
       with:
