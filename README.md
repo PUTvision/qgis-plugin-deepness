@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="250" height="250" src="plugin/deepness/images/icon.png" alt="dsf_logo">
+  <img width="250" height="250" src="src/deepness/images/icon.png" alt="dsf_logo">
 
   <h2 align="center">Deepness: Deep Neural Remote Sensing QGIS Plugin</h2>
 </p>
@@ -40,7 +40,7 @@ python3 -m venv venv --system-site-packages
 - Create a symlink to our plugin in a QGIS plugin directory:
 
 ```bash
-ln -s $PROJECT_DIR/plugin/deepness ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/deepness
+ln -s $PROJECT_DIR/src/deepness ~/.local/share/QGIS/QGIS3/profiles/default/python/plugins/deepness
 ```
 
 - Activate the environment and install requirements:

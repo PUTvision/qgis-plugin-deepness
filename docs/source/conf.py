@@ -16,11 +16,11 @@ from unittest.mock import MagicMock
 import os
 import re
 import sys
-sys.path.append(os.path.abspath('../../plugin/'))
+sys.path.append(os.path.abspath('../../src/'))
 
 # -- Project information -----------------------------------------------------
 
-metadata_file_path = os.path.join('..', '..', 'plugin', 'deepness', 'metadata.txt')
+metadata_file_path = os.path.join('..', '..', 'src', 'deepness', 'metadata.txt')
 metadata_file_path = os.path.abspath(metadata_file_path)
 with open(metadata_file_path, 'rt') as file:
     file_content = file.read()
@@ -152,7 +152,7 @@ autodoc_inherit_docstrings = True  # If no docstring, inherit from base class
 set_type_checking_flag = True  # Enable 'expensive' imports for sphinx_autodoc_typehints
 nbsphinx_allow_errors = True  # Continue through Jupyter errors
 add_module_names = False # Remove namespaces from class/method signatures
-html_logo = "../../plugin/deepness/images/icon.png"
+html_logo = "../../src/deepness/images/icon.png"
 html_theme_options = {
     'logo_only': False,
     'display_version': True,
