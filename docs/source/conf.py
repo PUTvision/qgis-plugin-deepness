@@ -16,11 +16,11 @@ from unittest.mock import MagicMock
 import os
 import re
 import sys
-sys.path.append(os.path.abspath('../../plugin/'))
+sys.path.append(os.path.abspath('../../src/'))
 
 # -- Project information -----------------------------------------------------
 
-metadata_file_path = os.path.join('..', '..', 'plugin', 'deepness', 'metadata.txt')
+metadata_file_path = os.path.join('..', '..', 'src', 'deepness', 'metadata.txt')
 metadata_file_path = os.path.abspath(metadata_file_path)
 with open(metadata_file_path, 'rt') as file:
     file_content = file.read()

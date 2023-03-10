@@ -38,6 +38,7 @@ Home
    :maxdepth: 1
    :caption: Examples
 
+   example/example_detection_cars_yolov7
    example/example_segmentation_landcover
    example/example_detection_planes_yolov7
    example/example_detection_oils_yolov5
@@ -48,6 +49,7 @@ Home
    :caption: For Model Creators
 
    creators/creators_description_classes
+   creators/creators_tutorial
    creators/creators_export_training_data_tool
    creators/creators_example_onnx_model
    creators/creators_add_metadata_to_model

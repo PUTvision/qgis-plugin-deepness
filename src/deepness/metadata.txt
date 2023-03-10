@@ -6,7 +6,7 @@
 name=Deepness: Deep Neural Remote Sensing
 qgisMinimumVersion=3.22
 description=Inference of deep neural network models (ONNX) for segmentation, detection and regression
-version=0.4.1
+version=0.5.0
 author=PUT Vision
 email=przemyslaw.aszkowski@gmail.com
 
@@ -17,7 +17,7 @@ about=
      - limiting processing range to predefined area (visible part or area defined by vector layer polygons)
      - common types of models are supported: segmentation, regression, detection
      - integration with layers (both for input data and model output layers). Once an output layer is created, it can be saved as a file manually
-     - model ZOO under development (planes detection on Bing Aerial, Corn field damage, Oil Storage tanks detection, ...)
+     - model ZOO under development (planes detection on Bing Aerial, Corn field damage, Oil Storage tanks detection, cars detection, ...)
      - training data Export Tool - exporting raster and mask as small tiles
      - parametrization of the processing for advanced users (spatial resolution, overlap, postprocessing)
     Plugin requires external python packages to be installed. After the first plugin startup, a Dialog will show, to assist in this process. Please visit plugin the documentation for details.
