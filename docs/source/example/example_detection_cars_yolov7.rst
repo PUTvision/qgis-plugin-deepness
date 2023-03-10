@@ -15,8 +15,11 @@ Training tutorial
 
 The entire training process has been gathered in a tutorial notebook in jupyter notebook:
 
-.. code::
-    ./tutorials/detection/cars_yolov7/car_detection__prepare_and_train.ipynb
+
+  .. code-block::
+
+        ./tutorials/detection/cars_yolov7/car_detection__prepare_and_train.ipynb
+
 
 ==================
 Example inference

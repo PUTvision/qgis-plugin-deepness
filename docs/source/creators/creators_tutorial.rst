@@ -8,8 +8,10 @@ Detection
 
 For one of models in our zoo - specifically for cars detection on aerial images - a complete tutorial is provided in a jupyter notebook:
 
-.. code::
-    ./tutorials/detection/cars_yolov7/car_detection__prepare_and_train.ipynb
+  .. code-block::
+
+        ./tutorials/detection/cars_yolov7/car_detection__prepare_and_train.ipynb
+
 
 The notebook covers:
  * downloading yolov7 repository
