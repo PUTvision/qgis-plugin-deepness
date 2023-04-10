@@ -35,7 +35,7 @@ def test_export_dummy_fotomap():
 
     map_processor = MapProcessorTrainingDataExport(
         rlayer=rlayer,
-        vlayer_mask=None,
+        vlayer_mask=vlayer,  # layer with masks
         map_canvas=MagicMock(),
         params=params,
     )
