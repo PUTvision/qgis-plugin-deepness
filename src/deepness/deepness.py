@@ -245,7 +245,7 @@ class Deepness:
 
         self._map_processor = MapProcessorTrainingDataExport(
             rlayer=rlayer,
-            vlayer_mask=vlayer,
+            vlayer_mask=vlayer,  # layer with masks
             map_canvas=self.iface.mapCanvas(),
             params=training_data_export_parameters)
         self._map_processor.finished_signal.connect(self._map_processor_finished)
