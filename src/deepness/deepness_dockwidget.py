@@ -23,6 +23,7 @@ from deepness.common.processing_parameters.detection_parameters import Detection
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
     ProcessedAreaType, ModelOutputFormat
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
+from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.training_data_export_parameters import \
     TrainingDataExportParameters
@@ -207,6 +208,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         segmentation_enabled = False
         detection_enabled = False
         regression_enabled = False
+        superresolution_enabled = False
 
         if model_type == ModelType.SEGMENTATION:
             segmentation_enabled = True
@@ -214,12 +216,15 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             detection_enabled = True
         elif model_type == ModelType.REGRESSION:
             regression_enabled = True
+        elif model_type == ModelType.SUPERRESOLUTION:
+            superresolution_enabled = True
         else:
             raise Exception(f"Unsupported model type ({model_type})!")
 
         self.mGroupBox_segmentationParameters.setEnabled(segmentation_enabled)
         self.mGroupBox_detectionParameters.setEnabled(detection_enabled)
         self.mGroupBox_regressionParameters.setEnabled(regression_enabled)
+        self.mGroupBox_superresolutionParameters.setEnabled(superresolution_enabled)
 
     def _model_output_format_changed(self):
         txt = self.comboBox_modelOutputFormat.currentText()
@@ -334,6 +339,10 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.spinBox_tileSize_px.setValue(input_size_px)
             self.spinBox_tileSize_px.setEnabled(False)
             self._input_channels_mapping_widget.set_model(self._model)
+            #super resolution 
+            output_0_shape = self._model.get_output_shape()
+            scale_factor = output_0_shape[-1] / input_size_px
+            self.doubleSpinBox_superresolutionScaleFactor.setValue(int(scale_factor))
         except Exception as e:
             if IS_DEBUG:
                 raise e
@@ -404,8 +413,11 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             params = self.get_segmentation_parameters(map_processing_parameters)
         elif model_type == ModelType.REGRESSION:
             params = self.get_regression_parameters(map_processing_parameters)
+        elif model_type == ModelType.SUPERRESOLUTION:
+            params = self.get_superresolution_parameters(map_processing_parameters)
         elif model_type == ModelType.DETECTION:
             params = self.get_detection_parameters(map_processing_parameters)
+            
         else:
             raise Exception(f"Unknown model type '{model_type}'!")
 
@@ -428,6 +440,14 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             **map_processing_parameters.__dict__,
             output_scaling=self.doubleSpinBox_regressionScaling.value(),
             model=self._model,
+        )
+        return params
+    def get_superresolution_parameters(self, map_processing_parameters: MapProcessingParameters) -> SuperresolutionParameters:
+        params = SuperresolutionParameters(
+            **map_processing_parameters.__dict__,
+            model=self._model,
+            scale_factor=self.doubleSpinBox_superresolutionScaleFactor.value(),
+            output_scaling=self.doubleSpinBox_superresolutionScaling.value(),
         )
         return params
 
