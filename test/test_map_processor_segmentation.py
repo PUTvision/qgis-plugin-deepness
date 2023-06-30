@@ -158,7 +158,7 @@ def test_generic_processing_test__specified_extent_from_vlayer_crs3857():
     # just check a few pixels
     assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
                np.asarray([0, 0, 2, 2, 2, 0, 0, 2, 0]))
-    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1] == np.array([182693,  44926, 170031]), atol=3)
+    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([182693,  44926, 170031]), atol=3)
 
 
 def test_generic_processing_test__specified_extent_from_active_map_extent():
