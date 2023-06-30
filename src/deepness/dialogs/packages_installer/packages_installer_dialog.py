@@ -6,7 +6,6 @@ This tool allows to install them in a local directory, if they are not installed
 import importlib
 import logging
 import os
-import platform
 import subprocess
 import sys
 import traceback
@@ -15,12 +14,10 @@ from pathlib import Path
 from threading import Thread
 from typing import List
 
+from qgis.PyQt import QtCore, uic
 from qgis.PyQt.QtCore import pyqtSignal
-from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.PyQt.QtGui import QCloseEvent
-from qgis.PyQt.QtWidgets import QTextBrowser
-from qgis.PyQt import uic, QtCore
-from qgis.PyQt.QtWidgets import QDialog
+from qgis.PyQt.QtWidgets import QDialog, QMessageBox, QTextBrowser
 
 from deepness.common.defines import PLUGIN_NAME
 
@@ -55,7 +52,7 @@ if sys.platform == "linux" or sys.platform == "linux2":
     import lsb_release
     if lsb_release.get_os_release()['CODENAME'] == 'focal':
         opencv_version = '4.5.5.64'
-    
+
 packages_to_install = [
     PackageToInstall(name='opencv-python-headless', version=opencv_version, import_name='cv2'),
 ]

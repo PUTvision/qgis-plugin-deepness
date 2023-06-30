@@ -91,7 +91,7 @@ class ModelBase:
         Returns
         -------
         str
-            Channel name or empty string if not found      
+            Channel name or empty string if not found
         """
         meta = self.sess.get_modelmeta()
         channel_id_str = str(channel_id)
@@ -106,7 +106,7 @@ class ModelBase:
 
     def get_metadata_model_type(self) -> Optional[str]:
         """ Get model type from metadata
-        
+
         Returns
         -------
         Optional[str]
@@ -136,7 +136,7 @@ class ModelBase:
 
     def get_metadata_tile_size(self) -> Optional[int]:
         """ Get tile size from metadata if exists
-        
+
         Returns
         -------
         Optional[int]
@@ -311,7 +311,7 @@ class ModelBase:
 
     def get_number_of_output_channels(self) -> int:
         """ Abstract method for getting number of classes in the output layer
-        
+
         Returns
         -------
         int
@@ -323,4 +323,3 @@ class ModelBase:
 
         """
         return NotImplementedError
-

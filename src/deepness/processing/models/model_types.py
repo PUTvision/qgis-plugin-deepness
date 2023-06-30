@@ -69,4 +69,3 @@ class ModelDefinition:
             if isinstance(params, model_definition.parameters_class):
                 return model_definition
         raise Exception(f"Unknown model type for parameters: '{params}'!")
-
