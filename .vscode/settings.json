@@ -1,0 +1,44 @@
+{
+    "python.formatting.autopep8Args": [
+        "--max-line-length",
+        "9999",
+        "--experimental"
+    ],
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.autoImportUserSymbols": true,
+    "[python]": {
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        }
+    },
+    "isort.args": [
+        "-l",
+        "120"
+    ],
+    "python.formatting.provider": "autopep8",
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/",
+        "${workspaceFolder}/src",
+        "${workspaceFolder}/tests"
+    ],
+    "terminal.integrated.env.linux": {
+        "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/src:${workspaceFolder}/tests"
+    },
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Args": [
+        "--max-line-length=9999"
+    ],
+    "python.linting.pylintEnabled": false,
+    "python.linting.mypyEnabled": false,
+    "python.linting.banditEnabled": false,
+    "python.linting.pycodestyleEnabled": false,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.analysis.stubPath": "",
+    "python.analysis.indexing": true,
+    "autoDocstring.docstringFormat": "sphinx-notypes",
+    "python.testing.pytestArgs": [
+        "."
+    ],
+}
