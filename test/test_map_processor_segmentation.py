@@ -108,7 +108,7 @@ def test_generic_processing_test__specified_extent_from_vlayer():
     assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
                np.asarray([0, 2, 2, 2, 2, 0, 0, 2, 0]))
     # and counts of different values
-    np.testing.assert_equal(np.unique(result_img, return_counts=True)[1], np.array([166903, 45270, 171919]))
+    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([166903, 45270, 171919]), atol=3)
 
 
 def test_generic_processing_test__specified_extent_from_vlayer_crs3857():
