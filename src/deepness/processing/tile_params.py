@@ -17,6 +17,7 @@ cv2 = LazyPackageLoader('cv2')
 
 class TileParams:
     """ Defines a single tile parameters - image that's being processed by model"""
+
     def __init__(self,
                  x_bin_number: int,
                  y_bin_number: int,
@@ -115,7 +116,7 @@ class TileParams:
         roi_slice = np.s_[y_min:y_max + 1, x_min:x_max + 1]
         return roi_slice
 
-    def get_slice_on_tile_image_for_copying(self, roi_slice_on_full_image = None):
+    def get_slice_on_tile_image_for_copying(self, roi_slice_on_full_image=None):
         """
         Similar to _get_slice_on_full_image_for_copying, but ROI is a slice on the tile
         """
@@ -124,9 +125,9 @@ class TileParams:
 
         r = roi_slice_on_full_image
         roi_slice_on_tile = np.s_[
-                            r[0].start - self.start_pixel_y:r[0].stop - self.start_pixel_y,
-                            r[1].start - self.start_pixel_x:r[1].stop - self.start_pixel_x
-                            ]
+            r[0].start - self.start_pixel_y:r[0].stop - self.start_pixel_y,
+            r[1].start - self.start_pixel_x:r[1].stop - self.start_pixel_x
+        ]
         return roi_slice_on_tile
 
     def is_tile_within_mask(self, mask_img: Optional[np.ndarray]):
