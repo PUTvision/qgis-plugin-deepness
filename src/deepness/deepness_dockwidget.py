@@ -339,10 +339,12 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.spinBox_tileSize_px.setValue(input_size_px)
             self.spinBox_tileSize_px.setEnabled(False)
             self._input_channels_mapping_widget.set_model(self._model)
-            #super resolution 
-            output_0_shape = self._model.get_output_shape()
-            scale_factor = output_0_shape[-1] / input_size_px
-            self.doubleSpinBox_superresolutionScaleFactor.setValue(int(scale_factor))
+
+            # super resolution
+            if model_class == ModelType.SUPERRESOLUTION:
+                output_0_shape = self._model.get_output_shape()
+                scale_factor = output_0_shape[-1] / input_size_px
+                self.doubleSpinBox_superresolutionScaleFactor.setValue(int(scale_factor))
         except Exception as e:
             if IS_DEBUG:
                 raise e
@@ -351,7 +353,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             logging.exception(txt)
             self.spinBox_tileSize_px.setEnabled(True)
             length_limit = 300
-            exception_msg = info = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
+            exception_msg = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
             msg = txt + f'\n\nException: {exception_msg}'
             QMessageBox.critical(self, "Error!", msg)
 
@@ -417,7 +419,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             params = self.get_superresolution_parameters(map_processing_parameters)
         elif model_type == ModelType.DETECTION:
             params = self.get_detection_parameters(map_processing_parameters)
-            
+
         else:
             raise Exception(f"Unknown model type '{model_type}'!")
 
