@@ -5,7 +5,7 @@ Plugin features
 
 - Limiting processing range to predefined area.
 
-- Main types of models are supported: segmentation, regression, detection.
+- Main types of models are supported: segmentation, regression, detection, supereesolution.
 
 - Training data export tool - exporting raster and mask as small tiles.
 

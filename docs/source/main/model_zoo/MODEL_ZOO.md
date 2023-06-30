@@ -25,6 +25,15 @@ The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection 
 | [Airbus Oil Storage Detection](https://chmura.put.poznan.pl/s/gMundpKsYUC7sNb) | 512        | 150   | YOLOv5-m model for object detection on satellite images. Based on the [Airbus Oil Storage Detection dataset](https://www.kaggle.com/datasets/airbusgeo/airbus-oil-storage-detection-dataset). | [Image](https://chmura.put.poznan.pl/s/T3pwaKlbFDBB2C3) |
 | [Aerial Cars Detection](https://chmura.put.poznan.pl/s/vgOeUN4H4tGsrGm)        | 640        | 10    | YOLOv7-m model for cars detection on aerial images. Based on the [ITCVD](https://arxiv.org/pdf/1801.07339.pdf).                                                                               | [Image](https://chmura.put.poznan.pl/s/cPzw1mkXlprSUIJ) |
 
+## Super Resolution Models
+| Model                                                                          | Input size | CM/PX | Scale Factor |Description                                                                                                                                                                                   | Example image                                           |
+|--------------------------------------------------------------------------------|------------|-------|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+|[Residual Dense Network (RDN X2)](#)      |64      |Trained on 10 cm/px images set it same as input data   | X2 |   Model originally trained by H Zhang et. al. in "[A Comparative Study on CNN-Based Single-Image Super-Resolution Techniques for Satellite Images](https://github.com/farahmand-m/satellite-image-super-resolution)" converted to onnx format   | [Image](#)Image from Massachusetts Roads Dataset [Dataset in kaggle](https://www.kaggle.com/datasets/balraj98/massachusetts-roads-dataset) |
+|[Residual Dense Network (RDN X4)](#)      |64      |Trained on 10 cm/px images set it same as input data   | X4 |   Model originally trained by H Zhang et. al. in "[A Comparative Study on CNN-Based Single-Image Super-Resolution Techniques for Satellite Images](https://github.com/farahmand-m/satellite-image-super-resolution)" converted to onnx format   | [Image](#)Image from Massachusetts Roads Dataset [Dataset in kaggle](https://www.kaggle.com/datasets/balraj98/massachusetts-roads-dataset) |
+
+
+
+
 ## Contributing
 
 PRs with models are welcome! 
