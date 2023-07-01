@@ -27,6 +27,12 @@ def get_dummy_regression_model_path():
     """
     return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_regression_model.onnx')
 
+def get_dummy_superresolution_model_path():
+    """
+    Get path of a dummy onnx model. See details in README in model directory.
+    Model used for unit tests processing purposes
+    """
+    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_superresolution_model.onnx')
 
 def get_dummy_fotomap_small_path():
     """
