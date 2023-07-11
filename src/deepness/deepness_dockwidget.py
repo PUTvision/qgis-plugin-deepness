@@ -2,7 +2,6 @@
 This file contain the main widget of the plugin
 """
 
-
 import logging
 import os
 from typing import Optional
@@ -427,7 +426,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def get_segmentation_parameters(self, map_processing_parameters: MapProcessingParameters) -> SegmentationParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
-                                         if self.checkBox_removeSmallAreas.isChecked() else 0
+            if self.checkBox_removeSmallAreas.isChecked() else 0
 
         params = SegmentationParameters(
             **map_processing_parameters.__dict__,
@@ -444,6 +443,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             model=self._model,
         )
         return params
+
     def get_superresolution_parameters(self, map_processing_parameters: MapProcessingParameters) -> SuperresolutionParameters:
         params = SuperresolutionParameters(
             **map_processing_parameters.__dict__,

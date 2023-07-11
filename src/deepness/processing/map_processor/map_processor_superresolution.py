@@ -42,7 +42,7 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
         final_shape_px = (int(self.img_size_y_pixels*self.superresolution_parameters.scale_factor), int(self.img_size_x_pixels*self.superresolution_parameters.scale_factor), number_of_output_channels)
 
         # NOTE: consider whether we can use float16/uint16 as datatype
-        full_result_imgs = np.zeros(final_shape_px, np.float32) 
+        full_result_imgs = np.zeros(final_shape_px, np.float32)
 
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
@@ -50,11 +50,11 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
 
             tile_results = self._process_tile(tile_img)
             full_result_imgs[int(tile_params.start_pixel_y*self.superresolution_parameters.scale_factor):int((tile_params.start_pixel_y+tile_params.stride_px)*self.superresolution_parameters.scale_factor),
-                                int(tile_params.start_pixel_x*self.superresolution_parameters.scale_factor):int((tile_params.start_pixel_x+tile_params.stride_px)*self.superresolution_parameters.scale_factor),
-                                :] = tile_results.transpose(1, 2, 0)  # transpose to chanels last
+                             int(tile_params.start_pixel_x*self.superresolution_parameters.scale_factor):int((tile_params.start_pixel_x+tile_params.stride_px)*self.superresolution_parameters.scale_factor),
+                             :] = tile_results.transpose(1, 2, 0)  # transpose to chanels last
 
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
-        full_result_imgs = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_imgs )
+        full_result_imgs = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_imgs)
         self._result_imgs = full_result_imgs
         self._create_rlayers_from_images_for_base_extent(self._result_imgs)
 
@@ -66,9 +66,10 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
         txt = f'Super-resolution done \n'
 
         if len(channels) > 0:
-            total_area = result_img.shape[0] * result_img.shape[1] * (self.params.resolution_m_per_px /self.superresolution_parameters.scale_factor)**2
+            total_area = result_img.shape[0] * result_img.shape[1] * (self.params.resolution_m_per_px / self.superresolution_parameters.scale_factor)**2
             txt += f'Total are is {total_area:.2f} m^2'
         return txt
+
     def limit_extended_extent_image_to_base_extent_with_mask(self, full_img):
         """
         Limit an image which is for extended_extent to the base_extent image.
@@ -78,15 +79,13 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
         """
         # TODO look for some inplace operation to save memory
         # cv2.copyTo(src=full_img, mask=area_mask_img, dst=full_img)  # this doesn't work due to implementation details
-        #full_img = cv2.copyTo(src=full_img, mask=self.area_mask_img)
+        # full_img = cv2.copyTo(src=full_img, mask=self.area_mask_img)
 
         b = self.base_extent_bbox_in_full_image
         result_img = full_img[int(b.y_min*self.superresolution_parameters.scale_factor):int(b.y_max*self.superresolution_parameters.scale_factor),
-                                int(b.x_min*self.superresolution_parameters.scale_factor):int(b.x_max*self.superresolution_parameters.scale_factor),
-                                :]
+                              int(b.x_min*self.superresolution_parameters.scale_factor):int(b.x_max*self.superresolution_parameters.scale_factor),
+                              :]
         return result_img
-
-    
 
     def load_rlayer_from_file(self, file_path):
         """
@@ -143,9 +142,9 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
         # data_type = gdal.GDT_Byte
         data_type = gdal.GDT_Float32
         grid_data = driver.Create('grid_data', n_cols, n_lines, n_chanels, data_type)  # , options)
-        #loop over chanels
+        # loop over chanels
         for i in range(1, img.shape[2]+1):
-            grid_data.GetRasterBand(i).WriteArray(img[:, :, i-1]) 
+            grid_data.GetRasterBand(i).WriteArray(img[:, :, i-1])
 
         # crs().srsid()  - maybe we can use the ID directly - but how?
         # srs.ImportFromEPSG()

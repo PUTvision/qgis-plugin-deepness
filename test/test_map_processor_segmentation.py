@@ -1,20 +1,16 @@
+from test.test_utils import (create_default_input_channels_mapping_for_rgba_bands, create_rlayer_from_file,
+                             create_vlayer_from_file, get_dummy_fotomap_area_crs3857_path, get_dummy_fotomap_area_path,
+                             get_dummy_fotomap_small_path, get_dummy_segmentation_model_path, init_qgis)
 from unittest.mock import MagicMock
 
+import matplotlib.pyplot as plt
+import numpy as np
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
+from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
-from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
-    ModelOutputFormat
 from deepness.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deepness.processing.models.segmentor import Segmentor
-from test.test_utils import init_qgis, create_rlayer_from_file, \
-    create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, \
-    get_dummy_segmentation_model_path, \
-    create_default_input_channels_mapping_for_rgba_bands, get_dummy_fotomap_area_crs3857_path
-
-import numpy as np
-import matplotlib.pyplot as plt
-
 
 RASTER_FILE_PATH = get_dummy_fotomap_small_path()
 

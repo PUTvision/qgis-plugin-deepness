@@ -1,7 +1,7 @@
 """ Module including the class for the object detection task and related functions
 """
 from dataclasses import dataclass
-from typing import Tuple, List
+from typing import List, Tuple
 
 import numpy as np
 
@@ -58,13 +58,13 @@ class Detection:
 
 class Detector(ModelBase):
     """Class implements object detection features
-    
+
     Detector model is used for detection of objects in images. It is based on YOLOv5/YOLOv7 models style.
     """
 
     def __init__(self, model_file_path: str):
         """Initialize object detection model
-        
+
         Parameters
         ----------
         model_file_path : str
@@ -92,7 +92,7 @@ class Detector(ModelBase):
     @classmethod
     def get_class_display_name(cls):
         """Get class display name
-        
+
         Returns
         -------
         str
@@ -105,7 +105,7 @@ class Detector(ModelBase):
         Returns
         -------
         int
-            Number of output channels            
+            Number of output channels
         """
         if len(self.outputs_layers) == 1:
             return self.outputs_layers[0].shape[-1] - 4 - 1  # shape - 4 bboxes - 1 conf
@@ -141,7 +141,7 @@ class Detector(ModelBase):
         ----------
         model_output : list
             Model output
-        
+
         Returns
         -------
         list
@@ -175,10 +175,10 @@ class Detector(ModelBase):
         for b, c, cl in zip(boxes, conf, classes):
             det = Detection(
                 bbox=BoundingBox(
-                            x_min = b[0],
-                            x_max = b[2],
-                            y_min = b[1],
-                            y_max = b[3]),
+                    x_min=b[0],
+                    x_max=b[2],
+                    y_min=b[1],
+                    y_max=b[3]),
                 conf=c,
                 clss=cl
             )
@@ -283,10 +283,10 @@ class Detector(ModelBase):
 
     def check_loaded_model_outputs(self):
         """Check if model outputs are valid.
-        Valid model are: 
+        Valid model are:
             - has 1 output layer
             - output layer shape length is 3
-            - batch size is 1 
+            - batch size is 1
         """
         if len(self.outputs_layers) == 1:
             shape = self.outputs_layers[0].shape

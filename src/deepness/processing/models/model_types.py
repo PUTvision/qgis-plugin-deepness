@@ -20,7 +20,7 @@ class ModelType(enum.Enum):
     SEGMENTATION = Segmentor.get_class_display_name()
     REGRESSION = Regressor.get_class_display_name()
     DETECTION = Detector.get_class_display_name()
-    SUPERRESOLUTION =  Superresolution.get_class_display_name()
+    SUPERRESOLUTION = Superresolution.get_class_display_name()
 
 
 @dataclass
@@ -50,7 +50,7 @@ class ModelDefinition:
                 model_class=Detector,
                 parameters_class=DetectionParameters,
                 map_processor_class=MapProcessorDetection,
-            ),#superresolution
+            ),  # superresolution
             cls(
                 model_type=ModelType.SUPERRESOLUTION,
                 model_class=Superresolution,
@@ -80,4 +80,3 @@ class ModelDefinition:
             if isinstance(params, model_definition.parameters_class):
                 return model_definition
         raise Exception(f"Unknown model type for parameters: '{params}'!")
-

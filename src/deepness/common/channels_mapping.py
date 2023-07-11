@@ -5,8 +5,7 @@ Channel mappings in this file define how the ortophoto channels translate to mod
 """
 
 import copy
-from typing import Dict
-from typing import List
+from typing import Dict, List
 
 
 class ImageChannel:

@@ -11,6 +11,7 @@ class Superresolution(ModelBase):
 
     Super Resolution  model is used improve the resolution of an image.
     """
+
     def __init__(self, model_file_path: str):
         """
 
@@ -43,25 +44,25 @@ class Superresolution(ModelBase):
 
         return input_batch
 
-    def postprocessing(self, model_output : List) -> np.ndarray:
+    def postprocessing(self, model_output: List) -> np.ndarray:
         """ Postprocess the model output.
-        
+
         Parameters
         ----------
         model_output : List
             Output from the (Regression) model
-            
+
         Returns
         -------
         np.ndarray
             Postprocessed mask (H,W,C), 0-1 (one output channel)
-        
+
         """
         return model_output[0][0]
 
     def get_number_of_output_channels(self) -> int:
         """ Returns number of channels in the output layer
-        
+
         Returns
         -------
         int
@@ -82,6 +83,7 @@ class Superresolution(ModelBase):
             Display name of the model class
         """
         return cls.__name__
+
     def get_output_shape(self) -> List[int]:
         """ Returns shape of the output layer
 
@@ -94,6 +96,7 @@ class Superresolution(ModelBase):
             return self.outputs_layers[0].shape
         else:
             return NotImplementedError
+
     def check_loaded_model_outputs(self):
         """ Check if the model has correct output layers
 

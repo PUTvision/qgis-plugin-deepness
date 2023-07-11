@@ -1,8 +1,5 @@
-import enum
 from dataclasses import dataclass
-from typing import Optional
 
-from deepness.common.channels_mapping import ChannelsMapping
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 from deepness.processing.models.model_base import ModelBase
 

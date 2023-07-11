@@ -1,6 +1,7 @@
 """ Module including Regression model definition
 """
 from typing import List
+
 import numpy as np
 
 from deepness.processing.models.model_base import ModelBase
@@ -11,6 +12,7 @@ class Regressor(ModelBase):
 
     Regression model is used to predict metric per pixel of the image.
     """
+
     def __init__(self, model_file_path: str):
         """
 
@@ -43,25 +45,25 @@ class Regressor(ModelBase):
 
         return input_batch
 
-    def postprocessing(self, model_output : List) -> np.ndarray:
+    def postprocessing(self, model_output: List) -> np.ndarray:
         """ Postprocess the model output.
-        
+
         Parameters
         ----------
         model_output : List
             Output from the (Regression) model
-            
+
         Returns
         -------
         np.ndarray
             Postprocessed mask (H,W,C), 0-1 (one output channel)
-        
+
         """
         return model_output[0][0]
 
     def get_number_of_output_channels(self) -> int:
         """ Returns number of channels in the output layer
-        
+
         Returns
         -------
         int
