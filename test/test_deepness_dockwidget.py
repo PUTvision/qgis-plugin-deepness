@@ -39,6 +39,7 @@ def test_run_inference():
     ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.set(44)
 
     dockwidget = DeepnessDockWidget(iface=MagicMock())
+    dockwidget._get_input_layer_id = MagicMock(return_value=1)  # fake input layer id, just to test
 
     # set to different values to check if will be saved while running ui
     ConfigEntryKey.PROCESSED_AREA_TYPE.set(ProcessedAreaType.ENTIRE_LAYER.value)
@@ -58,6 +59,7 @@ def test_run_data_export():
     qgs = init_qgis()
 
     dockwidget = DeepnessDockWidget(iface=MagicMock())
+    dockwidget._get_input_layer_id = MagicMock(return_value=1)  # fake input layer id, just to test
 
     signal_collector = SignalCollector(dockwidget.run_training_data_export_signal)
     dockwidget.pushButton_runTrainingDataExport.click()
@@ -81,6 +83,7 @@ def test_get_inference_parameters():
     ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.set(1)
 
     dockwidget = DeepnessDockWidget(iface=MagicMock())
+    dockwidget._get_input_layer_id = MagicMock(return_value=1)  # fake input layer id, just to test
 
     params = dockwidget.get_inference_parameters()
     assert isinstance(params, SegmentationParameters)
