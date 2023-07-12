@@ -2,12 +2,16 @@
 
 The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection of pre-trained, deep learning models in the ONNX format. It allows for an easy-to-use start with the plugin.
 
+ NOTE: the provided models are not universal tools and will perform well only on similar data as in the training datasets. If you notice the model is not perfroming well on your data, consider re-training (or fine-tuning) it on your data.
+
+ If you do not have machine learning expertise, feel free to contact the plugin authors for help or advice.
+
 ## Segmentation models
 
 | Model                                                                            | Input size | CM/PX | Description                                                                                                                                                                                                                                                                                                                                                                         | Example image |
 |----------------------------------------------------------------------------------|------------|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
-| [Corn Field Damage Segmentation](https://chmura.put.poznan.pl/s/abWFTVYSDIcncWs) | 512        | 3     | [PUT Vision](https://putvision.github.io/) model for Corn Field Damage Segmentation created on own dataset labeled by experts. We used the classical UNet++ model. It generates 3 outputs: healthy crop, damaged crop, and out-of-field area.                                                                                                                                       | [Image](https://chmura.put.poznan.pl/s/i5WVmcfqPNdBTAQ) | 
-| [Land Cover Segmentation](https://chmura.put.poznan.pl/s/PnAFJw27uneROkV)        | 512        | 40    | The model is trained on the [LandCover.ai dataset](https://landcover.ai.linuxpolska.com/). It provides satellite images with 25 cm/px and 50 cm/px resolution. Annotation masks for the following classes are provided for the images: building (1), woodland (2), water(3), road(4). We use `DeepLabV3+` model with `tu-semnasnet_100` backend and `FocalDice` as a loss function. | [Image](https://chmura.put.poznan.pl/s/Xa29vnieNQTvSt5) |
+| [Corn Field Damage Segmentation](https://chmura.put.poznan.pl/s/abWFTVYSDIcncWs) | 512        | 3     | [PUT Vision](https://putvision.github.io/) model for Corn Field Damage Segmentation created on own dataset labeled by experts. We used the classical UNet++ model. It generates 3 outputs: healthy crop, damaged crop, and out-of-field area.                                                                                                                                       | [Image](https://chmura.put.poznan.pl/s/i5WVmcfqPNdBTAQ) |
+| [Land Cover Segmentation](https://chmura.put.poznan.pl/s/PnAFJw27uneROkV)        | 512        | 40    | The model is trained on the [LandCover.ai dataset](https://landcover.ai.linuxpolska.com/). It provides satellite images with 25 cm/px and 50 cm/px resolution. Annotation masks for the following classes are provided for the images: building (1), woodland (2), water(3), road(4). We use `DeepLabV3+` model with `tu-semnasnet_100` backend and `FocalDice` as a loss function. NOTE: the dataset covers only the area of Poland, therefore the performance may be inferior in other parts of the world. | [Image](https://chmura.put.poznan.pl/s/Xa29vnieNQTvSt5) |
 | [Roads Segmentation](https://chmura.put.poznan.pl/s/y6S3CmodPy1fYYz)             | 512        | 21    | The model segments the Google Earth satellite images into 'road' and 'not-road' classes. Model works best on wide car roads, crossroads and roundabouts.                                                                                                                                                                                                                            | [Image](https://chmura.put.poznan.pl/s/rln6mpbjpsXWpKg) |
 
 ## Regression models
@@ -28,15 +32,15 @@ The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection 
 ## Super Resolution Models
 | Model                                                                          | Input size | CM/PX | Scale Factor |Description                                                                                                                                                                                   | Example image                                           |
 |--------------------------------------------------------------------------------|------------|-------|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
-|[Residual Dense Network (RDN X2)](#)      |64      |Trained on 10 cm/px images set it same as input data   | X2 |   Model originally trained by H Zhang et. al. in "[A Comparative Study on CNN-Based Single-Image Super-Resolution Techniques for Satellite Images](https://github.com/farahmand-m/satellite-image-super-resolution)" converted to onnx format   | [Image](#)Image from Massachusetts Roads Dataset [Dataset in kaggle](https://www.kaggle.com/datasets/balraj98/massachusetts-roads-dataset) |
-|[Residual Dense Network (RDN X4)](#)      |64      |Trained on 10 cm/px images set it same as input data   | X4 |   Model originally trained by H Zhang et. al. in "[A Comparative Study on CNN-Based Single-Image Super-Resolution Techniques for Satellite Images](https://github.com/farahmand-m/satellite-image-super-resolution)" converted to onnx format   | [Image](#)Image from Massachusetts Roads Dataset [Dataset in kaggle](https://www.kaggle.com/datasets/balraj98/massachusetts-roads-dataset) |
+|[Residual Dense Network (RDN X2)](https://chmura.put.poznan.pl/s/cLBZpjYn3ubuoii)      |64      |Trained on 10 cm/px images set it same as input data   | X2 |   Model originally trained by H Zhang et. al. in "[A Comparative Study on CNN-Based Single-Image Super-Resolution Techniques for Satellite Images](https://github.com/farahmand-m/satellite-image-super-resolution)" converted to onnx format   | [Image](https://chmura.put.poznan.pl/s/Ruz24ZpMNg97joV)Image from Massachusetts Roads Dataset [Dataset in kaggle](https://www.kaggle.com/datasets/balraj98/massachusetts-roads-dataset) |
+|[Residual Dense Network (RDN X4)](https://chmura.put.poznan.pl/s/AaKySmOoOhxW6qZ)      |64      |Trained on 10 cm/px images set it same as input data   | X4 |   Model originally trained by H Zhang et. al. in "[A Comparative Study on CNN-Based Single-Image Super-Resolution Techniques for Satellite Images](https://github.com/farahmand-m/satellite-image-super-resolution)" converted to onnx format   | [Image](https://chmura.put.poznan.pl/s/Ruz24ZpMNg97joV)Image from Massachusetts Roads Dataset [Dataset in kaggle](https://www.kaggle.com/datasets/balraj98/massachusetts-roads-dataset) |
 
 
 
 
 ## Contributing
 
-PRs with models are welcome! 
+PRs with models are welcome!
 
 * Please follow the [general model information](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_description_classes.html).
 
@@ -44,6 +48,6 @@ PRs with models are welcome!
 
 * If you need, you can check [how to export the model to ONNX](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_example_onnx_model.html).
 
-* And do not forget to [add metadata to the ONNX model](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_add_metadata_to_model.html). 
+* And do not forget to [add metadata to the ONNX model](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_add_metadata_to_model.html).
 
 * You can host your model yourself or ask us to do it.

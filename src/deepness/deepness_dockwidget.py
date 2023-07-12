@@ -6,32 +6,25 @@ import logging
 import os
 from typing import Optional
 
+from qgis.core import Qgis, QgsMapLayerProxyModel, QgsProject
 from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
-from qgis.PyQt.QtWidgets import QComboBox
-from qgis.PyQt.QtWidgets import QFileDialog
-from qgis.PyQt.QtWidgets import QMessageBox
-from qgis.core import Qgis
-from qgis.core import QgsMapLayerProxyModel
-from qgis.core import QgsProject
+from qgis.PyQt.QtWidgets import QComboBox, QFileDialog, QMessageBox
 
 from deepness.common.config_entry_key import ConfigEntryKey
-from deepness.common.defines import PLUGIN_NAME, IS_DEBUG
+from deepness.common.defines import IS_DEBUG, PLUGIN_NAME
 from deepness.common.errors import OperationFailedException
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters
-from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
-    ProcessedAreaType, ModelOutputFormat
+from deepness.common.processing_parameters.map_processing_parameters import (MapProcessingParameters, ModelOutputFormat,
+                                                                             ProcessedAreaType)
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
-from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
-from deepness.common.processing_parameters.training_data_export_parameters import \
-    TrainingDataExportParameters
+from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
+from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deepness.processing.models.model_base import ModelBase
 from deepness.processing.models.model_types import ModelDefinition, ModelType
-from deepness.widgets.input_channels_mapping.input_channels_mapping_widget import \
-    InputChannelsMappingWidget
-from deepness.widgets.training_data_export_widget.training_data_export_widget import \
-    TrainingDataExportWidget
+from deepness.widgets.input_channels_mapping.input_channels_mapping_widget import InputChannelsMappingWidget
+from deepness.widgets.training_data_export_widget.training_data_export_widget import TrainingDataExportWidget
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deepness_dockwidget.ui'))
@@ -487,6 +480,9 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # check_required_packages_and_install_if_necessary()
         try:
             params = self.get_inference_parameters()
+
+            if not params.input_layer_id:
+                raise OperationFailedException("Please select an input layer first!")
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning, duration=7)
@@ -502,6 +498,9 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             map_processing_parameters = self._get_map_processing_parameters()
             training_data_export_parameters = self._training_data_export_widget.get_training_data_export_parameters(
                 map_processing_parameters)
+
+            if not map_processing_parameters.input_layer_id:
+                raise OperationFailedException("Please select an input layer first!")
 
             # Overwrite common parameter - we don't want channels mapping as for the model,
             # but just to take all channels

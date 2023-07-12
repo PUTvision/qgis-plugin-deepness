@@ -42,5 +42,5 @@ Another inference on random street in Poznan:
 
 
 And output mask for an Grunwald district in Poznan:
-  
-    .. image:: ../images/ecars_in_poznan_grunwald_district.webp
+
+    .. image:: ../images/cars_in_poznan_grunwald_district.webp
