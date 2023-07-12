@@ -2,6 +2,10 @@
 
 The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection of pre-trained, deep learning models in the ONNX format. It allows for an easy-to-use start with the plugin.
 
+ NOTE: the provided models are not universal tools and will perform well only on similar data as in the training datasets. If you notice the model is not perfroming well on your data, consider re-training (or fine-tuning) it on your data.
+
+ If you do not have machine learning expertise, feel free to contact the plugin authors for help or advice.
+
 ## Segmentation models
 
 | Model                                                                            | Input size | CM/PX | Description                                                                                                                                                                                                                                                                                                                                                                         | Example image |
