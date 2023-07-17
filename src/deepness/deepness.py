@@ -6,7 +6,6 @@ Skeleton of this file was generate with the QGis plugin to create plugin skeleto
 """
 
 import traceback
-import os
 
 from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
@@ -73,16 +72,16 @@ class Deepness:
         return QCoreApplication.translate('Deepness', message)
 
     def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
+            self,
+            icon_path,
+            text,
+            callback,
+            enabled_flag=True,
+            add_to_menu=True,
+            add_to_toolbar=True,
+            status_tip=None,
+            whats_this=None,
+            parent=None):
         """Add a toolbar icon to the toolbar.
 
         :param icon_path: Path to the icon for this action. Can be a resource
@@ -245,7 +244,7 @@ class Deepness:
 
         self._map_processor = MapProcessorTrainingDataExport(
             rlayer=rlayer,
-            vlayer_mask=vlayer,
+            vlayer_mask=vlayer,  # layer with masks
             map_canvas=self.iface.mapCanvas(),
             params=training_data_export_parameters)
         self._map_processor.finished_signal.connect(self._map_processor_finished)

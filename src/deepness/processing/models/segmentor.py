@@ -1,6 +1,7 @@
 """ Module including the class for the segmentation of the images
 """
 from typing import List
+
 import numpy as np
 
 from deepness.processing.models.model_base import ModelBase
@@ -8,11 +9,12 @@ from deepness.processing.models.model_base import ModelBase
 
 class Segmentor(ModelBase):
     """Class implements segmentation model
-    
+
     Segmentation model is used to predict class confidence per pixel of the image.
     """
+
     def __init__(self, model_file_path: str):
-        """ 
+        """
 
         Parameters
         ----------
@@ -23,7 +25,7 @@ class Segmentor(ModelBase):
 
     def preprocessing(self, image: np.ndarray):
         """ Preprocess the image for the model
-        
+
         Parameters
         ----------
         image : np.ndarray
@@ -106,6 +108,6 @@ class Segmentor(ModelBase):
 
             if shape[2] != shape[3]:
                 raise Exception(f'Segmentation model can handle only square outputs masks. Has: {shape}')
-            
+
         else:
             raise NotImplementedError

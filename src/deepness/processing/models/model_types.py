@@ -5,18 +5,22 @@ from deepness.common.processing_parameters.detection_parameters import Detection
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
+from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
 from deepness.processing.map_processor.map_processor_detection import MapProcessorDetection
 from deepness.processing.map_processor.map_processor_regression import MapProcessorRegression
 from deepness.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
+from deepness.processing.map_processor.map_processor_superresolution import MapProcessorSuperresolution
 from deepness.processing.models.detector import Detector
 from deepness.processing.models.regressor import Regressor
 from deepness.processing.models.segmentor import Segmentor
+from deepness.processing.models.superresolution import Superresolution
 
 
 class ModelType(enum.Enum):
     SEGMENTATION = Segmentor.get_class_display_name()
     REGRESSION = Regressor.get_class_display_name()
     DETECTION = Detector.get_class_display_name()
+    SUPERRESOLUTION = Superresolution.get_class_display_name()
 
 
 @dataclass
@@ -46,7 +50,14 @@ class ModelDefinition:
                 model_class=Detector,
                 parameters_class=DetectionParameters,
                 map_processor_class=MapProcessorDetection,
+            ),  # superresolution
+            cls(
+                model_type=ModelType.SUPERRESOLUTION,
+                model_class=Superresolution,
+                parameters_class=SuperresolutionParameters,
+                map_processor_class=MapProcessorSuperresolution,
             )
+
         ]
 
     @classmethod
@@ -69,4 +80,3 @@ class ModelDefinition:
             if isinstance(params, model_definition.parameters_class):
                 return model_definition
         raise Exception(f"Unknown model type for parameters: '{params}'!")
-

@@ -1,6 +1,7 @@
 """ This file defines possible outcomes of map processing
 """
 
+
 class MapProcessingResult:
     """
     Base class for signaling finished processing result

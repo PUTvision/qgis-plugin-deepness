@@ -2,16 +2,20 @@
 -r requirements.txt
 
 # Requirements required only to test and debug code while developing
-pytest
-pytest-cov
-flake8
-onnx
+pytest==7.4.0
+pytest-cov==4.1.0
+flake8==6.0.0
+onnx==1.14.0
 
 # docs
-sphinx
-sphinxcontrib-youtube
-sphinx-autodoc-typehints
-sphinx-autopackagesummary
-sphinx_rtd_theme
-m2r2
-sphinx-rtd-size
+sphinx==6.1.3
+sphinxcontrib-youtube==1.2.0
+sphinx-autodoc-typehints==1.22
+sphinx-autopackagesummary==1.3
+sphinx-rtd-theme==0.5.1
+m2r2==0.3.3
+sphinx-rtd-size==0.2.0
+
+# vscode
+pylint==2.17.4
+autopep8==2.0.2

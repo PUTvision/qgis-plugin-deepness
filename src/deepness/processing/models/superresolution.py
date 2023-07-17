@@ -1,16 +1,15 @@
-""" Module including Regression model definition
+""" Module including Super Resolution model definition
 """
 from typing import List
-
 import numpy as np
 
 from deepness.processing.models.model_base import ModelBase
 
 
-class Regressor(ModelBase):
-    """ Class implements regression model.
+class Superresolution(ModelBase):
+    """ Class implements super resolution model.
 
-    Regression model is used to predict metric per pixel of the image.
+    Super Resolution  model is used improve the resolution of an image.
     """
 
     def __init__(self, model_file_path: str):
@@ -21,7 +20,7 @@ class Regressor(ModelBase):
         model_file_path : str
             Path to the model file
         """
-        super(Regressor, self).__init__(model_file_path)
+        super(Superresolution, self).__init__(model_file_path)
 
     def preprocessing(self, image: np.ndarray) -> np.ndarray:
         """ Preprocess the image for the model (resize, normalization, etc)
@@ -84,6 +83,19 @@ class Regressor(ModelBase):
             Display name of the model class
         """
         return cls.__name__
+
+    def get_output_shape(self) -> List[int]:
+        """ Returns shape of the output layer
+
+        Returns
+        -------
+        List[int]
+            Shape of the output layer
+        """
+        if len(self.outputs_layers) == 1:
+            return self.outputs_layers[0].shape
+        else:
+            return NotImplementedError
 
     def check_loaded_model_outputs(self):
         """ Check if the model has correct output layers

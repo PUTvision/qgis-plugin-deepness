@@ -2,36 +2,29 @@
 This file contain the main widget of the plugin
 """
 
-
 import logging
 import os
 from typing import Optional
 
+from qgis.core import Qgis, QgsMapLayerProxyModel, QgsProject
 from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
-from qgis.PyQt.QtWidgets import QComboBox
-from qgis.PyQt.QtWidgets import QFileDialog
-from qgis.PyQt.QtWidgets import QMessageBox
-from qgis.core import Qgis
-from qgis.core import QgsMapLayerProxyModel
-from qgis.core import QgsProject
+from qgis.PyQt.QtWidgets import QComboBox, QFileDialog, QMessageBox
 
 from deepness.common.config_entry_key import ConfigEntryKey
-from deepness.common.defines import PLUGIN_NAME, IS_DEBUG
+from deepness.common.defines import IS_DEBUG, PLUGIN_NAME
 from deepness.common.errors import OperationFailedException
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters
-from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
-    ProcessedAreaType, ModelOutputFormat
+from deepness.common.processing_parameters.map_processing_parameters import (MapProcessingParameters, ModelOutputFormat,
+                                                                             ProcessedAreaType)
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
-from deepness.common.processing_parameters.training_data_export_parameters import \
-    TrainingDataExportParameters
+from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
+from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deepness.processing.models.model_base import ModelBase
 from deepness.processing.models.model_types import ModelDefinition, ModelType
-from deepness.widgets.input_channels_mapping.input_channels_mapping_widget import \
-    InputChannelsMappingWidget
-from deepness.widgets.training_data_export_widget.training_data_export_widget import \
-    TrainingDataExportWidget
+from deepness.widgets.input_channels_mapping.input_channels_mapping_widget import InputChannelsMappingWidget
+from deepness.widgets.training_data_export_widget.training_data_export_widget import TrainingDataExportWidget
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deepness_dockwidget.ui'))
@@ -207,6 +200,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         segmentation_enabled = False
         detection_enabled = False
         regression_enabled = False
+        superresolution_enabled = False
 
         if model_type == ModelType.SEGMENTATION:
             segmentation_enabled = True
@@ -214,12 +208,15 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             detection_enabled = True
         elif model_type == ModelType.REGRESSION:
             regression_enabled = True
+        elif model_type == ModelType.SUPERRESOLUTION:
+            superresolution_enabled = True
         else:
             raise Exception(f"Unsupported model type ({model_type})!")
 
         self.mGroupBox_segmentationParameters.setEnabled(segmentation_enabled)
         self.mGroupBox_detectionParameters.setEnabled(detection_enabled)
         self.mGroupBox_regressionParameters.setEnabled(regression_enabled)
+        self.mGroupBox_superresolutionParameters.setEnabled(superresolution_enabled)
 
     def _model_output_format_changed(self):
         txt = self.comboBox_modelOutputFormat.currentText()
@@ -334,6 +331,12 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.spinBox_tileSize_px.setValue(input_size_px)
             self.spinBox_tileSize_px.setEnabled(False)
             self._input_channels_mapping_widget.set_model(self._model)
+
+            # super resolution
+            if model_class == ModelType.SUPERRESOLUTION:
+                output_0_shape = self._model.get_output_shape()
+                scale_factor = output_0_shape[-1] / input_size_px
+                self.doubleSpinBox_superresolutionScaleFactor.setValue(int(scale_factor))
         except Exception as e:
             if IS_DEBUG:
                 raise e
@@ -342,7 +345,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             logging.exception(txt)
             self.spinBox_tileSize_px.setEnabled(True)
             length_limit = 300
-            exception_msg = info = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
+            exception_msg = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
             msg = txt + f'\n\nException: {exception_msg}'
             QMessageBox.critical(self, "Error!", msg)
 
@@ -404,8 +407,11 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             params = self.get_segmentation_parameters(map_processing_parameters)
         elif model_type == ModelType.REGRESSION:
             params = self.get_regression_parameters(map_processing_parameters)
+        elif model_type == ModelType.SUPERRESOLUTION:
+            params = self.get_superresolution_parameters(map_processing_parameters)
         elif model_type == ModelType.DETECTION:
             params = self.get_detection_parameters(map_processing_parameters)
+
         else:
             raise Exception(f"Unknown model type '{model_type}'!")
 
@@ -413,7 +419,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
     def get_segmentation_parameters(self, map_processing_parameters: MapProcessingParameters) -> SegmentationParameters:
         postprocessing_dilate_erode_size = self.spinBox_dilateErodeSize.value() \
-                                         if self.checkBox_removeSmallAreas.isChecked() else 0
+            if self.checkBox_removeSmallAreas.isChecked() else 0
 
         params = SegmentationParameters(
             **map_processing_parameters.__dict__,
@@ -428,6 +434,15 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             **map_processing_parameters.__dict__,
             output_scaling=self.doubleSpinBox_regressionScaling.value(),
             model=self._model,
+        )
+        return params
+
+    def get_superresolution_parameters(self, map_processing_parameters: MapProcessingParameters) -> SuperresolutionParameters:
+        params = SuperresolutionParameters(
+            **map_processing_parameters.__dict__,
+            model=self._model,
+            scale_factor=self.doubleSpinBox_superresolutionScaleFactor.value(),
+            output_scaling=self.doubleSpinBox_superresolutionScaling.value(),
         )
         return params
 
@@ -465,6 +480,9 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         # check_required_packages_and_install_if_necessary()
         try:
             params = self.get_inference_parameters()
+
+            if not params.input_layer_id:
+                raise OperationFailedException("Please select an input layer first!")
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning, duration=7)
@@ -480,6 +498,9 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             map_processing_parameters = self._get_map_processing_parameters()
             training_data_export_parameters = self._training_data_export_widget.get_training_data_export_parameters(
                 map_processing_parameters)
+
+            if not map_processing_parameters.input_layer_id:
+                raise OperationFailedException("Please select an input layer first!")
 
             # Overwrite common parameter - we don't want channels mapping as for the model,
             # but just to take all channels

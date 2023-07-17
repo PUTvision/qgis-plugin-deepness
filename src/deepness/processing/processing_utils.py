@@ -77,7 +77,7 @@ def get_tile_image(
     expected_units_per_pixel_2d = expected_units_per_pixel, expected_units_per_pixel
     # to get all pixels - use the 'rlayer.rasterUnitsPerPixelX()' instead of 'expected_units_per_pixel_2d'
     image_size = round((extent.width()) / expected_units_per_pixel_2d[0]), \
-                 round((extent.height()) / expected_units_per_pixel_2d[1])
+        round((extent.height()) / expected_units_per_pixel_2d[1])
 
     # sanity check, that we gave proper extent as parameter
     assert image_size[0] == params.tile_size_px

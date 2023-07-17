@@ -44,6 +44,7 @@ class MapProcessorTrainingDataExport(MapProcessor):
             vlayer_segmentation = QgsProject.instance().mapLayers()[self.params.segmentation_mask_layer_id]
             vlayer_segmentation.setCrs(self.rlayer.crs())
             segmentation_mask_full = processing_utils.create_area_mask_image(
+                rlayer=self.rlayer,
                 vlayer_mask=vlayer_segmentation,
                 extended_extent=self.extended_extent,
                 rlayer_units_per_pixel=self.rlayer_units_per_pixel,

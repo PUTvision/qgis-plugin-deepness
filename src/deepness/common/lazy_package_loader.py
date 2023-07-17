@@ -13,6 +13,7 @@ class LazyPackageLoader:
         ...
         cv2.waitKey(3)  # here will be the actual import
     """
+
     def __init__(self, package_name):
         self._package_name = package_name
         self._package = None
