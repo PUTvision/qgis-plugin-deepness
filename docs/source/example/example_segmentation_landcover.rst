@@ -13,7 +13,7 @@ The example is based on the `LandCover.ai dataset <https://landcover.ai.linuxpol
 Architecture and training
 =========================
 
-We built our pipeline based on `Pytorch <https://github.com/pytorch/pytorch>`_, `Pytorch Lightning <https://github.com/Lightning-AI/lightning>`_, and `Pytchorchsegmentation_models.pytorch <https://github.com/qubvel/segmentation_models.pytorch>`_ repository. Our training pipeline is available in [the repository](https://github.com/PUTvision/LandCoverSeg).
+We built our pipeline based on `Pytorch <https://github.com/pytorch/pytorch>`_, `Pytorch Lightning <https://github.com/Lightning-AI/lightning>`_, and `Pytchorchsegmentation_models.pytorch <https://github.com/qubvel/segmentation_models.pytorch>`_ repository. Our training pipeline is available in `the repository <https://github.com/PUTvision/LandCoverSeg>`_.
 
 * Model :code:`DeepLabV3+` with :code:`tu-semnasnet_100` backend
 * Loss function: balanced :code:`FocalDiceLoss`
