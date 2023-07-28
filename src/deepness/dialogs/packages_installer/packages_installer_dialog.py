@@ -49,9 +49,14 @@ class PackageToInstall:
 
 opencv_version = '4.6.0.66'
 if sys.platform == "linux" or sys.platform == "linux2":
-    import lsb_release
-    if lsb_release.get_os_release()['CODENAME'] == 'focal':
-        opencv_version = '4.5.5.64'
+    try:
+        import lsb_release
+        if lsb_release.get_os_release()['CODENAME'] == 'focal':
+            opencv_version = '4.5.5.64'
+    except Exception as e:
+        logging.warning(f'Could not check Ubuntu version: {e}')
+        pass
+
 
 packages_to_install = [
     PackageToInstall(name='opencv-python-headless', version=opencv_version, import_name='cv2'),
