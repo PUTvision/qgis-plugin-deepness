@@ -108,6 +108,8 @@ class Detector(ModelBase):
             Number of output channels
         """
         if len(self.outputs_layers) == 1:
+            if self._has_only_one_output_class_due_to_missing_output():
+                return 1
             return self.outputs_layers[0].shape[-1] - 4 - 1  # shape - 4 bboxes - 1 conf
         else:
             return NotImplementedError
@@ -134,6 +136,21 @@ class Detector(ModelBase):
 
         return input_batch
 
+    def _has_inverted_output_shape(self):
+        shape = self.outputs_layers[0].shape[1:]  # first dimension is batch size?
+        return shape[0] < shape[1]
+
+    def _has_only_one_output_class_due_to_missing_output(self):
+        if self._has_inverted_output_shape():
+            single_prediction_shape = self.outputs_layers[0].shape[-2]
+        else:
+            single_prediction_shape = self.outputs_layers[0].shape[-1]
+
+        if single_prediction_shape == 5:
+            return True  # 4 for bbox + 1 conf; missing class!
+
+        return False
+
     def postprocessing(self, model_output):
         """Postprocess model output
 
@@ -154,8 +171,15 @@ class Detector(ModelBase):
 
         model_output = model_output[0][0]
 
+        if self._has_inverted_output_shape():
+            print("Detector model has probably wrong output shape - reversing them. If you see this message and the model doesn't work, try to comment lines below in detector.py")
+            model_output = np.transpose(model_output, (1, 0))
+
+        def filter_single(x):
+            return x[4] >= self.confidence
+
         outputs_filtered = np.array(
-            list(filter(lambda x: x[4] >= self.confidence, model_output))
+            list(filter(filter_single, model_output))
         )
 
         if len(outputs_filtered.shape) < 2:
@@ -163,12 +187,21 @@ class Detector(ModelBase):
 
         outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
 
-        pick_indxs = self.non_max_suppression_fast(outputs_x1y1x2y2, outputs_filtered[:, 4], self.iou_threshold)
+        probabilities = outputs_filtered[:, 4]
+        pick_indxs = self.non_max_suppression_fast(
+            outputs_x1y1x2y2,
+            probs=probabilities,
+            iou_threshold=self.iou_threshold)
         outputs_nms = outputs_x1y1x2y2[pick_indxs]
 
         boxes = np.array(outputs_nms[:, :4], dtype=int)
         conf = outputs_nms[:, 4]
-        classes = np.argmax(outputs_nms[:, 5:], axis=1)
+
+        if self._has_only_one_output_class_due_to_missing_output():
+            classes = np.zeros(len(outputs_nms))
+            print('Missing class number in detection model output. Assuming all detections are of class 0')
+        else:
+            classes = np.argmax(outputs_nms[:, 5:], axis=1)
 
         detections = []
 
