@@ -77,3 +77,22 @@ If you don't understand something and/or have some questions, ask them in [Discu
 ## Contributing
 
 PRs are welcome! Read our [General Information for Developers](https://qgis-plugin-deepness.readthedocs.io/en/latest/dev/dev_general_info.html). Consider discussing your plans with maintainers.
+
+## Citation
+
+Is our plugin help you in research? Please cite it:
+
+```
+@article{ASZKOWSKI2023101495,
+title = {Deepness: Deep neural remote sensing plugin for QGIS},
+journal = {SoftwareX},
+volume = {23},
+pages = {101495},
+year = {2023},
+issn = {2352-7110},
+doi = {https://doi.org/10.1016/j.softx.2023.101495},
+url = {https://www.sciencedirect.com/science/article/pii/S2352711023001917},
+author = {Przemysław Aszkowski and Bartosz Ptak and Marek Kraft and Dominik Pieczyński and Paweł Drapikowski},
+keywords = {QGIS, Deep learning, Remote sensing, Segmentation, Object detection},
+}
+```
