@@ -110,7 +110,7 @@ class MapProcessor(QgsTask):
         """ If the plugin is somehow invalid, it cannot compare the enums correctly
         I suppose it could be fixed somehow, but no need to investigate it now,
         it affects only the development
-    """
+        """
 
         if self.params.processed_area_type.__class__ != ProcessedAreaType:
             raise Exception("Disable plugin, restart QGis and enable plugin again!")
