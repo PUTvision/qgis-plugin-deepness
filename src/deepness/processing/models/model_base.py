@@ -81,7 +81,7 @@ class ModelBase:
         """
         return self.input_shape[-2:]
 
-    def get_class_names(self) -> List[str] | None:
+    def get_class_names(self) -> Optional[List[str]]:
         """ Get class names from metadata
 
         Returns
