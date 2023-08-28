@@ -258,6 +258,21 @@ class ModelBase:
             return float(value)
         return None
 
+    def get_detector_type(self) -> Optional[str]:
+        """ Get detector type from metadata if exists
+
+        Returns string value of DetectorType enum or None if not found
+        -------
+        Optional[str]
+            Detector type or None if not found
+        """
+        meta = self.sess.get_modelmeta()
+        name = 'det_type'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return str(value)
+        return None
+
     def get_metadata_detection_iou_threshold(self) -> Optional[float]:
         """ Get detection iou threshold from metadata if exists
 

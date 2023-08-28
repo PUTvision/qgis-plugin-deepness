@@ -14,7 +14,7 @@ from qgis.PyQt.QtWidgets import QComboBox, QFileDialog, QMessageBox
 from deepness.common.config_entry_key import ConfigEntryKey
 from deepness.common.defines import IS_DEBUG, PLUGIN_NAME
 from deepness.common.errors import OperationFailedException
-from deepness.common.processing_parameters.detection_parameters import DetectionParameters
+from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
 from deepness.common.processing_parameters.map_processing_parameters import (MapProcessingParameters, ModelOutputFormat,
                                                                              ProcessedAreaType)
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
@@ -110,7 +110,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.doubleSpinBox_confidence.setValue(ConfigEntryKey.DETECTION_CONFIDENCE.get())
             self.doubleSpinBox_iouScore.setValue(ConfigEntryKey.DETECTION_IOU.get())
             self.checkBox_removeOverlappingDetections.setChecked(ConfigEntryKey.DETECTION_REMOVE_OVERLAPPING.get())
-        except:
+            self.comboBox_detectorType.setCurrentText(ConfigEntryKey.DETECTOR_TYPE)
+        except Exception:
             logging.exception("Failed to load the ui state from config!")
 
     def _save_ui_to_config(self):
@@ -140,6 +141,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ConfigEntryKey.DETECTION_CONFIDENCE.set(self.doubleSpinBox_confidence.value())
         ConfigEntryKey.DETECTION_IOU.set(self.doubleSpinBox_iouScore.value())
         ConfigEntryKey.DETECTION_REMOVE_OVERLAPPING.set(self.checkBox_removeOverlappingDetections.isChecked())
+        ConfigEntryKey.DETECTOR_TYPE.set(self.comboBox_detectorType.currentText())
 
         self._input_channels_mapping_widget.save_ui_to_config()
         self._training_data_export_widget.save_ui_to_config()
@@ -165,6 +167,10 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         for model_definition in ModelDefinition.get_model_definitions():
             self.comboBox_modelType.addItem(model_definition.model_type.value)
 
+        for detector_type in DetectorType.get_all_display_values():
+            self.comboBox_detectorType.addItem(detector_type)
+        self._detector_type_changed()
+
         for output_format_type in ModelOutputFormat.get_all_names():
             self.comboBox_modelOutputFormat.addItem(output_format_type)
         self._model_output_format_changed()
@@ -187,6 +193,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
         self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
         self.comboBox_modelType.currentIndexChanged.connect(self._model_type_changed)
+        self.comboBox_detectorType.currentIndexChanged.connect(self._detector_type_changed)
         self.pushButton_reloadModel.clicked.connect(self._load_model_and_display_info)
         self.pushButton_loadDefaultModelParameters.clicked.connect(self._load_default_model_parameters)
         self.mMapLayerComboBox_inputLayer.layerChanged.connect(self._rlayer_updated)
@@ -217,6 +224,10 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.mGroupBox_detectionParameters.setEnabled(detection_enabled)
         self.mGroupBox_regressionParameters.setEnabled(regression_enabled)
         self.mGroupBox_superresolutionParameters.setEnabled(superresolution_enabled)
+
+    def _detector_type_changed(self):
+        detector_type = DetectorType(self.comboBox_detectorType.currentText())
+        self.label_detectorTypeDescription.setText(detector_type.get_formatted_description())
 
     def _model_output_format_changed(self):
         txt = self.comboBox_modelOutputFormat.currentText()
@@ -260,6 +271,10 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if value is not None:
             print(f'{value =}')
             self.comboBox_modelType.setCurrentText(value)
+
+        value = self._model.get_detector_type()
+        if value is not None:
+            self.comboBox_detectorType.setCurrentText(value)
 
         value = self._model.get_metadata_segmentation_threshold()
         if value is not None:
@@ -454,6 +469,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             iou_threshold=self.doubleSpinBox_iouScore.value(),
             remove_overlapping_detections=self.checkBox_removeOverlappingDetections.isChecked(),
             model=self._model,
+            detector_type=DetectorType(self.comboBox_detectorType.currentText()),
         )
 
         return params
