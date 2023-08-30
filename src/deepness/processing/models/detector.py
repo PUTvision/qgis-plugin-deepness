@@ -4,7 +4,9 @@ from dataclasses import dataclass
 from typing import List, Tuple
 
 import numpy as np
+from pyexpat import model
 
+from deepness.common.processing_parameters.detection_parameters import DetectorType
 from deepness.processing.models.model_base import ModelBase
 from deepness.processing.processing_utils import BoundingBox
 
@@ -75,6 +77,8 @@ class Detector(ModelBase):
         """float: Confidence threshold"""
         self.iou_threshold = None
         """float: IoU threshold"""
+        self.model_type = None
+        """DetectorType: Model type"""
 
     def set_inference_params(self, confidence: float, iou_threshold: float):
         """Set inference parameters
@@ -88,6 +92,16 @@ class Detector(ModelBase):
         """
         self.confidence = confidence
         self.iou_threshold = iou_threshold
+
+    def set_model_type_param(self, model_type: DetectorType):
+        """Set model type parameters
+
+        Parameters
+        ----------
+        model_type : str
+            Model type
+        """
+        self.model_type = model_type
 
     @classmethod
     def get_class_display_name(cls):
@@ -111,8 +125,11 @@ class Detector(ModelBase):
         if class_names is not None:
             return len(class_names)  # If class names are specified, we expect to have exactly this number of channels as specidied
 
+        model_type_params = self.model_type.get_parameters()
+        has_only_one_output_class_due_to_missing_output = model_type_params.skipped_objectness_probability and model_type_params.ignore_objectness_probability
+
         if len(self.outputs_layers) == 1:
-            if self._has_only_one_output_class_due_to_missing_output():
+            if has_only_one_output_class_due_to_missing_output:
                 return 1
             return self.outputs_layers[0].shape[-1] - 4 - 1  # shape - 4 bboxes - 1 conf
         else:
@@ -140,39 +157,6 @@ class Detector(ModelBase):
 
         return input_batch
 
-    def _has_inverted_output_shape(self):
-        shape = self.outputs_layers[0].shape[1:]  # first dimension is batch size?
-        return shape[0] < shape[1]
-
-    def _has_only_one_output_class_due_to_missing_output(self):
-        if self._has_inverted_output_shape():
-            single_prediction_shape = self.outputs_layers[0].shape[-2]
-        else:
-            single_prediction_shape = self.outputs_layers[0].shape[-1]
-
-        if single_prediction_shape == 5:
-            return True  # 4 for bbox + 1 conf; missing class!
-
-        return False
-
-    def _has_no_confidence_value_in_output(self):
-        """ Whether the model has no separate confidence output (and has only probabilities for each class in output)"""
-        if self._has_only_one_output_class_due_to_missing_output():
-            return True
-
-        class_names = self.get_class_names()
-        if class_names is None:
-            return False  # we cannot determine whether the model has confidence output or not
-
-        if self._has_inverted_output_shape():
-            single_prediction_shape = self.outputs_layers[0].shape[-2]
-        else:
-            single_prediction_shape = self.outputs_layers[0].shape[-1]
-        if single_prediction_shape - len(class_names) == 4:
-            return True  # we have only 4 values for bbox, no confidence
-        else:
-            return False
-
     def postprocessing(self, model_output):
         """Postprocess model output
 
@@ -192,14 +176,22 @@ class Detector(ModelBase):
             return Exception(
                 "Confidence or IOU threshold is not set for model. Use self.set_inference_params"
             )
+            
+        if self.model_type is None:
+            return Exception(
+                "Model type is not set for model. Use self.set_model_type_param"
+            )
 
         model_output = model_output[0][0]
 
-        if self._has_inverted_output_shape():
+        model_type_params = self.model_type.get_parameters()
+        has_inverted_output_shape = model_type_params.has_inverted_output_shape
+        has_confidence_value = not model_type_params.skipped_objectness_probability and not model_type_params.ignore_objectness_probability
+        has_only_one_output_class_due_to_missing_output = model_type_params.skipped_objectness_probability and model_type_params.ignore_objectness_probability
+
+        if has_inverted_output_shape:
             print("Detector model has probably wrong output shape - reversing them. If you see this message and the model doesn't work, try to comment lines below in detector.py")
             model_output = np.transpose(model_output, (1, 0))
-
-        has_confidence_value = not self._has_no_confidence_value_in_output()
 
         def filter_single(x):
             if has_confidence_value:
@@ -235,7 +227,7 @@ class Detector(ModelBase):
             # we do not have confidence, so we need to take it from probabilities
             conf = np.max(outputs_nms[:, 4:], axis=1)
 
-        if self._has_only_one_output_class_due_to_missing_output():
+        if has_only_one_output_class_due_to_missing_output:
             classes = np.zeros(len(outputs_nms))
             print('Missing class number in detection model output. Assuming all detections are of class 0')
         else:
