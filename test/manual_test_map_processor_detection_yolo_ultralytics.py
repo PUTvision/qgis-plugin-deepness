@@ -19,7 +19,7 @@ RASTER_FILE_PATH = os.path.join(EXAMPLE_DATA_DIR, 'Task-of-2023-08-13T150332132Z
 INPUT_CHANNELS_MAPPING = create_default_input_channels_mapping_for_rgb_bands()
 
 
-def test_map_processor_detection_strange_format():
+def test_map_processor_detection_yolo_ultralytics():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
