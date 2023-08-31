@@ -1,10 +1,9 @@
 """ Module including the class for the object detection task and related functions
 """
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
-from pyexpat import model
 
 from deepness.common.processing_parameters.detection_parameters import DetectorType
 from deepness.processing.models.model_base import ModelBase
@@ -77,7 +76,7 @@ class Detector(ModelBase):
         """float: Confidence threshold"""
         self.iou_threshold = None
         """float: IoU threshold"""
-        self.model_type = None
+        self.model_type: DetectorType | None = None
         """DetectorType: Model type"""
 
     def set_inference_params(self, confidence: float, iou_threshold: float):
@@ -126,7 +125,7 @@ class Detector(ModelBase):
             return len(class_names)  # If class names are specified, we expect to have exactly this number of channels as specidied
 
         model_type_params = self.model_type.get_parameters()
-        
+
         shape_index = -2 if model_type_params.has_inverted_output_shape else -1
 
         if len(self.outputs_layers) == 1:
@@ -226,7 +225,7 @@ class Detector(ModelBase):
             outputs_x1y1x2y2,
             probs=probabilities,
             iou_threshold=self.iou_threshold)
-        
+
         outputs_nms = outputs_x1y1x2y2[pick_indxs]
 
         boxes = np.array(outputs_nms[:, :4], dtype=int)
@@ -251,7 +250,7 @@ class Detector(ModelBase):
             outputs_x1y1x2y2,
             probs=probabilities,
             iou_threshold=self.iou_threshold)
-        
+
         outputs_nms = outputs_x1y1x2y2[pick_indxs]
 
         boxes = np.array(outputs_nms[:, :4], dtype=int)
@@ -278,7 +277,7 @@ class Detector(ModelBase):
             outputs_x1y1x2y2,
             probs=probabilities,
             iou_threshold=self.iou_threshold)
-        
+
         outputs_nms = outputs_x1y1x2y2[pick_indxs]
 
         boxes = np.array(outputs_nms[:, :4], dtype=int)

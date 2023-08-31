@@ -21,6 +21,7 @@ from deepness.common.processing_parameters.regression_parameters import Regressi
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
 from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
+from deepness.processing.models.detector import Detector
 from deepness.processing.models.model_base import ModelBase
 from deepness.processing.models.model_types import ModelDefinition, ModelType
 from deepness.widgets.input_channels_mapping.input_channels_mapping_widget import InputChannelsMappingWidget
@@ -110,7 +111,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.doubleSpinBox_confidence.setValue(ConfigEntryKey.DETECTION_CONFIDENCE.get())
             self.doubleSpinBox_iouScore.setValue(ConfigEntryKey.DETECTION_IOU.get())
             self.checkBox_removeOverlappingDetections.setChecked(ConfigEntryKey.DETECTION_REMOVE_OVERLAPPING.get())
-            self.comboBox_detectorType.setCurrentText(ConfigEntryKey.DETECTOR_TYPE)
+            self.comboBox_detectorType.setCurrentText(ConfigEntryKey.DETECTOR_TYPE.get())
         except Exception:
             logging.exception("Failed to load the ui state from config!")
 
@@ -365,6 +366,11 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             QMessageBox.critical(self, "Error!", msg)
 
         self.label_modelInfo.setText(txt)
+
+        if isinstance(self._model, Detector):
+            detector_type = DetectorType(self.comboBox_detectorType.currentText())
+            self._model.set_model_type_param(detector_type)
+
         self._update_model_output_format_mapping()
 
     def _update_model_output_format_mapping(self):
