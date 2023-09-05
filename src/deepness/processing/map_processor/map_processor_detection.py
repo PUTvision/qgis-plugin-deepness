@@ -5,7 +5,7 @@ from typing import List
 import numpy as np
 from qgis.core import QgsVectorLayer, QgsProject, QgsGeometry, QgsFeature
 
-from deepness.common.processing_parameters.detection_parameters import DetectionParameters
+from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
 from deepness.processing import processing_utils
 from deepness.processing.map_processor.map_processing_result import MapProcessingResultCanceled, \
     MapProcessingResultSuccess, MapProcessingResult
@@ -34,6 +34,7 @@ class MapProcessorDetection(MapProcessorWithModel):
             confidence=params.confidence,
             iou_threshold=params.iou_threshold
         )
+        self.model.set_model_type_param(model_type=params.detector_type)
         self._all_detections = None
 
     def get_all_detections(self) -> List[Detection]:
