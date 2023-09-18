@@ -108,4 +108,4 @@ class Regressor(ModelBase):
                 raise Exception(f'Regression model can handle only square outputs masks. Has: {shape}')
 
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")
