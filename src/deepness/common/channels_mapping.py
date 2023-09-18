@@ -18,10 +18,10 @@ class ImageChannel:
         self.name = name
 
     def get_band_number(self):
-        raise NotImplementedError
+        raise NotImplementedError('Base class not implemented!')
 
     def get_byte_number(self):
-        raise NotImplementedError
+        raise NotImplementedError('Base class not implemented!')
 
 
 class ImageChannelStandaloneBand(ImageChannel):
@@ -43,7 +43,7 @@ class ImageChannelStandaloneBand(ImageChannel):
         return self.band_number
 
     def get_byte_number(self):
-        raise NotImplementedError
+        raise NotImplementedError('Something went wrong if we are here!')
 
 
 class ImageChannelCompositeByte(ImageChannel):
@@ -62,7 +62,7 @@ class ImageChannelCompositeByte(ImageChannel):
         return txt
 
     def get_band_number(self):
-        raise NotImplementedError
+        raise NotImplementedError('Something went wrong if we are here!')
 
     def get_byte_number(self):
         return self.byte_number

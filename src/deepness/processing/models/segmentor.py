@@ -74,7 +74,7 @@ class Segmentor(ModelBase):
         if len(self.outputs_layers) == 1:
             return self.outputs_layers[0].shape[-3]
         else:
-            return NotImplementedError
+            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
 
     @classmethod
     def get_class_display_name(cls):
@@ -110,4 +110,4 @@ class Segmentor(ModelBase):
                 raise Exception(f'Segmentation model can handle only square outputs masks. Has: {shape}')
 
         else:
-            raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")
+            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")

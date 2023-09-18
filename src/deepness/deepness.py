@@ -5,6 +5,7 @@ Links the UI and the processing.
 Skeleton of this file was generate with the QGis plugin to create plugin skeleton - QGIS PluginBuilder
 """
 
+import logging
 import traceback
 
 from qgis.PyQt.QtCore import QCoreApplication, Qt
@@ -292,6 +293,7 @@ class Deepness:
             msg = f'Error! Processing error: "{result.message}"!'
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Critical, duration=14)
             if result.exception is not None:
+                logging.error(msg)
                 trace = '\n'.join(traceback.format_tb(result.exception.__traceback__)[-1:])
                 msg = f'{msg}\n\n\n' \
                       f'Details: ' \

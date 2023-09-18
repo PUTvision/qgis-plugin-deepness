@@ -71,7 +71,7 @@ class Superresolution(ModelBase):
         if len(self.outputs_layers) == 1:
             return self.outputs_layers[0].shape[-3]
         else:
-            return NotImplementedError
+            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
 
     @classmethod
     def get_class_display_name(cls) -> str:
@@ -95,7 +95,7 @@ class Superresolution(ModelBase):
         if len(self.outputs_layers) == 1:
             return self.outputs_layers[0].shape
         else:
-            return NotImplementedError
+            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
 
     def check_loaded_model_outputs(self):
         """ Check if the model has correct output layers
@@ -120,4 +120,4 @@ class Superresolution(ModelBase):
                 raise Exception(f'Regression model can handle only square outputs masks. Has: {shape}')
 
         else:
-            raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")
+            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")

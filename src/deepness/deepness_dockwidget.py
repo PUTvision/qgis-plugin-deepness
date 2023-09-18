@@ -508,6 +508,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning, duration=7)
+            logging.exception(msg)
             QMessageBox.critical(self, "Error!", msg)
             return
 
@@ -531,6 +532,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
+            logging.exception(msg)
             QMessageBox.critical(self, "Error!", msg)
             return
 
