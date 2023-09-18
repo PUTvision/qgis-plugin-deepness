@@ -1,10 +1,11 @@
 """ Module including the class for the object detection task and related functions
 """
 from dataclasses import dataclass
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 
+from deepness.common.processing_parameters.detection_parameters import DetectorType
 from deepness.processing.models.model_base import ModelBase
 from deepness.processing.processing_utils import BoundingBox
 
@@ -75,6 +76,8 @@ class Detector(ModelBase):
         """float: Confidence threshold"""
         self.iou_threshold = None
         """float: IoU threshold"""
+        self.model_type: DetectorType | None = None
+        """DetectorType: Model type"""
 
     def set_inference_params(self, confidence: float, iou_threshold: float):
         """Set inference parameters
@@ -88,6 +91,16 @@ class Detector(ModelBase):
         """
         self.confidence = confidence
         self.iou_threshold = iou_threshold
+
+    def set_model_type_param(self, model_type: DetectorType):
+        """Set model type parameters
+
+        Parameters
+        ----------
+        model_type : str
+            Model type
+        """
+        self.model_type = model_type
 
     @classmethod
     def get_class_display_name(cls):
@@ -107,8 +120,18 @@ class Detector(ModelBase):
         int
             Number of output channels
         """
+        class_names = self.get_class_names()
+        if class_names is not None:
+            return len(class_names)  # If class names are specified, we expect to have exactly this number of channels as specidied
+
+        model_type_params = self.model_type.get_parameters()
+
+        shape_index = -2 if model_type_params.has_inverted_output_shape else -1
+
         if len(self.outputs_layers) == 1:
-            return self.outputs_layers[0].shape[-1] - 4 - 1  # shape - 4 bboxes - 1 conf
+            if model_type_params.skipped_objectness_probability:
+                return self.outputs_layers[0].shape[shape_index] - 4
+            return self.outputs_layers[0].shape[shape_index] - 4 - 1  # shape - 4 bboxes - 1 conf
         else:
             return NotImplementedError
 
@@ -137,6 +160,8 @@ class Detector(ModelBase):
     def postprocessing(self, model_output):
         """Postprocess model output
 
+            NOTE: Maybe refactor this, as it has many added layers of checks which can be simplified.
+
         Parameters
         ----------
         model_output : list
@@ -152,23 +177,21 @@ class Detector(ModelBase):
                 "Confidence or IOU threshold is not set for model. Use self.set_inference_params"
             )
 
+        if self.model_type is None:
+            return Exception(
+                "Model type is not set for model. Use self.set_model_type_param"
+            )
+
         model_output = model_output[0][0]
 
-        outputs_filtered = np.array(
-            list(filter(lambda x: x[4] >= self.confidence, model_output))
-        )
-
-        if len(outputs_filtered.shape) < 2:
-            return []
-
-        outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
-
-        pick_indxs = self.non_max_suppression_fast(outputs_x1y1x2y2, outputs_filtered[:, 4], self.iou_threshold)
-        outputs_nms = outputs_x1y1x2y2[pick_indxs]
-
-        boxes = np.array(outputs_nms[:, :4], dtype=int)
-        conf = outputs_nms[:, 4]
-        classes = np.argmax(outputs_nms[:, 5:], axis=1)
+        if self.model_type == DetectorType.YOLO_v5_v7_DEFAULT:
+            boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output)
+        elif self.model_type == DetectorType.YOLO_v6:
+            boxes, conf, classes = self._postprocessing_YOLO_v6(model_output)
+        elif self.model_type == DetectorType.YOLO_ULTRALYTICS:
+            boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output)
+        else:
+            raise NotImplementedError
 
         detections = []
 
@@ -185,6 +208,85 @@ class Detector(ModelBase):
             detections.append(det)
 
         return detections
+
+    def _postprocessing_YOLO_v5_v7_DEFAULT(self, model_output):
+        outputs_filtered = np.array(
+            list(filter(lambda x: x[4] >= self.confidence, model_output))
+        )
+
+        if len(outputs_filtered.shape) < 2:
+            return [], [], []
+
+        probabilities = outputs_filtered[:, 4]
+
+        outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
+
+        pick_indxs = self.non_max_suppression_fast(
+            outputs_x1y1x2y2,
+            probs=probabilities,
+            iou_threshold=self.iou_threshold)
+
+        outputs_nms = outputs_x1y1x2y2[pick_indxs]
+
+        boxes = np.array(outputs_nms[:, :4], dtype=int)
+        conf = outputs_nms[:, 4]
+        classes = np.argmax(outputs_nms[:, 5:], axis=1)
+
+        return boxes, conf, classes
+
+    def _postprocessing_YOLO_v6(self, model_output):
+        outputs_filtered = np.array(
+            list(filter(lambda x: np.max(x[5:]) >= self.confidence, model_output))
+        )
+
+        if len(outputs_filtered.shape) < 2:
+            return [], [], []
+
+        probabilities = outputs_filtered[:, 4]
+
+        outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
+
+        pick_indxs = self.non_max_suppression_fast(
+            outputs_x1y1x2y2,
+            probs=probabilities,
+            iou_threshold=self.iou_threshold)
+
+        outputs_nms = outputs_x1y1x2y2[pick_indxs]
+
+        boxes = np.array(outputs_nms[:, :4], dtype=int)
+        conf = np.max(outputs_nms[:, 5:], axis=1)
+        classes = np.argmax(outputs_nms[:, 5:], axis=1)
+
+        return boxes, conf, classes
+
+    def _postprocessing_YOLO_ULTRALYTICS(self, model_output):
+        model_output = np.transpose(model_output, (1, 0))
+
+        outputs_filtered = np.array(
+            list(filter(lambda x: np.max(x[4:]) >= self.confidence, model_output))
+        )
+
+        if len(outputs_filtered.shape) < 2:
+            return [], [], []
+
+        probabilities = np.max(outputs_filtered[:, 4:], axis=1)
+
+        outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
+
+        pick_indxs = self.non_max_suppression_fast(
+            outputs_x1y1x2y2,
+            probs=probabilities,
+            iou_threshold=self.iou_threshold)
+
+        outputs_nms = outputs_x1y1x2y2[pick_indxs]
+
+        boxes = np.array(outputs_nms[:, :4], dtype=int)
+        conf = np.max(outputs_nms[:, 4:], axis=1)
+        classes = np.argmax(outputs_nms[:, 4:], axis=1)
+
+        return boxes, conf, classes
+
+
 
     @staticmethod
     def xywh2xyxy(x: np.ndarray) -> np.ndarray:

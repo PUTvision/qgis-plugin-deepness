@@ -1,4 +1,5 @@
 """ Module including the base model interfaces and utilities"""
+import ast
 import json
 from typing import List, Optional
 
@@ -80,6 +81,41 @@ class ModelBase:
         """
         return self.input_shape[-2:]
 
+    def get_class_names(self) -> Optional[List[str]]:
+        """ Get class names from metadata
+
+        Returns
+        -------
+        List[str] | None
+            List of class names or None if not found
+        """
+        meta = self.sess.get_modelmeta()
+
+        allowed_key_names = ['class_names', 'names']  # support both names for backward compatibility
+        for name in allowed_key_names:
+            if name not in meta.custom_metadata_map:
+                continue
+
+            txt = meta.custom_metadata_map[name]
+            try:
+                class_names = json.loads(txt)  # default format recommended in the documentation - classes encoded as json
+            except json.decoder.JSONDecodeError:
+                class_names = ast.literal_eval(txt)  # keys are integers instead of strings - use ast
+
+            sorted_by_key = sorted(class_names.items(), key=lambda kv: int(kv[0]))
+
+            class_counter = 0
+            all_names = []
+            for key, value in sorted_by_key:
+                if int(key) != class_counter:
+                    raise Exception("Class names in the model metadata are not consecutive (missing class label)")
+                class_counter += 1
+                all_names.append(value)
+
+            return all_names
+
+        return None
+
     def get_channel_name(self, channel_id: int) -> str:
         """ Get channel name by id if exists in model metadata
 
@@ -93,14 +129,12 @@ class ModelBase:
         str
             Channel name or empty string if not found
         """
-        meta = self.sess.get_modelmeta()
+        class_names = self.get_class_names()
         channel_id_str = str(channel_id)
         default_return = f'channel_{channel_id_str}'
 
-        if 'class_names' in meta.custom_metadata_map:
-            class_names = json.loads(meta.custom_metadata_map['class_names'])
-
-            return class_names.get(channel_id_str, default_return)
+        if class_names is not None and channel_id < len(class_names):
+            return class_names[channel_id]
         else:
             return default_return
 
@@ -222,6 +256,21 @@ class ModelBase:
         if name in meta.custom_metadata_map:
             value = json.loads(meta.custom_metadata_map[name])
             return float(value)
+        return None
+
+    def get_detector_type(self) -> Optional[str]:
+        """ Get detector type from metadata if exists
+
+        Returns string value of DetectorType enum or None if not found
+        -------
+        Optional[str]
+            Detector type or None if not found
+        """
+        meta = self.sess.get_modelmeta()
+        name = 'det_type'
+        if name in meta.custom_metadata_map:
+            value = json.loads(meta.custom_metadata_map[name])
+            return str(value)
         return None
 
     def get_metadata_detection_iou_threshold(self) -> Optional[float]:
