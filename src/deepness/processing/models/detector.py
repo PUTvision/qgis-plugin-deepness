@@ -133,7 +133,7 @@ class Detector(ModelBase):
                 return self.outputs_layers[0].shape[shape_index] - 4
             return self.outputs_layers[0].shape[shape_index] - 4 - 1  # shape - 4 bboxes - 1 conf
         else:
-            return NotImplementedError
+            raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")
 
     def preprocessing(self, image: np.ndarray):
         """Preprocess image before inference
@@ -191,7 +191,7 @@ class Detector(ModelBase):
         elif self.model_type == DetectorType.YOLO_ULTRALYTICS:
             boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"Model type not implemented! ('{self.model_type}')")
 
         detections = []
 
@@ -405,4 +405,4 @@ class Detector(ModelBase):
                 )
 
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")

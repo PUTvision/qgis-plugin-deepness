@@ -72,7 +72,7 @@ class Regressor(ModelBase):
         if len(self.outputs_layers) == 1:
             return self.outputs_layers[0].shape[-3]
         else:
-            return NotImplementedError
+            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
 
     @classmethod
     def get_class_display_name(cls) -> str:
@@ -108,4 +108,4 @@ class Regressor(ModelBase):
                 raise Exception(f'Regression model can handle only square outputs masks. Has: {shape}')
 
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
