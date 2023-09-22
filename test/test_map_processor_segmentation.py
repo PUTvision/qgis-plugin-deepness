@@ -62,6 +62,38 @@ def test_dummy_model_processing__entire_file():
     assert result_img.shape == (561, 829)
     # TODO - add detailed check for pixel values once we have output channels mapping with thresholding
 
+def test_dummy_model_processing__entire_file_overlap_in_pixels():
+    qgs = init_qgis()
+
+    rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
+    model = Segmentor(MODEL_FILE_PATH)
+
+    params = SegmentationParameters(
+        resolution_cm_per_px=3,
+        tile_size_px=model.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
+        mask_layer_id=None,
+        input_layer_id=rlayer.id(),
+        input_channels_mapping=INPUT_CHANNELS_MAPPING,
+        postprocessing_dilate_erode_size=5,
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PIXELS, overlap_px=int(model.get_input_size_in_pixels()[0] * 0.2)),
+        pixel_classification__probability_threshold=0.5,
+        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
+        model_output_format__single_class_number=-1,
+        model=model,
+    )
+
+    map_processor = MapProcessorSegmentation(
+        rlayer=rlayer,
+        vlayer_mask=None,
+        map_canvas=MagicMock(),
+        params=params,
+    )
+
+    map_processor.run()
+    result_img = map_processor.get_result_img()
+
+    assert result_img.shape == (561, 829)
 
 def model_process_mock(x):
     x = x[:, :, 0:2]
