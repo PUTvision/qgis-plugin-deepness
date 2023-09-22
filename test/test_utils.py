@@ -1,12 +1,10 @@
 import os
 
+from qgis.core import (QgsApplication, QgsCoordinateReferenceSystem, QgsProject, QgsRasterLayer, QgsRectangle,
+                       QgsVectorLayer)
 from qgis.PyQt.QtWidgets import QWidget
-from qgis.core import QgsVectorLayer, QgsProject
-from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle, QgsApplication
-from qgis.core import QgsRasterLayer
 
-from deepness.common.channels_mapping import ChannelsMapping, ImageChannelStandaloneBand, \
-    ImageChannelCompositeByte
+from deepness.common.channels_mapping import ChannelsMapping, ImageChannelCompositeByte, ImageChannelStandaloneBand
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 TEST_DATA_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, 'data'))
@@ -19,6 +17,12 @@ def get_dummy_segmentation_model_path():
     """
     return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_model.onnx')
 
+def get_dummy_segmentation_model_different_output_size_path():
+    """
+    Get path of a dummy onnx model. See details in README in model directory.
+    Model used for unit tests processing purposes. Its output size is different than input size.
+    """
+    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_model_different_output_size.onnx')
 
 def get_dummy_regression_model_path():
     """

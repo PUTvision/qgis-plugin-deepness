@@ -11,7 +11,6 @@ from qgis.core import QgsRectangle
 from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 
-
 cv2 = LazyPackageLoader('cv2')
 
 
@@ -87,11 +86,13 @@ class TileParams:
         roi_slice = np.s_[y_min:y_max + 1, x_min:x_max + 1]
         return roi_slice
 
-    def get_slice_on_full_image_for_copying(self):
+    def get_slice_on_full_image_for_copying(self, tile_offset: int = 0):
         """
         As we are doing processing with overlap, we are not going to copy the entire tile result to final image,
         but only the part that is not overlapping with the neighbouring tiles.
         Edge tiles have special handling too.
+
+        :param tile_offset: how many pixels to cut from the tile result (to remove the padding)
 
         :return Slice to be used on the full image
         """
@@ -101,7 +102,7 @@ class TileParams:
         x_min = self.start_pixel_x + half_overlap
         x_max = self.start_pixel_x + self.params.tile_size_px - half_overlap - 1
         y_min = self.start_pixel_y + half_overlap
-        y_max = self.start_pixel_y + self.params.tile_size_px - half_overlap - 1
+        y_max = self.start_pixel_y + self.params.tile_size_px - half_overlap - 1            
 
         # edge tiles handling
         if self.x_bin_number == 0:
@@ -113,20 +114,25 @@ class TileParams:
         if self.y_bin_number == self.y_bins_number-1:
             y_max += half_overlap
 
+        x_min += tile_offset
+        x_max -= tile_offset
+        y_min += tile_offset
+        y_max -= tile_offset
+
         roi_slice = np.s_[y_min:y_max + 1, x_min:x_max + 1]
         return roi_slice
 
-    def get_slice_on_tile_image_for_copying(self, roi_slice_on_full_image=None):
+    def get_slice_on_tile_image_for_copying(self, roi_slice_on_full_image=None, tile_offset: int = 0):
         """
         Similar to _get_slice_on_full_image_for_copying, but ROI is a slice on the tile
         """
         if not roi_slice_on_full_image:
-            roi_slice_on_full_image = self.get_slice_on_full_image_for_copying()
+            roi_slice_on_full_image = self.get_slice_on_full_image_for_copying(tile_offset=tile_offset)
 
         r = roi_slice_on_full_image
         roi_slice_on_tile = np.s_[
-            r[0].start - self.start_pixel_y:r[0].stop - self.start_pixel_y,
-            r[1].start - self.start_pixel_x:r[1].stop - self.start_pixel_x
+            r[0].start - self.start_pixel_y - tile_offset:r[0].stop - self.start_pixel_y - tile_offset,
+            r[1].start - self.start_pixel_x - tile_offset:r[1].stop - self.start_pixel_x - tile_offset
         ]
         return roi_slice_on_tile
 
@@ -147,8 +153,17 @@ class TileParams:
         return coverage_percentage > 0  # TODO - for training we can use tiles with higher coverage only
 
     def set_mask_on_full_img(self, full_result_img, tile_result):
-        roi_slice_on_full_image = self.get_slice_on_full_image_for_copying()
-        roi_slice_on_tile_image = self.get_slice_on_tile_image_for_copying(roi_slice_on_full_image)
+        if tile_result.shape[0] != self.params.tile_size_px or tile_result.shape[1] != self.params.tile_size_px:
+            tile_offset = (self.params.tile_size_px - tile_result.shape[0])//2
+
+            assert tile_offset % 2 == 0, "Model output shape is not even, cannot calculate offset"
+            assert tile_offset >= 0, "Model output shape is bigger than tile size, cannot calculate offset"
+        else:
+            tile_offset = 0
+
+        roi_slice_on_full_image = self.get_slice_on_full_image_for_copying(tile_offset=tile_offset)
+        roi_slice_on_tile_image = self.get_slice_on_tile_image_for_copying(roi_slice_on_full_image, tile_offset=tile_offset)
+
         full_result_img[roi_slice_on_full_image] = tile_result[roi_slice_on_tile_image]
 
     def get_entire_tile_from_full_img(self, full_result_img) -> np.ndarray:
