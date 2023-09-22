@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
+from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
 from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
@@ -41,7 +42,7 @@ def test_dummy_model_processing__entire_file():
         input_layer_id=rlayer.id(),
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
         postprocessing_dilate_erode_size=5,
-        processing_overlap_percentage=20,
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=20),
         pixel_classification__probability_threshold=0.5,
         model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
         model_output_format__single_class_number=-1,
@@ -86,7 +87,7 @@ def test_generic_processing_test__specified_extent_from_vlayer():
         input_layer_id=rlayer.id(),
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
         postprocessing_dilate_erode_size=5,
-        processing_overlap_percentage=20,
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=20),
         pixel_classification__probability_threshold=0.5,
         model_output_format=ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER,
         model_output_format__single_class_number=1,
@@ -130,7 +131,7 @@ def test_generic_processing_test__specified_extent_from_vlayer_crs3857():
         input_layer_id=rlayer.id(),
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
         postprocessing_dilate_erode_size=5,
-        processing_overlap_percentage=20,
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=20),
         pixel_classification__probability_threshold=0.5,
         model_output_format=ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER,
         model_output_format__single_class_number=1,
@@ -175,7 +176,7 @@ def test_generic_processing_test__specified_extent_from_active_map_extent():
         input_layer_id=rlayer.id(),
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
         postprocessing_dilate_erode_size=5,
-        processing_overlap_percentage=20,
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=20),
         pixel_classification__probability_threshold=0.5,
         model_output_format=ModelOutputFormat.CLASSES_AS_SEPARATE_LAYERS_WITHOUT_ZERO_CLASS,
         model_output_format__single_class_number=-1,

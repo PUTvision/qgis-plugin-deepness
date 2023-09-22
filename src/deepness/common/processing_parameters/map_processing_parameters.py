@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 from deepness.common.channels_mapping import ChannelsMapping
+from deepness.common.processing_overlap import ProcessingOverlap
 
 
 class ProcessedAreaType(enum.Enum):
@@ -40,7 +41,7 @@ class MapProcessingParameters:
     input_layer_id: str  # raster layer to process
     mask_layer_id: Optional[str]  # Processing of masked layer - if processed_area_type is FROM_POLYGONS
 
-    processing_overlap_percentage: float  # aka stride - overlap of neighbouring tiles while processing (0-100)
+    processing_overlap: ProcessingOverlap  # aka "stride" - how much to overlap tiles during processing
 
     input_channels_mapping: ChannelsMapping  # describes mapping of image channels to model inputs
 
@@ -54,9 +55,9 @@ class MapProcessingParameters:
     @property
     def processing_overlap_px(self) -> int:
         """
-        Always multiple of 2
+        Always divide by 2, because overlap is on both sides of the tile
         """
-        return int(self.tile_size_px * self.processing_overlap_percentage / 100 * 2) // 2
+        return self.processing_overlap.get_overlap_px(self.tile_size_px)
 
     @property
     def resolution_m_per_px(self):
