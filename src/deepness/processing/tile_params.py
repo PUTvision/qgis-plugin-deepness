@@ -156,8 +156,11 @@ class TileParams:
         if tile_result.shape[0] != self.params.tile_size_px or tile_result.shape[1] != self.params.tile_size_px:
             tile_offset = (self.params.tile_size_px - tile_result.shape[0])//2
 
-            assert tile_offset % 2 == 0, "Model output shape is not even, cannot calculate offset"
-            assert tile_offset >= 0, "Model output shape is bigger than tile size, cannot calculate offset"
+            if tile_offset % 2 != 0:
+                raise Exception("Model output shape is not even, cannot calculate offset")
+
+            if tile_offset < 0:
+                raise Exception("Model output shape is bigger than tile size, cannot calculate offset")
         else:
             tile_offset = 0
 
