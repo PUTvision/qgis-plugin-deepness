@@ -55,7 +55,7 @@ class MapProcessingParameters:
     @property
     def processing_overlap_px(self) -> int:
         """
-        Always divide by 2, because overlap is on both sides of the tile
+        Always divisible by 2, because overlap is on both sides of the tile
         """
         return self.processing_overlap.get_overlap_px(self.tile_size_px)
 
