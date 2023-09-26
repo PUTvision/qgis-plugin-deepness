@@ -187,6 +187,8 @@ class Detector(ModelBase):
                 "Model type is not set for model. Use self.set_model_type_param"
             )
 
+        masks = None
+
         if self.model_type == DetectorType.YOLO_v5_v7_DEFAULT:
             boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output[0][0])
         elif self.model_type == DetectorType.YOLO_v6:
