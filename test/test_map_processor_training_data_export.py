@@ -1,13 +1,12 @@
+from test.test_utils import (create_default_input_channels_mapping_for_rgba_bands, create_rlayer_from_file,
+                             create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path,
+                             init_qgis)
 from unittest.mock import MagicMock
 
-from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
-    ModelOutputFormat
-from deepness.common.processing_parameters.training_data_export_parameters import \
-    TrainingDataExportParameters
+from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
+from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
+from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deepness.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
-from test.test_utils import init_qgis, create_rlayer_from_file, \
-    create_vlayer_from_file, get_dummy_fotomap_area_path, get_dummy_fotomap_small_path, \
-    create_default_input_channels_mapping_for_rgba_bands
 
 RASTER_FILE_PATH = get_dummy_fotomap_small_path()
 
@@ -28,7 +27,7 @@ def test_export_dummy_fotomap():
         mask_layer_id=None,
         input_layer_id=rlayer.id(),
         input_channels_mapping=create_default_input_channels_mapping_for_rgba_bands(),
-        processing_overlap_percentage=20,
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=20),
         model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
         model_output_format__single_class_number=-1,
     )
@@ -76,7 +75,7 @@ def test_export_dummy_fotomap():
 #         mask_layer_id=None,
 #         input_layer_id=rlayer.id(),
 #         input_channels_mapping=create_default_input_channels_mapping_for_google_satellite_bands(),
-#         processing_overlap_percentage=20,
+#         processing_overlap=20,
 #     )
 #
 #     processed_extent = QgsRectangle(

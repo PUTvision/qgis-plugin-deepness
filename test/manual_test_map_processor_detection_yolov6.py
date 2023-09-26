@@ -3,6 +3,7 @@ from pathlib import Path
 from test.test_utils import create_default_input_channels_mapping_for_rgb_bands, create_rlayer_from_file, init_qgis
 from unittest.mock import MagicMock
 
+from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
 from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
 from deepness.processing.map_processor.map_processor_detection import MapProcessorDetection
@@ -32,7 +33,7 @@ def test_map_processor_detection_yolov6():
         mask_layer_id=None,
         input_layer_id=rlayer.id(),
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
-        processing_overlap_percentage=0,
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=0),
         model=model_wrapper,
         confidence=0.9,
         iou_threshold=0.4,

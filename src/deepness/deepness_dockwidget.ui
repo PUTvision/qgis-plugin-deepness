@@ -26,7 +26,7 @@
          <x>0</x>
          <y>0</y>
          <width>452</width>
-         <height>1503</height>
+         <height>1487</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -44,7 +44,6 @@
           <property name="font">
            <font>
             <pointsize>9</pointsize>
-            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
@@ -238,7 +237,6 @@
             <widget class="QLabel" name="label_12">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -265,13 +263,6 @@
            <string>Processing parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_8">
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_8">
-             <property name="text">
-              <string>Tile size [px]:</string>
-             </property>
-            </widget>
-           </item>
            <item row="0" column="1">
             <widget class="QDoubleSpinBox" name="doubleSpinBox_resolution_cm_px">
              <property name="toolTip">
@@ -291,10 +282,108 @@
              </property>
             </widget>
            </item>
+           <item row="2" column="0" colspan="3">
+            <widget class="QGroupBox" name="groupBox">
+             <property name="title">
+              <string>Tiles overlap:</string>
+             </property>
+             <layout class="QGridLayout" name="gridLayout_3">
+              <item row="0" column="1">
+               <widget class="QSpinBox" name="spinBox_processingTileOverlapPercentage">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>80</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="toolTip">
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Defines how much tiles should overlap on their neighbours during processing.&lt;/p&gt;&lt;p&gt;Especially required for model which introduce distortions on the edges of images, so that it can be removed in postprocessing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                </property>
+                <property name="suffix">
+                 <string/>
+                </property>
+                <property name="value">
+                 <number>15</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="4">
+               <widget class="QSpinBox" name="spinBox_processingTileOverlapPixels">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="minimumSize">
+                 <size>
+                  <width>80</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="maximum">
+                 <number>9999999</number>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QRadioButton" name="radioButton_processingTileOverlapPixels">
+                <property name="text">
+                 <string>[px]</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QRadioButton" name="radioButton_processingTileOverlapPercentage">
+                <property name="text">
+                 <string>[%]</string>
+                </property>
+                <property name="checked">
+                 <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <spacer name="horizontalSpacer_2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>40</width>
+                  <height>20</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>Tile size [px]:</string>
+             </property>
+            </widget>
+           </item>
            <item row="0" column="0">
             <widget class="QLabel" name="label">
              <property name="text">
               <string>Resolution [cm/px]:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="2">
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>May be a fixed value
+for some models</string>
              </property>
             </widget>
            </item>
@@ -311,34 +400,6 @@
              </property>
              <property name="value">
               <number>512</number>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <widget class="QLabel" name="label_13">
-             <property name="text">
-              <string>May be a fixed value
-for some models</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="0">
-            <widget class="QLabel" name="label_19">
-             <property name="text">
-              <string>Tiles overlap [%]:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QSpinBox" name="spinBox_processingTileOverlapPercentage">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Defines how much tiles should overlap on their neighbours during processing.&lt;/p&gt;&lt;p&gt;Especially required for model which introduce distortions on the edges of images, so that it can be removed in postprocessing.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="suffix">
-              <string/>
-             </property>
-             <property name="value">
-              <number>15</number>
              </property>
             </widget>
            </item>
@@ -371,7 +432,6 @@ for some models</string>
             <widget class="QLabel" name="label_2">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -567,7 +627,6 @@ for some models</string>
             <widget class="QLabel" name="label_20">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -661,7 +720,6 @@ for some models</string>
             <widget class="QLabel" name="label_17">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>

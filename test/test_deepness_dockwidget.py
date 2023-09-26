@@ -92,7 +92,7 @@ def test_get_inference_parameters():
     assert params.processed_area_type == ProcessedAreaType.VISIBLE_PART
     assert params.tile_size_px == 512  # should be read from model input
     # assert params.input_layer_id == rlayer.id()
-    assert params.processing_overlap_percentage == 44
+    assert params.processing_overlap.get_overlap_px(params.tile_size_px) == int(0.44*params.tile_size_px)
     assert params.input_channels_mapping.get_number_of_model_inputs() == 3
     assert params.input_channels_mapping.get_number_of_image_channels() == 4
     assert params.input_channels_mapping.get_image_channel_index_for_model_input(2) == 2
