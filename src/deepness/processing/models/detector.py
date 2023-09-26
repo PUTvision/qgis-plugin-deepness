@@ -1,7 +1,7 @@
 """ Module including the class for the object detection task and related functions
 """
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 import cv2
 import numpy as np
@@ -31,7 +31,7 @@ class Detection:
     """float: confidence of the detection"""
     clss: int
     """int: class of the detected object"""
-    mask: np.ndarray | None = None
+    mask: Optional[np.ndarray] = None
     """np.ndarray: mask of the detected object"""
 
     def convert_to_global(self, offset_x: int, offset_y: int):
