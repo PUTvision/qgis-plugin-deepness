@@ -1,7 +1,7 @@
 """ Module including the class for the object detection task and related functions
 """
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import cv2
 import numpy as np
@@ -33,6 +33,7 @@ class Detection:
     """int: class of the detected object"""
     mask: Optional[np.ndarray] = None
     """np.ndarray: mask of the detected object"""
+    mask_offsets: Optional[Tuple[int, int]] = None
 
     def convert_to_global(self, offset_x: int, offset_y: int):
         """Apply (x,y) offset to bounding box coordinates
@@ -45,6 +46,9 @@ class Detection:
             _description_
         """
         self.bbox.apply_offset(offset_x=offset_x, offset_y=offset_y)
+        
+        if self.mask is not None:
+            self.mask_offsets = (offset_x, offset_y)
 
     def get_bbox_xyxy(self) -> np.ndarray:
         """Convert stored bounding box into x1y1x2y2 format

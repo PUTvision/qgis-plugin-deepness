@@ -1,5 +1,6 @@
 """ This file implements map processing for detection model """
 
+from itertools import count
 from typing import List
 
 import cv2
@@ -134,23 +135,35 @@ class MapProcessorDetection(MapProcessorWithModel):
                     feature.setGeometry(geometry)
                     features.append(feature)
                 else:
-                    contours, hierarchy = cv2.findContours(det.mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-                    contours = processing_utils.transform_contours_yx_pixels_to_target_crs(
-                        contours=contours,
-                        extent=self.base_extent,
-                        rlayer_units_per_pixel=self.rlayer_units_per_pixel)
+                    contours, _ = cv2.findContours(det.mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+                    
+                    x_offset, y_offset = det.mask_offsets
+                    
+                    if len(contours) > 0:
+                        countur = contours[0]
 
-                    if len(contours):
-                        processing_utils.convert_cv_contours_to_features(
-                            features=features,
-                            cv_contours=contours,
-                            hierarchy=hierarchy[0],
-                            is_hole=False,
-                            current_holes=[],
-                            current_contour_index=0)
-                    else:
-                        pass  # just nothing, we already have an empty list of features
-
+                        corners = []
+                        for point in countur:
+                            corners.append(int(point[0][0]) + x_offset)
+                            corners.append(int(point[0][1]) + y_offset)
+                        
+                        mask_corners_pixels = cv2.convexHull(np.array(corners).reshape((-1, 2))).squeeze()
+                                                
+                        mask_corners_crs = processing_utils.transform_points_list_xy_to_target_crs(
+                            points=mask_corners_pixels,
+                            extent=self.extended_extent,
+                            rlayer_units_per_pixel=self.rlayer_units_per_pixel,
+                        )
+                        
+                        feature = QgsFeature()
+                        polygon_xy_vec_vec = [
+                            mask_corners_crs
+                        ]
+                        geometry = QgsGeometry.fromPolygonXY(polygon_xy_vec_vec)
+                        feature.setGeometry(geometry)
+                        features.append(feature)
+                        
             vlayer = QgsVectorLayer("multipolygon", self.model.get_channel_name(channel_id), "memory")
             vlayer.setCrs(self.rlayer.crs())
             prov = vlayer.dataProvider()
