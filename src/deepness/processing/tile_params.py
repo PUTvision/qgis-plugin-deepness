@@ -96,13 +96,13 @@ class TileParams:
 
         :return Slice to be used on the full image
         """
-        half_overlap = (self.params.tile_size_px - self.stride_px) // 2
+        half_overlap = max((self.params.tile_size_px - self.stride_px) // 2 - 2*tile_offset, 0)
 
         # 'core' part of the tile (not overlapping with other tiles), for sure copied for each tile
         x_min = self.start_pixel_x + half_overlap
         x_max = self.start_pixel_x + self.params.tile_size_px - half_overlap - 1
         y_min = self.start_pixel_y + half_overlap
-        y_max = self.start_pixel_y + self.params.tile_size_px - half_overlap - 1            
+        y_max = self.start_pixel_y + self.params.tile_size_px - half_overlap - 1
 
         # edge tiles handling
         if self.x_bin_number == 0:
