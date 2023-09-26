@@ -2,16 +2,16 @@
 
 from typing import List
 
+import cv2
 import numpy as np
-from qgis.core import QgsVectorLayer, QgsProject, QgsGeometry, QgsFeature
+from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer
 
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
 from deepness.processing import processing_utils
-from deepness.processing.map_processor.map_processing_result import MapProcessingResultCanceled, \
-    MapProcessingResultSuccess, MapProcessingResult
+from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
+                                                                     MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
-from deepness.processing.models.detector import Detection
-from deepness.processing.models.detector import Detector
+from deepness.processing.models.detector import Detection, Detector
 from deepness.processing.tile_params import TileParams
 
 
@@ -119,19 +119,38 @@ class MapProcessorDetection(MapProcessorWithModel):
 
             features = []
             for det in filtered_bounding_boxes:
-                bbox_corners_pixels = det.bbox.get_4_corners()
-                bbox_corners_crs = processing_utils.transform_points_list_xy_to_target_crs(
-                    points=bbox_corners_pixels,
-                    extent=self.extended_extent,
-                    rlayer_units_per_pixel=self.rlayer_units_per_pixel,
-                )
-                feature = QgsFeature()
-                polygon_xy_vec_vec = [
-                    bbox_corners_crs
-                ]
-                geometry = QgsGeometry.fromPolygonXY(polygon_xy_vec_vec)
-                feature.setGeometry(geometry)
-                features.append(feature)
+                if det.mask is None:
+                    bbox_corners_pixels = det.bbox.get_4_corners()
+                    bbox_corners_crs = processing_utils.transform_points_list_xy_to_target_crs(
+                        points=bbox_corners_pixels,
+                        extent=self.extended_extent,
+                        rlayer_units_per_pixel=self.rlayer_units_per_pixel,
+                    )
+                    feature = QgsFeature()
+                    polygon_xy_vec_vec = [
+                        bbox_corners_crs
+                    ]
+                    geometry = QgsGeometry.fromPolygonXY(polygon_xy_vec_vec)
+                    feature.setGeometry(geometry)
+                    features.append(feature)
+                else:
+                    contours, hierarchy = cv2.findContours(det.mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                    contours = processing_utils.transform_contours_yx_pixels_to_target_crs(
+                        contours=contours,
+                        extent=self.base_extent,
+                        rlayer_units_per_pixel=self.rlayer_units_per_pixel)
+                    features = []
+
+                    if len(contours):
+                        processing_utils.convert_cv_contours_to_features(
+                            features=features,
+                            cv_contours=contours,
+                            hierarchy=hierarchy[0],
+                            is_hole=False,
+                            current_holes=[],
+                            current_contour_index=0)
+                    else:
+                        pass  # just nothing, we already have an empty list of features
 
             vlayer = QgsVectorLayer("multipolygon", self.model.get_channel_name(channel_id), "memory")
             vlayer.setCrs(self.rlayer.crs())

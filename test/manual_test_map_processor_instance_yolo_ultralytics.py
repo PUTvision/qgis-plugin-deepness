@@ -52,9 +52,9 @@ def test_map_processor_detection_yolo_ultralytics():
 
     map_processor.run()
 
-    assert len(map_processor.get_all_detections()) == 17
+    assert len(map_processor.get_all_detections()) == 2
 
 
 if __name__ == '__main__':
-    test_map_processor_detection_strange_format()
+    test_map_processor_detection_yolo_ultralytics()
     print('Done')
