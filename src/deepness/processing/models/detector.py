@@ -30,6 +30,8 @@ class Detection:
     """float: confidence of the detection"""
     clss: int
     """int: class of the detected object"""
+    mask: np.ndarray | None = None
+    """np.ndarray: mask of the detected object"""
 
     def convert_to_global(self, offset_x: int, offset_y: int):
         """Apply (x,y) offset to bounding box coordinates

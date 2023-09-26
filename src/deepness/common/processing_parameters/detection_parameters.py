@@ -21,6 +21,7 @@ class DetectorType(enum.Enum):
     YOLO_v5_v7_DEFAULT = 'YOLO_v5_or_v7_default'
     YOLO_v6 = 'YOLO_v6'
     YOLO_ULTRALYTICS = 'YOLO_Ultralytics'
+    YOLO_ULTRALYTICS_SEGMENTATION = 'YOLO_Ultralytics_segmentation'
 
     def get_parameters(self):
         if self == DetectorType.YOLO_v5_v7_DEFAULT:
@@ -29,7 +30,7 @@ class DetectorType(enum.Enum):
             return DetectorTypeParameters(
                 ignore_objectness_probability=True,
             )
-        elif self == DetectorType.YOLO_ULTRALYTICS:
+        elif self == DetectorType.YOLO_ULTRALYTICS or self == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
             return DetectorTypeParameters(
                 has_inverted_output_shape=True,
                 skipped_objectness_probability=True,
