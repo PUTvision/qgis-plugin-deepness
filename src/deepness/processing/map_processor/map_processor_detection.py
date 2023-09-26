@@ -139,7 +139,6 @@ class MapProcessorDetection(MapProcessorWithModel):
                         contours=contours,
                         extent=self.base_extent,
                         rlayer_units_per_pixel=self.rlayer_units_per_pixel)
-                    features = []
 
                     if len(contours):
                         processing_utils.convert_cv_contours_to_features(
