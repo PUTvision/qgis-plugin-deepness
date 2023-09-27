@@ -43,7 +43,7 @@ Detection models allow to solve problem of objects detection, that is finding an
 Example application is detection of oil and water tanks on satellite images.
 
 The detection model output is list of bounding boxes, with assigned class and confidence value. This information is not really standardized between different model architectures.
-Currently plugin supports :code:`YOLOv5` and :code:`YOLOv7` output types.
+Currently plugin supports :code:`YOLOv5`, :code:`YOLOv7` and :code:`ULTRALYTICS` output types.
 
 For each object class, a separate vector layer can be created, with information saved as rectangle polygons (so the output can be potentially easily exported to a text).
 
@@ -65,6 +65,14 @@ Usually, only one output map (class) is used, as the model usually tries to solv
 
 Output report contains statistics for each class, that is average, min, max and standard deviation of values.
 
+=====================
+SuperResolution Model
+=====================
+SuperResolution models allow to solve problem of increasing the resolution of the image. The model takes a low resolution image as input and outputs a high resolution image.
+
+Example application is increasing the resolution of satellite images.
+
+The superresolution model output is also an image, with same dimension as the input tile, but with higher resolution (GDS).
 
 ================
 Extending Models
