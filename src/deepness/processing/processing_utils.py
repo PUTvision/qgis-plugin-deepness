@@ -4,21 +4,16 @@ This file contains utilities related to processing of the ortophoto
 
 import logging
 from dataclasses import dataclass
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
-from qgis.core import Qgis
-from qgis.core import QgsFeature, QgsGeometry, QgsPointXY
-from qgis.core import QgsRasterLayer, QgsCoordinateTransform
-from qgis.core import QgsRectangle
-from qgis.core import QgsUnitTypes
-from qgis.core import QgsWkbTypes
+from qgis.core import (Qgis, QgsCoordinateTransform, QgsFeature, QgsGeometry, QgsPointXY, QgsRasterLayer, QgsRectangle,
+                       QgsUnitTypes, QgsWkbTypes)
 
 from deepness.common.defines import IS_DEBUG
 from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
-
 
 cv2 = LazyPackageLoader('cv2')
 
@@ -390,9 +385,6 @@ class BoundingBox:
             (self.x_max, self.y_max),
             (self.x_max, self.y_min),
         ]
-
-        roi_slice = np.s_[self.y_min:self.y_max + 1, self.x_min:self.x_max + 1]
-        return roi_slice
 
 
 def transform_polygon_with_rings_epsg_to_extended_xy_pixels(
