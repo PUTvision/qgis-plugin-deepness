@@ -341,7 +341,7 @@ class ModelBase:
         np.ndarray
             Preprocessed image
         """
-        return NotImplementedError
+        raise NotImplementedError('Base class not implemented!')
 
     def postprocessing(self, outs: List) -> np.ndarray:
         """ Abstract method for postprocessing
@@ -356,7 +356,7 @@ class ModelBase:
         np.ndarray
             Postprocessed output
         """
-        return NotImplementedError
+        raise NotImplementedError('Base class not implemented!')
 
     def get_number_of_output_channels(self) -> int:
         """ Abstract method for getting number of classes in the output layer
@@ -365,10 +365,10 @@ class ModelBase:
         -------
         int
             Number of channels in the output layer"""
-        return NotImplementedError
+        raise NotImplementedError('Base class not implemented!')
 
     def check_loaded_model_outputs(self):
         """ Abstract method for checking if the model outputs are valid
 
         """
-        return NotImplementedError
+        raise NotImplementedError('Base class not implemented!')

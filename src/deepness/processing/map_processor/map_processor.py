@@ -129,7 +129,7 @@ class MapProcessor(QgsTask):
         return True
 
     def _run(self) -> MapProcessingResult:
-        return NotImplementedError
+        raise NotImplementedError('Base class not implemented!')
 
     def finished(self, result: bool):
         if not result:

@@ -1,8 +1,9 @@
 """ Module including the class for the object detection task and related functions
 """
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional, Tuple
 
+import cv2
 import numpy as np
 
 from deepness.common.processing_parameters.detection_parameters import DetectorType
@@ -30,6 +31,9 @@ class Detection:
     """float: confidence of the detection"""
     clss: int
     """int: class of the detected object"""
+    mask: Optional[np.ndarray] = None
+    """np.ndarray: mask of the detected object"""
+    mask_offsets: Optional[Tuple[int, int]] = None
 
     def convert_to_global(self, offset_x: int, offset_y: int):
         """Apply (x,y) offset to bounding box coordinates
@@ -42,6 +46,9 @@ class Detection:
             _description_
         """
         self.bbox.apply_offset(offset_x=offset_x, offset_y=offset_y)
+        
+        if self.mask is not None:
+            self.mask_offsets = (offset_x, offset_y)
 
     def get_bbox_xyxy(self) -> np.ndarray:
         """Convert stored bounding box into x1y1x2y2 format
@@ -132,9 +139,11 @@ class Detector(ModelBase):
             if model_type_params.skipped_objectness_probability:
                 return self.outputs_layers[0].shape[shape_index] - 4
             return self.outputs_layers[0].shape[shape_index] - 4 - 1  # shape - 4 bboxes - 1 conf
+        elif len(self.outputs_layers) == 2 and self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
+            return self.outputs_layers[0].shape[shape_index] - 4 - self.outputs_layers[1].shape[1]
         else:
-            return NotImplementedError
-
+            raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")
+            
     def preprocessing(self, image: np.ndarray):
         """Preprocess image before inference
 
@@ -182,20 +191,24 @@ class Detector(ModelBase):
                 "Model type is not set for model. Use self.set_model_type_param"
             )
 
-        model_output = model_output[0][0]
+        masks = None
 
         if self.model_type == DetectorType.YOLO_v5_v7_DEFAULT:
-            boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output)
+            boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output[0][0])
         elif self.model_type == DetectorType.YOLO_v6:
-            boxes, conf, classes = self._postprocessing_YOLO_v6(model_output)
+            boxes, conf, classes = self._postprocessing_YOLO_v6(model_output[0][0])
         elif self.model_type == DetectorType.YOLO_ULTRALYTICS:
-            boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output)
+            boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output[0][0])
+        elif self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
+            boxes, conf, classes, masks = self._postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(model_output)
         else:
-            raise NotImplementedError
+            raise NotImplementedError(f"Model type not implemented! ('{self.model_type}')")
 
         detections = []
+        
+        masks = masks if masks is not None else [None] * len(boxes)
 
-        for b, c, cl in zip(boxes, conf, classes):
+        for b, c, cl, m in zip(boxes, conf, classes, masks):
             det = Detection(
                 bbox=BoundingBox(
                     x_min=b[0],
@@ -203,7 +216,8 @@ class Detector(ModelBase):
                     y_min=b[1],
                     y_max=b[3]),
                 conf=c,
-                clss=cl
+                clss=cl,
+                mask=m,
             )
             detections.append(det)
 
@@ -286,7 +300,78 @@ class Detector(ModelBase):
 
         return boxes, conf, classes
 
+    def _postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(self, model_output):
+        detections = model_output[0][0]
+        protos = model_output[1][0]
+        
+        detections = np.transpose(detections, (1, 0))
+        
+        number_of_class = self.get_number_of_output_channels()
+        mask_start_index = 4 + number_of_class
+        
+        outputs_filtered = np.array(
+            list(filter(lambda x: np.max(x[4:4+number_of_class]) >= self.confidence, detections))
+        )
 
+        if len(outputs_filtered.shape) < 2:
+            return [], [], [], []
+        
+        probabilities = np.max(outputs_filtered[:, 4:4+number_of_class], axis=1)
+
+        outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
+
+        pick_indxs = self.non_max_suppression_fast(
+            outputs_x1y1x2y2,
+            probs=probabilities,
+            iou_threshold=self.iou_threshold)
+
+        outputs_nms = outputs_x1y1x2y2[pick_indxs]
+
+        boxes = np.array(outputs_nms[:, :4], dtype=int)
+        conf = np.max(outputs_nms[:, 4:4+number_of_class], axis=1)
+        classes = np.argmax(outputs_nms[:, 4:4+number_of_class], axis=1)
+        masks_in = np.array(outputs_nms[:, mask_start_index:], dtype=float)
+        
+        masks = self.process_mask(protos, masks_in, boxes)
+
+        return boxes, conf, classes, masks
+    
+    # based on https://github.com/ultralytics/ultralytics/blob/main/ultralytics/utils/ops.py#L638C1-L638C67
+    def process_mask(self, protos, masks_in, bboxes):
+        c, mh, mw = protos.shape  # CHW
+        ih, iw = self.input_shape[2:]
+
+        masks = self.sigmoid(np.matmul(masks_in, protos.astype(float).reshape(c, -1))).reshape(-1, mh, mw)
+
+        downsampled_bboxes = bboxes.copy().astype(float)
+        downsampled_bboxes[:, 0] *= mw / iw
+        downsampled_bboxes[:, 2] *= mw / iw
+        downsampled_bboxes[:, 3] *= mh / ih
+        downsampled_bboxes[:, 1] *= mh / ih
+
+        masks = self.crop_mask(masks, downsampled_bboxes)
+        scaled_masks = np.zeros((len(masks), ih, iw))
+
+        for i in range(len(masks)):
+            scaled_masks[i] = cv2.resize(masks[i], (iw, ih), interpolation=cv2.INTER_LINEAR)
+
+        masks = np.uint8(scaled_masks >= 0.5)
+            
+        return masks
+
+    @staticmethod
+    def sigmoid(x):
+        return 1 / (1 + np.exp(-x))
+
+    @staticmethod
+    # based on https://github.com/ultralytics/ultralytics/blob/main/ultralytics/utils/ops.py#L598C1-L614C65
+    def crop_mask(masks, boxes):
+        n, h, w = masks.shape
+        x1, y1, x2, y2 = np.split(boxes[:, :, None], 4, axis=1)  # x1 shape(n,1,1)
+        r = np.arange(w, dtype=x1.dtype)[None, None, :]  # rows shape(1,1,w)
+        c = np.arange(h, dtype=x1.dtype)[None, :, None]  # cols shape(1,h,1)
+
+        return masks * ((r >= x1) * (r < x2) * (c >= y1) * (c < y2))
 
     @staticmethod
     def xywh2xyxy(x: np.ndarray) -> np.ndarray:
@@ -386,11 +471,12 @@ class Detector(ModelBase):
     def check_loaded_model_outputs(self):
         """Check if model outputs are valid.
         Valid model are:
-            - has 1 output layer
+            - has 1 or 2 outputs layer
             - output layer shape length is 3
             - batch size is 1
         """
-        if len(self.outputs_layers) == 1:
+
+        if len(self.outputs_layers) == 1 or len(self.outputs_layers) == 2:
             shape = self.outputs_layers[0].shape
 
             if len(shape) != 3:
@@ -405,4 +491,4 @@ class Detector(ModelBase):
                 )
 
         else:
-            raise NotImplementedError
+            raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")

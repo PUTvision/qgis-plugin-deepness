@@ -14,6 +14,7 @@ from qgis.PyQt.QtWidgets import QComboBox, QFileDialog, QMessageBox
 from deepness.common.config_entry_key import ConfigEntryKey
 from deepness.common.defines import IS_DEBUG, PLUGIN_NAME
 from deepness.common.errors import OperationFailedException
+from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
 from deepness.common.processing_parameters.map_processing_parameters import (MapProcessingParameters, ModelOutputFormat,
                                                                              ProcessedAreaType)
@@ -164,6 +165,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.mMapLayerComboBox_inputLayer.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.mMapLayerComboBox_areaMaskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
         self._set_processed_area_mask_options()
+        self._set_processing_overlap_enabled()
 
         for model_definition in ModelDefinition.get_model_definitions():
             self.comboBox_modelType.addItem(model_definition.model_type.value)
@@ -201,6 +203,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.checkBox_pixelClassEnableThreshold.stateChanged.connect(self._set_probability_threshold_enabled)
         self.checkBox_removeSmallAreas.stateChanged.connect(self._set_remove_small_segment_enabled)
         self.comboBox_modelOutputFormat.currentIndexChanged.connect(self._model_output_format_changed)
+        self.radioButton_processingTileOverlapPercentage.toggled.connect(self._set_processing_overlap_enabled)
+        self.radioButton_processingTileOverlapPixels.toggled.connect(self._set_processing_overlap_enabled)
 
     def _model_type_changed(self):
         model_type = ModelType(self.comboBox_modelType.currentText())
@@ -235,6 +239,13 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         model_output_format = ModelOutputFormat(txt)
         class_number_selection_enabled = bool(model_output_format == ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER)
         self.comboBox_outputFormatClassNumber.setEnabled(class_number_selection_enabled)
+        
+    def _set_processing_overlap_enabled(self):
+        overlap_percentage_enabled = self.radioButton_processingTileOverlapPercentage.isChecked()
+        self.spinBox_processingTileOverlapPercentage.setEnabled(overlap_percentage_enabled)
+        
+        overlap_pixels_enabled = self.radioButton_processingTileOverlapPixels.isChecked()
+        self.spinBox_processingTileOverlapPixels.setEnabled(overlap_pixels_enabled)
 
     def _set_probability_threshold_enabled(self):
         self.doubleSpinBox_probabilityThreshold.setEnabled(self.checkBox_pixelClassEnableThreshold.isChecked())
@@ -400,6 +411,20 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         else:
             return ''
 
+    def _get_overlap_parameter(self):
+        if self.radioButton_processingTileOverlapPercentage.isChecked():
+            return ProcessingOverlap(
+                selected_option=ProcessingOverlapOptions.OVERLAP_IN_PERCENT,
+                percentage=self.spinBox_processingTileOverlapPercentage.value(),
+            )
+        elif self.radioButton_processingTileOverlapPixels.isChecked():
+            return ProcessingOverlap(
+                selected_option=ProcessingOverlapOptions.OVERLAP_IN_PIXELS,
+                overlap_px=self.spinBox_processingTileOverlapPixels.value(),
+            )
+        else:
+            raise Exception('Something goes wrong. No overlap parameter selected!')
+
     def _get_pixel_classification_threshold(self):
         if not self.checkBox_pixelClassEnableThreshold.isChecked():
             return 0
@@ -491,7 +516,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             processed_area_type=processed_area_type,
             mask_layer_id=self.get_mask_layer_id(),
             input_layer_id=self._get_input_layer_id(),
-            processing_overlap_percentage=self.spinBox_processingTileOverlapPercentage.value(),
+            processing_overlap=self._get_overlap_parameter(),
             input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
             model_output_format=ModelOutputFormat(self.comboBox_modelOutputFormat.currentText()),
             model_output_format__single_class_number=self.comboBox_outputFormatClassNumber.currentIndex(),
@@ -508,6 +533,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning, duration=7)
+            logging.exception(msg)
             QMessageBox.critical(self, "Error!", msg)
             return
 
@@ -531,6 +557,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         except OperationFailedException as e:
             msg = str(e)
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Warning)
+            logging.exception(msg)
             QMessageBox.critical(self, "Error!", msg)
             return
 
