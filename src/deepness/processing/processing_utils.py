@@ -30,20 +30,21 @@ def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
 
 def get_numpy_data_type_for_qgis_type(data_type_qgis: Qgis.DataType):
     """Conver QGIS data type to corresponding numpy data type
+    In [58]: Qgis.DataType?
+    implemented: Byte, UInt16, Int16, Float32, Float64
     """
     if data_type_qgis == Qgis.DataType.Byte:
         return np.uint8
-    elif data_type_qgis == Qgis.DataType.UInt16:
+    if data_type_qgis == Qgis.DataType.UInt16:
         return np.uint16
-    elif data_type_qgis == Qgis.DataType.Int16:
+    if data_type_qgis == Qgis.DataType.Int16:
         return np.int16
-    elif data_type_qgis in Qgis.DataType.Float32:
+    if data_type_qgis in Qgis.DataType.Float32:
         return np.float32
-    elif data_type_qgis in Qgis.DataType.Float64:
+    if data_type_qgis in Qgis.DataType.Float64:
         return np.float64
-    else:
-        # TODO - maybe add support for more data types (change also the numpy type below then)
-        raise Exception("Invalid input layer data type!")
+    # TODO - maybe add support for more data types (change also the numpy type below then)
+    raise Exception("Invalid input layer data type!")
 
 
 
