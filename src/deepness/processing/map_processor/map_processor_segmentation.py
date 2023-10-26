@@ -136,5 +136,8 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         result = self.model.process(tile_img)
 
         result[result < self.segmentation_parameters.pixel_classification__probability_threshold] = 0.0
-        result = np.argmax(result, axis=0)
+        if (result.shape[0] == 1):
+            result = (result != 0).astype(int)[0]         
+        else:
+            result = np.argmax(result, axis=0)
         return result
