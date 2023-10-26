@@ -72,7 +72,13 @@ class Segmentor(ModelBase):
             Number of channels in the output layer
         """
         if len(self.outputs_layers) == 1:
-            return self.outputs_layers[0].shape[-3]
+            n_output_channels = self.outputs_layers[0].shape[-3]
+            # Support models that return a single output layer, which is converted to 
+            # a binary mask.
+            if n_output_channels == 1:
+                return 2
+            else:
+                return n_output_channels
         else:
             raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
 
