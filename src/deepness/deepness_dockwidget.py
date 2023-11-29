@@ -229,6 +229,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.mGroupBox_detectionParameters.setEnabled(detection_enabled)
         self.mGroupBox_regressionParameters.setEnabled(regression_enabled)
         self.mGroupBox_superresolutionParameters.setEnabled(superresolution_enabled)
+        # Disable output format options for super-resolution models.
+        self.mGroupBox_6.setEnabled(not superresolution_enabled)
 
     def _detector_type_changed(self):
         detector_type = DetectorType(self.comboBox_detectorType.currentText())
@@ -364,6 +366,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 output_0_shape = self._model.get_output_shape()
                 scale_factor = output_0_shape[-1] / input_size_px
                 self.doubleSpinBox_superresolutionScaleFactor.setValue(int(scale_factor))
+                # Disable output format options for super-resolution models
+                self.mGroupBox_6.setEnabled(False)
         except Exception as e:
             if IS_DEBUG:
                 raise e
