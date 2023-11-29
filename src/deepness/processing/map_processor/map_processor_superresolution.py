@@ -38,7 +38,7 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
         return self._result_imgs
 
     def _run(self) -> MapProcessingResult:
-        number_of_output_channels = len(self._get_indexes_of_model_output_channels_to_create())
+        number_of_output_channels = self.model.get_number_of_output_channels()
         final_shape_px = (int(self.img_size_y_pixels*self.superresolution_parameters.scale_factor), int(self.img_size_x_pixels*self.superresolution_parameters.scale_factor), number_of_output_channels)
 
         # NOTE: consider whether we can use float16/uint16 as datatype
