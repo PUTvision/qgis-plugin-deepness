@@ -1,14 +1,13 @@
 """ This file implements map processing for segmentation model """
 
 import numpy as np
-from qgis.core import QgsProject
-from qgis.core import QgsVectorLayer
+from qgis.core import QgsProject, QgsVectorLayer
 
 from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.processing import processing_utils
-from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
-    MapProcessingResultCanceled, MapProcessingResultSuccess
+from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
+                                                                     MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 
 cv2 = LazyPackageLoader('cv2')
@@ -39,7 +38,16 @@ class MapProcessorSegmentation(MapProcessorWithModel):
 
     def _run(self) -> MapProcessingResult:
         final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
-        full_result_img = np.zeros(final_shape_px, np.uint8)
+        
+        if self.file_handler is not None:
+            full_result_img = np.memmap(
+                self.file_handler.get_results_img_path(),
+                dtype=np.uint8,
+                mode='w+',
+                shape=final_shape_px)
+        else:
+            full_result_img = np.zeros(final_shape_px, np.uint8)
+            
         for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
                 return MapProcessingResultCanceled()

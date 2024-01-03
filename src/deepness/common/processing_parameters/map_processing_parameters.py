@@ -37,6 +37,8 @@ class MapProcessingParameters:
     resolution_cm_per_px: float  # image resolution to used during processing
     processed_area_type: ProcessedAreaType  # whether to perform operation on the entire field or part
     tile_size_px: int  # Tile size for processing (model input size)
+    batch_size: int  # Batch size for processing
+    local_cache: bool  # Whether to use local cache for tiles
 
     input_layer_id: str  # raster layer to process
     mask_layer_id: Optional[str]  # Processing of masked layer - if processed_area_type is FROM_POLYGONS

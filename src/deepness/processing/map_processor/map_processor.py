@@ -4,19 +4,16 @@ import logging
 from typing import Optional, Tuple
 
 import numpy as np
-from qgis.PyQt.QtCore import pyqtSignal
-from qgis.core import QgsRasterLayer
-from qgis.core import QgsTask
-from qgis.core import QgsVectorLayer
+from qgis.core import QgsRasterLayer, QgsTask, QgsVectorLayer
 from qgis.gui import QgsMapCanvas
+from qgis.PyQt.QtCore import pyqtSignal
 
 from deepness.common.defines import IS_DEBUG
 from deepness.common.lazy_package_loader import LazyPackageLoader
-from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
-    ProcessedAreaType
-from deepness.processing import processing_utils, extent_utils
-from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
-    MapProcessingResultFailed
+from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
+from deepness.common.temp_files_handler import TempFilesHandler
+from deepness.processing import extent_utils, processing_utils
+from deepness.processing.map_processor.map_processing_result import MapProcessingResult, MapProcessingResultFailed
 from deepness.processing.tile_params import TileParams
 
 cv2 = LazyPackageLoader('cv2')
@@ -33,8 +30,10 @@ class MapProcessor(QgsTask):
     Work is done within QgsTask, for seamless integration with QGis GUI and logic.
     """
 
-    finished_signal = pyqtSignal(MapProcessingResult)  # error message if finished with error, empty string otherwise
-    show_img_signal = pyqtSignal(object, str)  # request to show an image. Params: (image, window_name)
+    # error message if finished with error, empty string otherwise
+    finished_signal = pyqtSignal(MapProcessingResult)
+    # request to show an image. Params: (image, window_name)
+    show_img_signal = pyqtSignal(object, str)
 
     def __init__(self,
                  rlayer: QgsRasterLayer,
@@ -59,11 +58,14 @@ class MapProcessor(QgsTask):
         self.vlayer_mask = vlayer_mask
         self.params = params
         self._assert_qgis_doesnt_need_reload()
-        self._processing_result = MapProcessingResultFailed('Failed to get processing result!')
+        self._processing_result = MapProcessingResultFailed(
+            'Failed to get processing result!')
 
         self.stride_px = self.params.processing_stride_px  # stride in pixels
         self.rlayer_units_per_pixel = processing_utils.convert_meters_to_rlayer_units(
             self.rlayer, self.params.resolution_m_per_px)  # number of rlayer units for one tile pixel
+
+        self.file_handler = TempFilesHandler() if self.params.local_cache else None
 
         # extent in which the actual required area is contained, without additional extensions, rounded to rlayer grid
         self.base_extent = extent_utils.calculate_base_processing_extent_in_rlayer_crs(
@@ -81,8 +83,10 @@ class MapProcessor(QgsTask):
             rlayer_units_per_pixel=self.rlayer_units_per_pixel)
 
         # processed rlayer dimensions (for extended_extent)
-        self.img_size_x_pixels = round(self.extended_extent.width() / self.rlayer_units_per_pixel)  # how many columns (x)
-        self.img_size_y_pixels = round(self.extended_extent.height() / self.rlayer_units_per_pixel)  # how many rows (y)
+        self.img_size_x_pixels = round(self.extended_extent.width(
+        ) / self.rlayer_units_per_pixel)  # how many columns (x)
+        self.img_size_y_pixels = round(self.extended_extent.height(
+        ) / self.rlayer_units_per_pixel)  # how many rows (y)
 
         # Coordinate of base image within extended image (images for base_extent and extended_extent)
         self.base_extent_bbox_in_full_image = extent_utils.calculate_base_extent_bbox_in_full_image(
@@ -104,7 +108,8 @@ class MapProcessor(QgsTask):
             rlayer=self.rlayer,
             extended_extent=self.extended_extent,
             rlayer_units_per_pixel=self.rlayer_units_per_pixel,
-            image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])  # type: Optional[np.ndarray]
+            image_shape_yx=(self.img_size_y_pixels, self.img_size_x_pixels),
+            files_handler=self.file_handler)  # type: Optional[np.ndarray]
 
     def _assert_qgis_doesnt_need_reload(self):
         """ If the plugin is somehow invalid, it cannot compare the enums correctly
