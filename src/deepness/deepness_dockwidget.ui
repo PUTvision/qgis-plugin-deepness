@@ -26,7 +26,7 @@
          <x>0</x>
          <y>0</y>
          <width>452</width>
-         <height>1487</height>
+         <height>1569</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -44,6 +44,7 @@
           <property name="font">
            <font>
             <pointsize>9</pointsize>
+            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
@@ -237,6 +238,7 @@
             <widget class="QLabel" name="label_12">
              <property name="font">
               <font>
+               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -282,7 +284,21 @@
              </property>
             </widget>
            </item>
-           <item row="2" column="0" colspan="3">
+           <item row="1" column="0">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>Tile size [px]:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Resolution [cm/px]:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0" colspan="3">
             <widget class="QGroupBox" name="groupBox">
              <property name="title">
               <string>Tiles overlap:</string>
@@ -365,28 +381,6 @@
              </layout>
             </widget>
            </item>
-           <item row="1" column="0">
-            <widget class="QLabel" name="label_8">
-             <property name="text">
-              <string>Tile size [px]:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0">
-            <widget class="QLabel" name="label">
-             <property name="text">
-              <string>Resolution [cm/px]:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="1" column="2">
-            <widget class="QLabel" name="label_13">
-             <property name="text">
-              <string>May be a fixed value
-for some models</string>
-             </property>
-            </widget>
-           </item>
            <item row="1" column="1">
             <widget class="QSpinBox" name="spinBox_tileSize_px">
              <property name="enabled">
@@ -400,6 +394,35 @@ for some models</string>
              </property>
              <property name="value">
               <number>512</number>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label_19">
+             <property name="text">
+              <string>Batch size:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QSpinBox" name="spinBox_batchSize">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The size of the data batch in the model.&lt;/p&gt;&lt;p&gt;The size depends on the computing resources, in particular the available RAM / GPU memory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>9999999</number>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="2" rowspan="3">
+            <widget class="QLabel" name="label_13">
+             <property name="text">
+              <string>These options may
+be a fixed value
+for some models</string>
              </property>
             </widget>
            </item>
@@ -418,35 +441,22 @@ for some models</string>
            <string>Segmentation parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_10">
-           <item row="3" column="2">
-            <widget class="QSpinBox" name="spinBox_dilateErodeSize">
+           <item row="2" column="2">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_probabilityThreshold">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Postprocessing option, to remove small areas (small clusters of pixels) belonging to each class, smoothing the predictions.&lt;/p&gt;&lt;p&gt;The actual size (in meters) of the smoothing can be calculated as &amp;quot;Resolution&amp;quot; * &amp;quot;value of this parameter&amp;quot;.&lt;br/&gt;Works as application of dilate and erode operation (twice, in reverse order).&lt;br/&gt;Similar effect to median filter.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Minimum required probability for the class to be considered as belonging to this class.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="decimals">
+              <number>2</number>
+             </property>
+             <property name="maximum">
+              <double>1.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.050000000000000</double>
              </property>
              <property name="value">
-              <number>9</number>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1" colspan="2">
-            <widget class="QLabel" name="label_2">
-             <property name="font">
-              <font>
-               <bold>true</bold>
-              </font>
-             </property>
-             <property name="text">
-              <string>NOTE: Applicable only if a segmentation model is used</string>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QCheckBox" name="checkBox_pixelClassEnableThreshold">
-             <property name="text">
-              <string>Apply class probability threshold:</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
+              <double>0.500000000000000</double>
              </property>
             </widget>
            </item>
@@ -466,6 +476,39 @@ for some models</string>
              </property>
             </widget>
            </item>
+           <item row="2" column="1">
+            <widget class="QCheckBox" name="checkBox_pixelClassEnableThreshold">
+             <property name="text">
+              <string>Apply class probability threshold:</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="2">
+            <widget class="QSpinBox" name="spinBox_dilateErodeSize">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Postprocessing option, to remove small areas (small clusters of pixels) belonging to each class, smoothing the predictions.&lt;/p&gt;&lt;p&gt;The actual size (in meters) of the smoothing can be calculated as &amp;quot;Resolution&amp;quot; * &amp;quot;value of this parameter&amp;quot;.&lt;br/&gt;Works as application of dilate and erode operation (twice, in reverse order).&lt;br/&gt;Similar effect to median filter.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="value">
+              <number>9</number>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1" colspan="2">
+            <widget class="QLabel" name="label_2">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>NOTE: Applicable only if a segmentation model is used</string>
+             </property>
+            </widget>
+           </item>
            <item row="3" column="1">
             <widget class="QCheckBox" name="checkBox_removeSmallAreas">
              <property name="text">
@@ -474,25 +517,6 @@ for some models</string>
              </property>
              <property name="checked">
               <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item row="2" column="2">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_probabilityThreshold">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Minimum required probability for the class to be considered as belonging to this class.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="decimals">
-              <number>2</number>
-             </property>
-             <property name="maximum">
-              <double>1.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.050000000000000</double>
-             </property>
-             <property name="value">
-              <double>0.500000000000000</double>
              </property>
             </widget>
            </item>
@@ -627,6 +651,7 @@ for some models</string>
             <widget class="QLabel" name="label_20">
              <property name="font">
               <font>
+               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -720,6 +745,7 @@ for some models</string>
             <widget class="QLabel" name="label_17">
              <property name="font">
               <font>
+               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
