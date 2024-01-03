@@ -109,9 +109,6 @@ class Segmentor(ModelBase):
             if len(shape) != 4:
                 raise Exception(f'Segmentation model output should have 4 dimensions: (B,C,H,W). Has {shape}')
 
-            if shape[0] != 1:
-                raise Exception(f'Segmentation model can handle only 1-Batch outputs. Has {shape}')
-
             if shape[2] != shape[3]:
                 raise Exception(f'Segmentation model can handle only square outputs masks. Has: {shape}')
 

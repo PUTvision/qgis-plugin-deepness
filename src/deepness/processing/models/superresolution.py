@@ -1,6 +1,7 @@
 """ Module including Super Resolution model definition
 """
 from typing import List
+
 import numpy as np
 
 from deepness.processing.models.model_base import ModelBase
@@ -112,9 +113,6 @@ class Superresolution(ModelBase):
             if len(shape) != 4:
                 raise Exception(f'Regression model output should have 4 dimensions: (Batch_size, Channels, H, W). \n'
                                 f'Actually has: {shape}')
-
-            if shape[0] != 1:
-                raise Exception(f'Regression model can handle only 1-Batch outputs. Has {shape}')
 
             if shape[2] != shape[3]:
                 raise Exception(f'Regression model can handle only square outputs masks. Has: {shape}')

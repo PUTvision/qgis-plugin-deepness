@@ -101,9 +101,6 @@ class Regressor(ModelBase):
                 raise Exception(f'Regression model output should have 4 dimensions: (Batch_size, Channels, H, W). \n'
                                 f'Actually has: {shape}')
 
-            if shape[0] != 1:
-                raise Exception(f'Regression model can handle only 1-Batch outputs. Has {shape}')
-
             if shape[2] != shape[3]:
                 raise Exception(f'Regression model can handle only square outputs masks. Has: {shape}')
 

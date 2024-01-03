@@ -485,10 +485,5 @@ class Detector(ModelBase):
                     f"Actually has: {shape}"
                 )
 
-            if shape[0] != 1:
-                raise Exception(
-                    f"Detection model can handle only 1-Batch outputs. Has {shape}"
-                )
-
         else:
             raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")

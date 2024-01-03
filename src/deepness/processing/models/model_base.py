@@ -71,6 +71,21 @@ class ModelBase:
         """
         return self.input_shape
 
+    def get_model_batch_size(self) -> Optional[int]:
+        """ Get batch size of the model
+
+        Returns
+        -------
+        Optional[int] | None
+            Batch size or None if not found (dynamic batch size)
+        """
+        bs = self.input_shape[0]
+                
+        if isinstance(bs, str):
+            return None
+        else:
+            return bs
+
     def get_input_size_in_pixels(self) -> int:
         """ Get number of input pixels in x and y direction (the same value)
 
