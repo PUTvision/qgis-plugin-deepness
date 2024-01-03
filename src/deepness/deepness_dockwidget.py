@@ -225,10 +225,10 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         else:
             raise Exception(f"Unsupported model type ({model_type})!")
 
-        self.mGroupBox_segmentationParameters.setEnabled(segmentation_enabled)
-        self.mGroupBox_detectionParameters.setEnabled(detection_enabled)
-        self.mGroupBox_regressionParameters.setEnabled(regression_enabled)
-        self.mGroupBox_superresolutionParameters.setEnabled(superresolution_enabled)
+        self.mGroupBox_segmentationParameters.setVisible(segmentation_enabled)
+        self.mGroupBox_detectionParameters.setVisible(detection_enabled)
+        self.mGroupBox_regressionParameters.setVisible(regression_enabled)
+        self.mGroupBox_superresolutionParameters.setVisible(superresolution_enabled)
         # Disable output format options for super-resolution models.
         self.mGroupBox_6.setEnabled(not superresolution_enabled)
 
