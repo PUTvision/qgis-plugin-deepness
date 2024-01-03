@@ -27,6 +27,8 @@ def test_map_processor_segmentation_landcover_example():
     params = SegmentationParameters(
         resolution_cm_per_px=100,
         tile_size_px=model.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        batch_size=1,
+        local_cache=False,
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
         input_layer_id=rlayer.id(),

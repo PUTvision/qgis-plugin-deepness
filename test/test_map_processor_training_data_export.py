@@ -20,6 +20,8 @@ def test_export_dummy_fotomap():
     params = TrainingDataExportParameters(
         export_image_tiles=True,
         resolution_cm_per_px=3,
+        batch_size=1,
+        local_cache=False,
         segmentation_mask_layer_id=vlayer.id(),
         output_directory_path='/tmp/qgis_test',
         tile_size_px=512,  # same x and y dimensions, so take x

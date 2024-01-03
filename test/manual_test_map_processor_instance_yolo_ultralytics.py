@@ -29,6 +29,8 @@ def test_map_processor_detection_yolo_ultralytics():
     params = DetectionParameters(
         resolution_cm_per_px=400,
         tile_size_px=model_wrapper.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        batch_size=1,
+        local_cache=False,
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
         input_layer_id=rlayer.id(),
