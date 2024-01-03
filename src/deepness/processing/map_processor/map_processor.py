@@ -58,8 +58,7 @@ class MapProcessor(QgsTask):
         self.vlayer_mask = vlayer_mask
         self.params = params
         self._assert_qgis_doesnt_need_reload()
-        self._processing_result = MapProcessingResultFailed(
-            'Failed to get processing result!')
+        self._processing_result = MapProcessingResultFailed('Failed to get processing result!')
 
         self.stride_px = self.params.processing_stride_px  # stride in pixels
         self.rlayer_units_per_pixel = processing_utils.convert_meters_to_rlayer_units(
@@ -83,10 +82,8 @@ class MapProcessor(QgsTask):
             rlayer_units_per_pixel=self.rlayer_units_per_pixel)
 
         # processed rlayer dimensions (for extended_extent)
-        self.img_size_x_pixels = round(self.extended_extent.width(
-        ) / self.rlayer_units_per_pixel)  # how many columns (x)
-        self.img_size_y_pixels = round(self.extended_extent.height(
-        ) / self.rlayer_units_per_pixel)  # how many rows (y)
+        self.img_size_x_pixels = round(self.extended_extent.width() / self.rlayer_units_per_pixel)  # how many columns (x)
+        self.img_size_y_pixels = round(self.extended_extent.height() / self.rlayer_units_per_pixel)  # how many rows (y)
 
         # Coordinate of base image within extended image (images for base_extent and extended_extent)
         self.base_extent_bbox_in_full_image = extent_utils.calculate_base_extent_bbox_in_full_image(
@@ -97,10 +94,8 @@ class MapProcessor(QgsTask):
 
         # Number of tiles in x and y dimensions which will be used during processing
         # As we are using "extended_extent" this should divide without any rest
-        self.x_bins_number = round((self.img_size_x_pixels - self.params.tile_size_px)
-                                   / self.stride_px) + 1
-        self.y_bins_number = round((self.img_size_y_pixels - self.params.tile_size_px)
-                                   / self.stride_px) + 1
+        self.x_bins_number = round((self.img_size_x_pixels - self.params.tile_size_px) / self.stride_px) + 1
+        self.y_bins_number = round((self.img_size_y_pixels - self.params.tile_size_px) / self.stride_px) + 1
 
         # Mask determining area to process (within extended_extent coordinates)
         self.area_mask_img = processing_utils.create_area_mask_image(

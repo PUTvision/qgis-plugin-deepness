@@ -15,5 +15,5 @@ class TempFilesHandler:
     def get_area_mask_img_path(self):
         return path.join(self._temp_dir, 'area_mask.dat')
 
-    # def __del__(self):
-    #     shutil.rmtree(self._temp_dir)
+    def __del__(self):
+        shutil.rmtree(self._temp_dir)
