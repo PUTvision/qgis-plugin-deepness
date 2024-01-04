@@ -95,7 +95,7 @@ def get_tile_image(
             extent,
             image_size[0], image_size[1])
         block_height, block_width = raster_block.height(), raster_block.width()
-        if block_width == 0 or block_width == 0:
+        if block_height == 0 or block_width == 0:
             raise Exception("No data on layer within the expected extent!")
         return raster_block
 
