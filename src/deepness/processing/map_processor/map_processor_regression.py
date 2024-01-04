@@ -1,20 +1,17 @@
 """ This file implements map processing for regression model """
 
-import uuid
-from typing import List
 import os
 import uuid
 from typing import List
 
 import numpy as np
 from osgeo import gdal, osr
-from qgis.core import QgsProject
-from qgis.core import QgsRasterLayer
+from qgis.core import QgsProject, QgsRasterLayer
 
 from deepness.common.misc import TMP_DIR_PATH
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
-from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
-    MapProcessingResultCanceled, MapProcessingResultSuccess
+from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
+                                                                     MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 
 
@@ -44,15 +41,17 @@ class MapProcessorRegression(MapProcessorWithModel):
         # NOTE: consider whether we can use float16/uint16 as datatype
         full_result_imgs = [np.zeros(final_shape_px, np.float32) for i in range(number_of_output_channels)]
 
-        for tile_img, tile_params in self.tiles_generator():
+        for tile_img_batched, tile_params_batched in self.tiles_generator():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
-            tile_results = self._process_tile(tile_img)
-            for i in range(number_of_output_channels):
-                tile_params.set_mask_on_full_img(
-                    tile_result=tile_results[i],
-                    full_result_img=full_result_imgs[i])
+            tile_results_batched = self._process_tile(tile_img_batched)
+            
+            for tile_results, tile_params in zip(tile_results_batched, tile_params_batched):
+                for i in range(number_of_output_channels):
+                    tile_params.set_mask_on_full_img(
+                        tile_result=tile_results[i],
+                        full_result_img=full_result_imgs[i])
 
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
         full_result_imgs = self.limit_extended_extent_images_to_base_extent_with_mask(full_imgs=full_result_imgs)

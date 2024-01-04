@@ -100,8 +100,8 @@ def test_dummy_model_processing__entire_file_overlap_in_pixels():
     assert result_img.shape == (561, 829)
 
 def model_process_mock(x):
-    x = x[:, :, 0:2]
-    return np.transpose(x, (2, 0, 1))
+    x = x[:, :, :, 0:2]
+    return np.transpose(x, (0, 3, 1, 2))
 
 
 def test_generic_processing_test__specified_extent_from_vlayer():

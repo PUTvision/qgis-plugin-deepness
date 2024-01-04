@@ -280,6 +280,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if value is not None:
             self.spinBox_batchSize.setValue(value)
             self.spinBox_batchSize.setEnabled(False)
+        else:
+            self.spinBox_batchSize.setEnabled(True)
 
         value = self._model.get_metadata_tile_size()
         if value is not None:
@@ -372,6 +374,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             if batch_size is not None:
                 self.spinBox_batchSize.setValue(batch_size)
                 self.spinBox_batchSize.setEnabled(False)
+            else:
+                self.spinBox_batchSize.setEnabled(True)
             
             self._input_channels_mapping_widget.set_model(self._model)
 

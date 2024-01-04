@@ -23,7 +23,7 @@ class Segmentor(ModelBase):
         """
         super(Segmentor, self).__init__(model_file_path)
 
-    def preprocessing(self, image: np.ndarray):
+    def preprocessing(self, input_batch: np.ndarray):
         """ Preprocess the image for the model
 
         Parameters
@@ -36,12 +36,11 @@ class Segmentor(ModelBase):
         np.ndarray
             Preprocessed image (1,C,H,W), RGB, 0-1
         """
-        img = image[:, :, :self.input_shape[-3]]
+        input_batch = input_batch[:, :, :, :self.input_shape[-3]]
 
-        input_batch = img.astype('float32')
+        input_batch = input_batch.astype('float32')
         input_batch /= 255
-        input_batch = input_batch.transpose(2, 0, 1)
-        input_batch = np.expand_dims(input_batch, axis=0)
+        input_batch = input_batch.transpose(0, 3, 1, 2)
 
         return input_batch
 
@@ -59,7 +58,7 @@ class Segmentor(ModelBase):
         np.ndarray
             Postprocessed mask (H,W,C), 0-1
         """
-        labels = np.clip(model_output[0][0], 0, 1)
+        labels = np.clip(model_output[0], 0, 1)
 
         return labels
 

@@ -36,12 +36,11 @@ class Superresolution(ModelBase):
         np.ndarray
             Preprocessed image (1,C,H,W), RGB, 0-1
         """
-        img = image[:, :, :self.input_shape[-3]]
+        img = image[:, :, :, :self.input_shape[-3]]
 
         input_batch = img.astype('float32')
         input_batch /= 255
-        input_batch = input_batch.transpose(2, 0, 1)
-        input_batch = np.expand_dims(input_batch, axis=0)
+        input_batch = input_batch.transpose(0, 3, 1, 2)
 
         return input_batch
 
@@ -59,7 +58,7 @@ class Superresolution(ModelBase):
             Postprocessed mask (H,W,C), 0-1 (one output channel)
 
         """
-        return model_output[0][0]
+        return model_output[0]
 
     def get_number_of_output_channels(self) -> int:
         """ Returns number of channels in the output layer

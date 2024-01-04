@@ -157,14 +157,13 @@ class Detector(ModelBase):
         np.ndarray
             Preprocessed image
         """
-        img = image[:, :, : self.input_shape[-3]]
+        img = image[:, :, :, :self.input_shape[-3]]
 
         input_data = img / 255.0
-        input_data = np.transpose(input_data, (2, 0, 1))
-        input_batch = np.expand_dims(input_data, 0)
-        input_batch = input_batch.astype(np.float32)
+        input_data = np.transpose(input_data, (0, 3, 1, 2))
+        input_data = input_data.astype(np.float32)
 
-        return input_batch
+        return input_data
 
     def postprocessing(self, model_output):
         """Postprocess model output
@@ -190,38 +189,41 @@ class Detector(ModelBase):
             return Exception(
                 "Model type is not set for model. Use self.set_model_type_param"
             )
-
-        masks = None
-
-        if self.model_type == DetectorType.YOLO_v5_v7_DEFAULT:
-            boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output[0][0])
-        elif self.model_type == DetectorType.YOLO_v6:
-            boxes, conf, classes = self._postprocessing_YOLO_v6(model_output[0][0])
-        elif self.model_type == DetectorType.YOLO_ULTRALYTICS:
-            boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output[0][0])
-        elif self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
-            boxes, conf, classes, masks = self._postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(model_output)
-        else:
-            raise NotImplementedError(f"Model type not implemented! ('{self.model_type}')")
-
-        detections = []
         
-        masks = masks if masks is not None else [None] * len(boxes)
+        batch_detection = []
+        for i in range(len(model_output)):
+            masks = None
+            detections = []
+            
+            if self.model_type == DetectorType.YOLO_v5_v7_DEFAULT:
+                boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output[0][i])
+            elif self.model_type == DetectorType.YOLO_v6:
+                boxes, conf, classes = self._postprocessing_YOLO_v6(model_output[0][i])
+            elif self.model_type == DetectorType.YOLO_ULTRALYTICS:
+                boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output[0][i])
+            elif self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
+                boxes, conf, classes, masks = self._postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(model_output[0][i], model_output[1][i])
+            else:
+                raise NotImplementedError(f"Model type not implemented! ('{self.model_type}')")
+            
+            masks = masks if masks is not None else [None] * len(boxes)
 
-        for b, c, cl, m in zip(boxes, conf, classes, masks):
-            det = Detection(
-                bbox=BoundingBox(
-                    x_min=b[0],
-                    x_max=b[2],
-                    y_min=b[1],
-                    y_max=b[3]),
-                conf=c,
-                clss=cl,
-                mask=m,
-            )
-            detections.append(det)
+            for b, c, cl, m in zip(boxes, conf, classes, masks):
+                det = Detection(
+                    bbox=BoundingBox(
+                        x_min=b[0],
+                        x_max=b[2],
+                        y_min=b[1],
+                        y_max=b[3]),
+                    conf=c,
+                    clss=cl,
+                    mask=m,
+                )
+                detections.append(det)
+                
+            batch_detection.append(detections)
 
-        return detections
+        return batch_detection
 
     def _postprocessing_YOLO_v5_v7_DEFAULT(self, model_output):
         outputs_filtered = np.array(
@@ -300,10 +302,7 @@ class Detector(ModelBase):
 
         return boxes, conf, classes
 
-    def _postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(self, model_output):
-        detections = model_output[0][0]
-        protos = model_output[1][0]
-        
+    def _postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(self, detections, protos):        
         detections = np.transpose(detections, (1, 0))
         
         number_of_class = self.get_number_of_output_channels()

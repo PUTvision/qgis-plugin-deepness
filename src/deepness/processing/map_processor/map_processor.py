@@ -164,6 +164,8 @@ class MapProcessor(QgsTask):
         """
         total_tiles = self.x_bins_number * self.y_bins_number
 
+        tile_img_batch, tile_params_batch = [], []
+
         for y_bin_number in range(self.y_bins_number):
             for x_bin_number in range(self.x_bins_number):
                 tile_no = y_bin_number * self.x_bins_number + x_bin_number
@@ -182,4 +184,13 @@ class MapProcessor(QgsTask):
 
                 tile_img = processing_utils.get_tile_image(
                     rlayer=self.rlayer, extent=tile_params.extent, params=self.params)
-                yield tile_img, tile_params
+                
+                tile_img_batch.append(tile_img)
+                tile_params_batch.append(tile_params)
+                
+                if len(tile_img_batch) >= self.params.batch_size:
+                    yield np.array(tile_img_batch), tile_params_batch
+                    tile_img_batch, tile_params_batch = [], []
+                
+        if len(tile_img_batch) > 0:
+            yield np.array(tile_img_batch), tile_params_batch
