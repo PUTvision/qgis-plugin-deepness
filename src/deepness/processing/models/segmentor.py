@@ -23,27 +23,6 @@ class Segmentor(ModelBase):
         """
         super(Segmentor, self).__init__(model_file_path)
 
-    def preprocessing(self, input_batch: np.ndarray):
-        """ Preprocess the image for the model
-
-        Parameters
-        ----------
-        image : np.ndarray
-            Image to preprocess (H,W,C), RGB, 0-255
-
-        Returns
-        -------
-        np.ndarray
-            Preprocessed image (1,C,H,W), RGB, 0-1
-        """
-        input_batch = input_batch[:, :, :, :self.input_shape[-3]]
-
-        input_batch = input_batch.astype('float32')
-        input_batch /= 255
-        input_batch = input_batch.transpose(0, 3, 1, 2)
-
-        return input_batch
-
     def postprocessing(self, model_output: List) -> np.ndarray:
         """ Postprocess the model output.
         Function returns the mask with the probability of the presence of the class in the image.
@@ -56,7 +35,7 @@ class Segmentor(ModelBase):
         Returns
         -------
         np.ndarray
-            Postprocessed mask (H,W,C), 0-1
+            Batch of postprocessed masks (N,H,W,C), 0-1
         """
         labels = np.clip(model_output[0], 0, 1)
 

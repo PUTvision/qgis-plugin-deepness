@@ -1,7 +1,7 @@
 """ This file implements core map processing logic """
 
 import logging
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 from qgis.core import QgsRasterLayer, QgsTask, QgsVectorLayer
@@ -164,8 +164,6 @@ class MapProcessor(QgsTask):
         """
         total_tiles = self.x_bins_number * self.y_bins_number
 
-        tile_img_batch, tile_params_batch = [], []
-
         for y_bin_number in range(self.y_bins_number):
             for x_bin_number in range(self.x_bins_number):
                 tile_no = y_bin_number * self.x_bins_number + x_bin_number
@@ -185,12 +183,23 @@ class MapProcessor(QgsTask):
                 tile_img = processing_utils.get_tile_image(
                     rlayer=self.rlayer, extent=tile_params.extent, params=self.params)
                 
-                tile_img_batch.append(tile_img)
-                tile_params_batch.append(tile_params)
-                
-                if len(tile_img_batch) >= self.params.batch_size:
-                    yield np.array(tile_img_batch), tile_params_batch
-                    tile_img_batch, tile_params_batch = [], []
+                yield tile_img, tile_params
+
+    def tiles_generator_batched(self) -> Tuple[np.ndarray, List[TileParams]]:
+        """
+        Iterate over all tiles, as a Python generator function, but return them in batches
+        """
+        
+        tile_img_batch, tile_params_batch = [], []
+        
+        for tile_img, tile_params in self.tiles_generator():
+            tile_img_batch.append(tile_img)
+            tile_params_batch.append(tile_params)
+            
+            if len(tile_img_batch) >= self.params.batch_size:
+                yield np.array(tile_img_batch), tile_params_batch
+                tile_img_batch, tile_params_batch = [], []
                 
         if len(tile_img_batch) > 0:
             yield np.array(tile_img_batch), tile_params_batch
+            tile_img_batch, tile_params_batch = [], []

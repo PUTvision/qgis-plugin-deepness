@@ -48,7 +48,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         else:
             full_result_img = np.zeros(final_shape_px, np.uint8)
             
-        for tile_img_batched, tile_params_batched in self.tiles_generator():
+        for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 

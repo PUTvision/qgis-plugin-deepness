@@ -143,27 +143,6 @@ class Detector(ModelBase):
             return self.outputs_layers[0].shape[shape_index] - 4 - self.outputs_layers[1].shape[1]
         else:
             raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")
-            
-    def preprocessing(self, image: np.ndarray):
-        """Preprocess image before inference
-
-        Parameters
-        ----------
-        image : np.ndarray
-            Image to preprocess in RGB format
-
-        Returns
-        -------
-        np.ndarray
-            Preprocessed image
-        """
-        img = image[:, :, :, :self.input_shape[-3]]
-
-        input_data = img / 255.0
-        input_data = np.transpose(input_data, (0, 3, 1, 2))
-        input_data = input_data.astype(np.float32)
-
-        return input_data
 
     def postprocessing(self, model_output):
         """Postprocess model output
@@ -178,7 +157,7 @@ class Detector(ModelBase):
         Returns
         -------
         list
-            List of detections
+            Batch of lists of detections
         """
         if self.confidence is None or self.iou_threshold is None:
             return Exception(

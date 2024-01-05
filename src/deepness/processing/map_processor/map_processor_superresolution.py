@@ -41,7 +41,7 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
         # NOTE: consider whether we can use float16/uint16 as datatype
         full_result_imgs = np.zeros(final_shape_px, np.float32)
 
-        for tile_img_batched, tile_params_batched in self.tiles_generator():
+        for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 

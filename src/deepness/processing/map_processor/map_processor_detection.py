@@ -43,7 +43,7 @@ class MapProcessorDetection(MapProcessorWithModel):
 
     def _run(self) -> MapProcessingResult:
         all_bounding_boxes = []  # type: List[Detection]
-        for tile_img_batched, tile_params_batched in self.tiles_generator():
+        for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
