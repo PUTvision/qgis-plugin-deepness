@@ -14,7 +14,7 @@ Once the processing of ortophoto is finished, a report with model-specific infor
 Common rules for models and processing:
  * Model needs to be in ONNX format, which contains both the network architecture and weights.
  * All model classes process the data in chunks called 'tiles', that is a small part of the entire ortophoto - tiles size and overlap is configurable.
- * Every model should have one input of size :code:`[BATCH_SIZE, CHANNELS, SIZE_PX, SIZE_PX]`. :code:`BATCH_SIZE` can be 1.
+ * Every model should have one input of size :code:`[BATCH_SIZE, CHANNELS, SIZE_PX, SIZE_PX]`. :code:`BATCH_SIZE` can be 1 or dynamic.
  * Size of processed tiles (in pixels) is model defined, but needs to be equal in x and y axes, so that the tiles can be square.
  * If the processed tile needs to be padded (e.g. on otophoto borders) it will be padded with 0 values.
  * Input image data - only uint8_t value for each pixel channel is supported
@@ -43,7 +43,7 @@ Detection models allow to solve problem of objects detection, that is finding an
 Example application is detection of oil and water tanks on satellite images.
 
 The detection model output is list of bounding boxes, with assigned class and confidence value. This information is not really standardized between different model architectures.
-Currently plugin supports :code:`YOLOv5`, :code:`YOLOv7` and :code:`ULTRALYTICS` output types.
+Currently plugin supports :code:`YOLOv5`, :code:`YOLOv7` and :code:`ULTRALYTICS` output types. Detection model also supports the instance segmentation output type from :code:`ULTRALYTICS`.
 
 For each object class, a separate vector layer can be created, with information saved as rectangle polygons (so the output can be potentially easily exported to a text).
 
