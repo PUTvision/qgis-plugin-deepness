@@ -36,10 +36,10 @@ class MapProcessorRegression(MapProcessorWithModel):
 
     def _run(self) -> MapProcessingResult:
         number_of_output_channels = len(self._get_indexes_of_model_output_channels_to_create())
-        final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
+        final_shape_px = (number_of_output_channels, self.img_size_y_pixels, self.img_size_x_pixels)
 
         # NOTE: consider whether we can use float16/uint16 as datatype
-        full_result_imgs = [np.zeros(final_shape_px, np.float32) for i in range(number_of_output_channels)]
+        full_result_imgs = self._get_array_or_mmapped_array(final_shape_px)
 
         for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():

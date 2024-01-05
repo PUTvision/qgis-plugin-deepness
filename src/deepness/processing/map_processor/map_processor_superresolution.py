@@ -39,7 +39,7 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
         final_shape_px = (int(self.img_size_y_pixels*self.superresolution_parameters.scale_factor), int(self.img_size_x_pixels*self.superresolution_parameters.scale_factor), number_of_output_channels)
 
         # NOTE: consider whether we can use float16/uint16 as datatype
-        full_result_imgs = np.zeros(final_shape_px, np.float32)
+        full_result_imgs = self._get_array_or_mmapped_array(final_shape_px)
 
         for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():

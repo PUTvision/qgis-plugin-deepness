@@ -39,14 +39,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
     def _run(self) -> MapProcessingResult:
         final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
         
-        if self.file_handler is not None:
-            full_result_img = np.memmap(
-                self.file_handler.get_results_img_path(),
-                dtype=np.uint8,
-                mode='w+',
-                shape=final_shape_px)
-        else:
-            full_result_img = np.zeros(final_shape_px, np.uint8)
+        full_result_img = self._get_array_or_mmapped_array(final_shape_px)
             
         for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():

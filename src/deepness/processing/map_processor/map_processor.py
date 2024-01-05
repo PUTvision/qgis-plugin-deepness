@@ -158,6 +158,18 @@ class MapProcessor(QgsTask):
         result_img = full_img[b.y_min:b.y_max+1, b.x_min:b.x_max+1]
         return result_img
 
+    def _get_array_or_mmapped_array(self, final_shape_px):
+        if self.file_handler is not None:
+            full_result_img = np.memmap(
+                self.file_handler.get_results_img_path(),
+                dtype=np.uint8,
+                mode='w+',
+                shape=final_shape_px)
+        else:
+            full_result_img = np.zeros(final_shape_px, np.uint8)
+            
+        return full_result_img
+
     def tiles_generator(self) -> Tuple[np.ndarray, TileParams]:
         """
         Iterate over all tiles, as a Python generator function
