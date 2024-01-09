@@ -92,8 +92,9 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             # needs to be loaded after the model is set up
             self.comboBox_outputFormatClassNumber.setCurrentIndex(ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.get())
-
             self.doubleSpinBox_resolution_cm_px.setValue(ConfigEntryKey.PREPROCESSING_RESOLUTION.get())
+            self.spinBox_batchSize.setValue(ConfigEntryKey.MODEL_BATCH_SIZE.get())
+            self.checkBox_local_cache.setChecked(ConfigEntryKey.PROCESS_LOCAL_CACHE.get())
             self.spinBox_processingTileOverlapPercentage.setValue(ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.get())
 
             self.doubleSpinBox_probabilityThreshold.setValue(
@@ -129,6 +130,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.set(self.comboBox_outputFormatClassNumber.currentIndex())
 
         ConfigEntryKey.PREPROCESSING_RESOLUTION.set(self.doubleSpinBox_resolution_cm_px.value())
+        ConfigEntryKey.MODEL_BATCH_SIZE.set(self.spinBox_batchSize.value())
+        ConfigEntryKey.PROCESS_LOCAL_CACHE.set(self.checkBox_local_cache.isChecked())
         ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.set(self.spinBox_processingTileOverlapPercentage.value())
 
         ConfigEntryKey.SEGMENTATION_PROBABILITY_THRESHOLD_ENABLED.set(
@@ -272,6 +275,13 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         value = self._model.get_metadata_resolution()
         if value is not None:
             self.doubleSpinBox_resolution_cm_px.setValue(value)
+            
+        value = self._model.get_model_batch_size()
+        if value is not None:
+            self.spinBox_batchSize.setValue(value)
+            self.spinBox_batchSize.setEnabled(False)
+        else:
+            self.spinBox_batchSize.setEnabled(True)
 
         value = self._model.get_metadata_tile_size()
         if value is not None:
@@ -355,10 +365,18 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             input_0_shape = self._model.get_input_shape()
             txt += f'Input shape: {input_0_shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
             input_size_px = input_0_shape[-1]
+            batch_size = self._model.get_model_batch_size()
 
             # TODO idk how variable input will be handled
             self.spinBox_tileSize_px.setValue(input_size_px)
             self.spinBox_tileSize_px.setEnabled(False)
+            
+            if batch_size is not None:
+                self.spinBox_batchSize.setValue(batch_size)
+                self.spinBox_batchSize.setEnabled(False)
+            else:
+                self.spinBox_batchSize.setEnabled(True)
+            
             self._input_channels_mapping_widget.set_model(self._model)
 
             # super resolution
@@ -375,6 +393,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                   "Model may be not usable."
             logging.exception(txt)
             self.spinBox_tileSize_px.setEnabled(True)
+            self.spinBox_batchSize.setEnabled(True)
             length_limit = 300
             exception_msg = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
             msg = txt + f'\n\nException: {exception_msg}'
@@ -517,6 +536,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         params = MapProcessingParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
+            batch_size=self.spinBox_batchSize.value(),
+            local_cache=self.checkBox_local_cache.isChecked(),
             processed_area_type=processed_area_type,
             mask_layer_id=self.get_mask_layer_id(),
             input_layer_id=self._get_input_layer_id(),

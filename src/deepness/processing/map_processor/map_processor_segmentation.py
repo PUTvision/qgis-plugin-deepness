@@ -1,14 +1,13 @@
 """ This file implements map processing for segmentation model """
 
 import numpy as np
-from qgis.core import QgsProject
-from qgis.core import QgsVectorLayer
+from qgis.core import QgsProject, QgsVectorLayer
 
 from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.processing import processing_utils
-from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
-    MapProcessingResultCanceled, MapProcessingResultSuccess
+from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
+                                                                     MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 
 cv2 = LazyPackageLoader('cv2')
@@ -39,17 +38,20 @@ class MapProcessorSegmentation(MapProcessorWithModel):
 
     def _run(self) -> MapProcessingResult:
         final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
-        full_result_img = np.zeros(final_shape_px, np.uint8)
-        for tile_img, tile_params in self.tiles_generator():
+        
+        full_result_img = self._get_array_or_mmapped_array(final_shape_px)
+            
+        for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
             # See note in the class description why are we adding/subtracting 1 here
-            tile_result = self._process_tile(tile_img) + 1
+            tile_result_batched = self._process_tile(tile_img_batched) + 1
 
-            tile_params.set_mask_on_full_img(
-                tile_result=tile_result,
-                full_result_img=full_result_img)
+            for tile_result, tile_params in zip(tile_result_batched, tile_params_batched):
+                tile_params.set_mask_on_full_img(
+                    tile_result=tile_result,
+                    full_result_img=full_result_img)
 
         blur_size = int(self.segmentation_parameters.postprocessing_dilate_erode_size // 2) * 2 + 1  # needs to be odd
         full_result_img = cv2.medianBlur(full_result_img, blur_size)
@@ -131,13 +133,15 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             QgsProject.instance().addMapLayer(vlayer, False)
             group.addLayer(vlayer)
 
-    def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
+    def _process_tile(self, tile_img_batched: np.ndarray) -> np.ndarray:
         # TODO - create proper mapping for output channels
-        result = self.model.process(tile_img)
-
+        result = self.model.process(tile_img_batched)
+        
         result[result < self.segmentation_parameters.pixel_classification__probability_threshold] = 0.0
-        if (result.shape[0] == 1):
-            result = (result != 0).astype(int)[0]         
+                
+        if (result.shape[1] == 1):
+            result = (result != 0).astype(int)[:, 0]         
         else:
-            result = np.argmax(result, axis=0)
+            result = np.argmax(result, axis=1)
+            
         return result

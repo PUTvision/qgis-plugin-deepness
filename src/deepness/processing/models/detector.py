@@ -143,28 +143,6 @@ class Detector(ModelBase):
             return self.outputs_layers[0].shape[shape_index] - 4 - self.outputs_layers[1].shape[1]
         else:
             raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")
-            
-    def preprocessing(self, image: np.ndarray):
-        """Preprocess image before inference
-
-        Parameters
-        ----------
-        image : np.ndarray
-            Image to preprocess in RGB format
-
-        Returns
-        -------
-        np.ndarray
-            Preprocessed image
-        """
-        img = image[:, :, : self.input_shape[-3]]
-
-        input_data = img / 255.0
-        input_data = np.transpose(input_data, (2, 0, 1))
-        input_batch = np.expand_dims(input_data, 0)
-        input_batch = input_batch.astype(np.float32)
-
-        return input_batch
 
     def postprocessing(self, model_output):
         """Postprocess model output
@@ -179,7 +157,7 @@ class Detector(ModelBase):
         Returns
         -------
         list
-            List of detections
+            Batch of lists of detections
         """
         if self.confidence is None or self.iou_threshold is None:
             return Exception(
@@ -190,38 +168,41 @@ class Detector(ModelBase):
             return Exception(
                 "Model type is not set for model. Use self.set_model_type_param"
             )
-
-        masks = None
-
-        if self.model_type == DetectorType.YOLO_v5_v7_DEFAULT:
-            boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output[0][0])
-        elif self.model_type == DetectorType.YOLO_v6:
-            boxes, conf, classes = self._postprocessing_YOLO_v6(model_output[0][0])
-        elif self.model_type == DetectorType.YOLO_ULTRALYTICS:
-            boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output[0][0])
-        elif self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
-            boxes, conf, classes, masks = self._postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(model_output)
-        else:
-            raise NotImplementedError(f"Model type not implemented! ('{self.model_type}')")
-
-        detections = []
         
-        masks = masks if masks is not None else [None] * len(boxes)
+        batch_detection = []
+        for i in range(len(model_output)):
+            masks = None
+            detections = []
+            
+            if self.model_type == DetectorType.YOLO_v5_v7_DEFAULT:
+                boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output[0][i])
+            elif self.model_type == DetectorType.YOLO_v6:
+                boxes, conf, classes = self._postprocessing_YOLO_v6(model_output[0][i])
+            elif self.model_type == DetectorType.YOLO_ULTRALYTICS:
+                boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output[0][i])
+            elif self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
+                boxes, conf, classes, masks = self._postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(model_output[0][i], model_output[1][i])
+            else:
+                raise NotImplementedError(f"Model type not implemented! ('{self.model_type}')")
+            
+            masks = masks if masks is not None else [None] * len(boxes)
 
-        for b, c, cl, m in zip(boxes, conf, classes, masks):
-            det = Detection(
-                bbox=BoundingBox(
-                    x_min=b[0],
-                    x_max=b[2],
-                    y_min=b[1],
-                    y_max=b[3]),
-                conf=c,
-                clss=cl,
-                mask=m,
-            )
-            detections.append(det)
+            for b, c, cl, m in zip(boxes, conf, classes, masks):
+                det = Detection(
+                    bbox=BoundingBox(
+                        x_min=b[0],
+                        x_max=b[2],
+                        y_min=b[1],
+                        y_max=b[3]),
+                    conf=c,
+                    clss=cl,
+                    mask=m,
+                )
+                detections.append(det)
+                
+            batch_detection.append(detections)
 
-        return detections
+        return batch_detection
 
     def _postprocessing_YOLO_v5_v7_DEFAULT(self, model_output):
         outputs_filtered = np.array(
@@ -300,10 +281,7 @@ class Detector(ModelBase):
 
         return boxes, conf, classes
 
-    def _postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(self, model_output):
-        detections = model_output[0][0]
-        protos = model_output[1][0]
-        
+    def _postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(self, detections, protos):        
         detections = np.transpose(detections, (1, 0))
         
         number_of_class = self.get_number_of_output_channels()
@@ -483,11 +461,6 @@ class Detector(ModelBase):
                 raise Exception(
                     f"Detection model output should have 3 dimensions: (Batch_size, detections, values). "
                     f"Actually has: {shape}"
-                )
-
-            if shape[0] != 1:
-                raise Exception(
-                    f"Detection model can handle only 1-Batch outputs. Has {shape}"
                 )
 
         else:

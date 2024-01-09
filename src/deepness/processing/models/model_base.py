@@ -71,6 +71,21 @@ class ModelBase:
         """
         return self.input_shape
 
+    def get_model_batch_size(self) -> Optional[int]:
+        """ Get batch size of the model
+
+        Returns
+        -------
+        Optional[int] | None
+            Batch size or None if not found (dynamic batch size)
+        """
+        bs = self.input_shape[0]
+                
+        if isinstance(bs, str):
+            return None
+        else:
+            return bs
+
     def get_input_size_in_pixels(self) -> int:
         """ Get number of input pixels in x and y direction (the same value)
 
@@ -308,7 +323,7 @@ class ModelBase:
         """
         return self.input_shape[-3]
 
-    def process(self, img):
+    def process(self, tiles_batched: np.ndarray):
         """ Process a single tile image
 
         Parameters
@@ -321,27 +336,33 @@ class ModelBase:
         np.ndarray
             Single prediction
         """
-        input_batch = self.preprocessing(img)
+        input_batch = self.preprocessing(tiles_batched)
         model_output = self.sess.run(
             output_names=None,
             input_feed={self.input_name: input_batch})
         res = self.postprocessing(model_output)
         return res
 
-    def preprocessing(self, img: np.ndarray) -> np.ndarray:
-        """ Abstract method for preprocessing
+    def preprocessing(self, tiles_batched: np.ndarray) -> np.ndarray:
+        """ Preprocess the batch of images for the model (resize, normalization, etc)
 
         Parameters
         ----------
-        img : np.ndarray
-            Image to process ([TILE_SIZE x TILE_SIZE x channels], type uint8, values 0 to 255, RGB order)
+        image : np.ndarray
+            Batch of images to preprocess (N,H,W,C), RGB, 0-255
 
         Returns
         -------
         np.ndarray
-            Preprocessed image
+            Preprocessed batch of image (N,C,H,W), RGB, 0-1
         """
-        raise NotImplementedError('Base class not implemented!')
+        tiles_batched = tiles_batched[:, :, :, :self.input_shape[-3]]
+
+        tiles_batched = tiles_batched.astype('float32')
+        tiles_batched /= 255
+        tiles_batched = tiles_batched.transpose(0, 3, 1, 2)
+
+        return tiles_batched
 
     def postprocessing(self, outs: List) -> np.ndarray:
         """ Abstract method for postprocessing

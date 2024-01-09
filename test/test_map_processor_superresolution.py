@@ -37,6 +37,8 @@ def test_dummy_model_processing__entire_file():
     params = SuperresolutionParameters(
         resolution_cm_per_px=3,
         tile_size_px=model.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        batch_size=1,
+        local_cache=False,
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
         input_layer_id=rlayer.id(),
@@ -63,6 +65,77 @@ def test_dummy_model_processing__entire_file():
     assert result_img.shape == (int(560*2), int(828*2), 3)  # 2x upscaled
     # TODO - add detailed check for pixel values once we have output channels mapping with thresholding
 
+def test_dummy_model_processing__entire_file_cached():
+    qgs = init_qgis()
+
+    rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
+    model = Superresolution(MODEL_FILE_PATH)
+
+    params = SuperresolutionParameters(
+        resolution_cm_per_px=3,
+        tile_size_px=model.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        batch_size=1,
+        local_cache=True,
+        processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
+        mask_layer_id=None,
+        input_layer_id=rlayer.id(),
+        input_channels_mapping=INPUT_CHANNELS_MAPPING,
+        output_scaling=1.0,
+        scale_factor=2.0,
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=0),
+        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
+        model_output_format__single_class_number=-1,
+        model=model,
+    )
+
+    map_processor = MapProcessorSuperresolution(
+        rlayer=rlayer,
+        vlayer_mask=None,
+        map_canvas=MagicMock(),
+        params=params,
+    )
+
+    map_processor.run()
+    result_img = map_processor.get_result_imgs()
+    result_img = result_img  # take only the first band
+
+    assert result_img.shape == (int(560*2), int(828*2), 3)  # 2x upscaled
+
+def test_dummy_model_processing__entire_file_batched():
+    qgs = init_qgis()
+
+    rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
+    model = Superresolution(MODEL_FILE_PATH)
+
+    params = SuperresolutionParameters(
+        resolution_cm_per_px=3,
+        tile_size_px=model.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        batch_size=1,
+        local_cache=True,
+        processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
+        mask_layer_id=None,
+        input_layer_id=rlayer.id(),
+        input_channels_mapping=INPUT_CHANNELS_MAPPING,
+        output_scaling=1.0,
+        scale_factor=2.0,
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=0),
+        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
+        model_output_format__single_class_number=-1,
+        model=model,
+    )
+
+    map_processor = MapProcessorSuperresolution(
+        rlayer=rlayer,
+        vlayer_mask=None,
+        map_canvas=MagicMock(),
+        params=params,
+    )
+
+    map_processor.run()
+    result_img = map_processor.get_result_imgs()
+    result_img = result_img  # take only the first band
+
+    assert result_img.shape == (int(560*2), int(828*2), 3)  # 2x upscaled
 
 if __name__ == '__main__':
     test_dummy_model_processing__entire_file()

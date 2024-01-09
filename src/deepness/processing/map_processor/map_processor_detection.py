@@ -43,12 +43,12 @@ class MapProcessorDetection(MapProcessorWithModel):
 
     def _run(self) -> MapProcessingResult:
         all_bounding_boxes = []  # type: List[Detection]
-        for tile_img, tile_params in self.tiles_generator():
+        for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
-            bounding_boxes_in_tile = self._process_tile(tile_img, tile_params)
-            all_bounding_boxes += bounding_boxes_in_tile
+            bounding_boxes_in_tile_batched = self._process_tile(tile_img_batched, tile_params_batched)
+            all_bounding_boxes += [d for det in bounding_boxes_in_tile_batched for d in det]
 
         if len(all_bounding_boxes) > 0:
             all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
@@ -219,7 +219,10 @@ class MapProcessorDetection(MapProcessorWithModel):
         for det in bounding_boxes_relative:
             det.convert_to_global(offset_x=tile_params.start_pixel_x, offset_y=tile_params.start_pixel_y)
 
-    def _process_tile(self, tile_img: np.ndarray, tile_params: TileParams) -> np.ndarray:
-        bounding_boxes: List[Detection] = self.model.process(tile_img)
-        self.convert_bounding_boxes_to_absolute_positions(bounding_boxes, tile_params)
-        return bounding_boxes
+    def _process_tile(self, tile_img: np.ndarray, tile_params_batched: List[TileParams]) -> np.ndarray:
+        bounding_boxes_batched: List[Detection] = self.model.process(tile_img)
+        
+        for bounding_boxes, tile_params in zip(bounding_boxes_batched, tile_params_batched):
+            self.convert_bounding_boxes_to_absolute_positions(bounding_boxes, tile_params)
+            
+        return bounding_boxes_batched
