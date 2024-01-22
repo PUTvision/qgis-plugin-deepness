@@ -10,6 +10,8 @@
 [![GitHub stars](https://img.shields.io/github/stars/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/PUTvision/qgis-plugin-deepness)](https://github.com/PUTvision/qgis-plugin-deepness/network/members)
 
+#### :coffee: :coffee: :coffee: Do you like the plugin? Do you want to keep it maintained? Support us and [buy "coffee"](https://www.buymeacoffee.com/deepness). :coffee: :coffee: :coffee:
+
 Plugin for QGIS to perform map/image segmentation, regression and object detection with (ONNX) neural network models.
 
 ## Introduction video
