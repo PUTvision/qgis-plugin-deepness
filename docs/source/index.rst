@@ -4,7 +4,7 @@ Home
 
 .. note::
 
-   This project is under active development.
+   Do you like the plugin? Do you want to keep it maintained? Support us and [buy "coffee"](https://www.buymeacoffee.com/deepness).
 
 
 Plugin is aimed as a tool for casual QGIS users, which don't need to be familiar with Machine Learning.
