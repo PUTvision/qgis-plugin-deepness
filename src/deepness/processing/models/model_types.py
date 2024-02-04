@@ -3,14 +3,17 @@ from dataclasses import dataclass
 
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
+from deepness.common.processing_parameters.recognition_parameters import RecognitionParameters
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
 from deepness.processing.map_processor.map_processor_detection import MapProcessorDetection
+from deepness.processing.map_processor.map_processor_recognition import MapProcessorRecognition
 from deepness.processing.map_processor.map_processor_regression import MapProcessorRegression
 from deepness.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deepness.processing.map_processor.map_processor_superresolution import MapProcessorSuperresolution
 from deepness.processing.models.detector import Detector
+from deepness.processing.models.recognition import Recognition
 from deepness.processing.models.regressor import Regressor
 from deepness.processing.models.segmentor import Segmentor
 from deepness.processing.models.superresolution import Superresolution
@@ -21,6 +24,7 @@ class ModelType(enum.Enum):
     REGRESSION = Regressor.get_class_display_name()
     DETECTION = Detector.get_class_display_name()
     SUPERRESOLUTION = Superresolution.get_class_display_name()
+    RECOGNITION = Recognition.get_class_display_name()
 
 
 @dataclass
@@ -56,6 +60,12 @@ class ModelDefinition:
                 model_class=Superresolution,
                 parameters_class=SuperresolutionParameters,
                 map_processor_class=MapProcessorSuperresolution,
+            ),  # recognition
+            cls(
+                model_type=ModelType.RECOGNITION,
+                model_class=Recognition,
+                parameters_class=RecognitionParameters,
+                map_processor_class=MapProcessorRecognition,
             )
 
         ]

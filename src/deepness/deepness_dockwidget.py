@@ -18,6 +18,7 @@ from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOver
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
 from deepness.common.processing_parameters.map_processing_parameters import (MapProcessingParameters, ModelOutputFormat,
                                                                              ProcessedAreaType)
+from deepness.common.processing_parameters.recognition_parameters import RecognitionParameters
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
@@ -196,6 +197,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _create_connections(self):
         self.pushButton_runInference.clicked.connect(self._run_inference)
         self.pushButton_runTrainingDataExport.clicked.connect(self._run_training_data_export)
+        self.pushButton_browseQueryImagePath.clicked.connect(self._browse_query_image_path)
         self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
         self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
         self.comboBox_modelType.currentIndexChanged.connect(self._model_type_changed)
@@ -216,6 +218,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         detection_enabled = False
         regression_enabled = False
         superresolution_enabled = False
+        recognition_enabled = False
 
         if model_type == ModelType.SEGMENTATION:
             segmentation_enabled = True
@@ -225,6 +228,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             regression_enabled = True
         elif model_type == ModelType.SUPERRESOLUTION:
             superresolution_enabled = True
+        elif model_type == ModelType.RECOGNITION:
+            recognition_enabled = True
         else:
             raise Exception(f"Unsupported model type ({model_type})!")
 
@@ -232,8 +237,10 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.mGroupBox_detectionParameters.setVisible(detection_enabled)
         self.mGroupBox_regressionParameters.setVisible(regression_enabled)
         self.mGroupBox_superresolutionParameters.setVisible(superresolution_enabled)
-        # Disable output format options for super-resolution models.
-        self.mGroupBox_6.setEnabled(not superresolution_enabled)
+        self.mGroupBox_recognitionParameters.setVisible(recognition_enabled)
+        # Disable output format options for super-resolution or recognition models.
+        if recognition_enabled or superresolution_enabled:
+            self.mGroupBox_6.setEnabled(False)
 
     def _detector_type_changed(self):
         detector_type = DetectorType(self.comboBox_detectorType.currentText())
@@ -268,6 +275,16 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.lineEdit_modelPath.setText(file_path)
             self._load_model_and_display_info()
 
+    def _browse_query_image_path(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select image file...",
+            os.path.expanduser("~"),
+            "All files (*.*)",
+        )
+        if file_path:
+            self.lineEdit_recognitionPath.setText(file_path)
+    
     def _load_default_model_parameters(self):
         """
         Load the default parameters from model metadata
@@ -478,6 +495,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             params = self.get_regression_parameters(map_processing_parameters)
         elif model_type == ModelType.SUPERRESOLUTION:
             params = self.get_superresolution_parameters(map_processing_parameters)
+        elif model_type == ModelType.RECOGNITION:
+            params = self.get_recognition_parameters(map_processing_parameters)
         elif model_type == ModelType.DETECTION:
             params = self.get_detection_parameters(map_processing_parameters)
 
@@ -515,6 +534,14 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         )
         return params
 
+    def get_recognition_parameters(self, map_processing_parameters: MapProcessingParameters) -> RecognitionParameters:
+        params = RecognitionParameters(
+            **map_processing_parameters.__dict__,
+            model=self._model,
+            query_image_path=self.lineEdit_recognitionPath.text(),
+        )
+        return params
+    
     def get_detection_parameters(self, map_processing_parameters: MapProcessingParameters) -> DetectionParameters:
 
         params = DetectionParameters(
