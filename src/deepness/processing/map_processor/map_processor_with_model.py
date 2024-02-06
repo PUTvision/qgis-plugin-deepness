@@ -37,6 +37,8 @@ class MapProcessorWithModel(MapProcessor):
             output_channels = list(range(0, self.model.get_number_of_output_channels()))
         elif self.params.model_output_format == ModelOutputFormat.CLASSES_AS_SEPARATE_LAYERS_WITHOUT_ZERO_CLASS:
             output_channels = list(range(1, self.model.get_number_of_output_channels()))
+        elif self.params.model_output_format == ModelOutputFormat.RECOGNITION_RESULT:
+            output_channels = 1
         else:
             raise Exception(f"Unhandled model output format {self.params.model_output_format}")
 

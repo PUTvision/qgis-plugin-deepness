@@ -21,6 +21,13 @@ The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection 
 |         |  |  |  |  |
 |         |  |  |  |  |
 
+## Recognition models
+
+| Model   | Input size | CM/PX | Description | Example image |
+|---------|---|---|---|---|
+|  NAIP Place recognition | 224 | 100 | ConvNeXt nano trained using SimSiam onn NAIP imagery |  |
+|         |  |  |  |  |
+
 ## Object detection models
 
 | Model                                                                          | Input size | CM/PX | Description                                                                                                                                                                                   | Example image                                           |
