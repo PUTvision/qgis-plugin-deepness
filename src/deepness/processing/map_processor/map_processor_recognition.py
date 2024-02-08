@@ -5,18 +5,18 @@ import uuid
 from typing import List
 
 import numpy as np
-from deepness.common.lazy_package_loader import LazyPackageLoader
-from deepness.common.misc import TMP_DIR_PATH
-from deepness.common.processing_parameters.recognition_parameters import \
-    RecognitionParameters
-from deepness.processing.map_processor.map_processing_result import (
-    MapProcessingResult, MapProcessingResultCanceled,
-    MapProcessingResultSuccess)
-from deepness.processing.map_processor.map_processor_with_model import \
-    MapProcessorWithModel
 from numpy.linalg import norm
 from osgeo import gdal, osr
 from qgis.core import QgsProject, QgsRasterLayer
+
+from deepness.common.defines import IS_DEBUG
+from deepness.common.lazy_package_loader import LazyPackageLoader
+from deepness.common.misc import TMP_DIR_PATH
+from deepness.common.processing_parameters.recognition_parameters import RecognitionParameters
+from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
+                                                                     MapProcessingResultFailed,
+                                                                     MapProcessingResultSuccess)
+from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 
 cv2 = LazyPackageLoader('cv2')
 
@@ -30,56 +30,51 @@ class MapProcessorRecognition(MapProcessorWithModel):
         super().__init__(params=params, model=params.model, **kwargs)
         self.recognition_parameters = params
         self.model = params.model
-        self._result_imgs = None
-
-    def get_result_imgs(self):
-        return self._result_imgs
 
     def _run(self) -> MapProcessingResult:
         try:
-            print("*" * 80)
-            print(self.recognition_parameters.query_image_path)
             query_img = cv2.imread(self.recognition_parameters.query_image_path)
-        except Exception as err:
-            print(err)
-            raise RuntimeError("unable to open image")
-            
-        query_img_emb = self.model.process(query_img)[0]
-        
+            assert query_img is not None, f"Error occurred while reading query image: {self.recognition_parameters.query_image_path}"
+        except Exception as e:
+            return MapProcessingResultFailed(f"Error occurred while reading query image: {e}")
+
+        query_img_emb = self.model.process(np.array([query_img]))[0]
+
         final_shape_px = (
             self.img_size_y_pixels,
             self.img_size_x_pixels,
         )
-        
+
         stride = self.stride_px
         full_result_img = np.zeros(final_shape_px, np.float32)
         mask = np.zeros_like(full_result_img, dtype=np.int16)
         highest = 0
-        for tile_img, tile_params in self.tiles_generator():
+        for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
-            # See note in the class description why are we adding/subtracting 1 here
-            tile_result = self._process_tile(tile_img)[0]
-            
-            # cosine similarity
-            cossim = np.dot(query_img_emb[0],tile_result[0])/(norm(query_img_emb[0])*norm(tile_result[0]))
-            
-            x_bin = tile_params.x_bin_number
-            y_bin = tile_params.y_bin_number
-            size = self.params.tile_size_px
-            if cossim > highest:
-                highest = cossim
-                x_high = x_bin
-                y_high = y_bin
-            full_result_img[y_bin*stride:y_bin*stride+size, x_bin*stride:x_bin*stride +size] +=  cossim
-            mask[y_bin*stride:y_bin*stride+size, x_bin*stride:x_bin*stride +size] += 1
+            tile_result_batched = self._process_tile(tile_img_batched)
+
+            for tile_result, tile_params in zip(tile_result_batched, tile_params_batched):
+                cossim = np.dot(query_img_emb, tile_result)/(norm(query_img_emb)*norm(tile_result))
+
+                x_bin = tile_params.x_bin_number
+                y_bin = tile_params.y_bin_number
+                size = self.params.tile_size_px
+
+                if cossim > highest:
+                    highest = cossim
+                    x_high = x_bin
+                    y_high = y_bin
+
+                full_result_img[y_bin*stride:y_bin*stride+size, x_bin*stride:x_bin*stride + size] += cossim
+                mask[y_bin*stride:y_bin*stride+size, x_bin*stride:x_bin*stride + size] += 1
 
         full_result_img = full_result_img/mask
-        self._result_img = full_result_img
+        self.set_results_img(full_result_img)
 
-        self._create_rlayers_from_images_for_base_extent(self._result_img, x_high, y_high, size, stride)#*255).astype(int))
-        result_message = self._create_result_message(self._result_img, x_high*self.params.tile_size_px, y_high*self.params.tile_size_px)
+        self._create_rlayers_from_images_for_base_extent(self.get_result_img(), x_high, y_high, size, stride)
+        result_message = self._create_result_message(self.get_result_img(), x_high*self.params.tile_size_px, y_high*self.params.tile_size_px)
         return MapProcessingResultSuccess(result_message)
 
     def _create_result_message(self, result_img: List[np.ndarray], x_high, y_high) -> str:
@@ -99,10 +94,10 @@ class MapProcessorRecognition(MapProcessorWithModel):
 
         b = self.base_extent_bbox_in_full_image
         result_img = full_img[
-            int(b.y_min * self.recognition_parameters.scale_factor) : int(
+            int(b.y_min * self.recognition_parameters.scale_factor): int(
                 b.y_max * self.recognition_parameters.scale_factor
             ),
-            int(b.x_min * self.recognition_parameters.scale_factor) : int(
+            int(b.x_min * self.recognition_parameters.scale_factor): int(
                 b.x_max * self.recognition_parameters.scale_factor
             ),
             :,
@@ -137,12 +132,10 @@ class MapProcessorRecognition(MapProcessorWithModel):
             .layerTreeRoot()
             .insertGroup(0, "Cosine similarity score")
         )
-        
-        min_value = np.min(result_img)
+
         y = y_high * stride
         x = x_high * stride
-        print(f"{x},{y}")
-        
+
         result_img[y, x:x+size-1] = 1
         result_img[y+size-1, x:x+size-1] = 1
         result_img[y:y+size-1, x] = 1
@@ -152,7 +145,6 @@ class MapProcessorRecognition(MapProcessorWithModel):
         # Maybe can we pass ownership of this file to QGis?
         # Or maybe even create vlayer directly from array, without a file?
 
-   #     for i, channel_id in enumerate(["Super Resolution"]):
         random_id = str(uuid.uuid4()).replace("-", "")
         file_path = os.path.join(TMP_DIR_PATH, f"{random_id}.tif")
         self.save_result_img_as_tif(file_path=file_path, img=np.expand_dims(result_img, axis=2))
@@ -179,11 +171,11 @@ class MapProcessorRecognition(MapProcessorWithModel):
 
         geo_transform = [
             extent.xMinimum(),
-            self.rlayer_units_per_pixel, # / self.recognition_parameters.scale_factor,
+            self.rlayer_units_per_pixel,
             0,
             extent.yMaximum(),
             0,
-            -self.rlayer_units_per_pixel, # / self.recognition_parameters.scale_factor,
+            -self.rlayer_units_per_pixel,
         ]
 
         driver = gdal.GetDriverByName("GTiff")
@@ -210,10 +202,9 @@ class MapProcessorRecognition(MapProcessorWithModel):
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
         result = self.model.process(tile_img)
-     #   result[np.isnan(result)] = 0
 
         # NOTE - currently we are saving result as float32, so we are losing some accuraccy.
         # result = np.clip(result, 0, 255)  # old version with uint8_t - not used anymore
-     #   result = result.astype(np.float32)
+        # result = result.astype(np.float32)
 
         return result

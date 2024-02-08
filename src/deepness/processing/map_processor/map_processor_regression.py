@@ -29,10 +29,6 @@ class MapProcessorRegression(MapProcessorWithModel):
             **kwargs)
         self.regression_parameters = params
         self.model = params.model
-        self._result_imgs = None
-
-    def get_result_imgs(self):
-        return self._result_imgs
 
     def _run(self) -> MapProcessingResult:
         number_of_output_channels = len(self._get_indexes_of_model_output_channels_to_create())
@@ -55,10 +51,10 @@ class MapProcessorRegression(MapProcessorWithModel):
 
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
         full_result_imgs = self.limit_extended_extent_images_to_base_extent_with_mask(full_imgs=full_result_imgs)
-        self._result_imgs = full_result_imgs
-        self._create_rlayers_from_images_for_base_extent(self._result_imgs)
-
-        result_message = self._create_result_message(self._result_imgs)
+        self.set_results_img(full_result_imgs)
+        
+        self._create_rlayers_from_images_for_base_extent(self.get_result_img())
+        result_message = self._create_result_message(self.get_result_img())
         return MapProcessingResultSuccess(result_message)
 
     def _create_result_message(self, result_imgs: List[np.ndarray]) -> str:

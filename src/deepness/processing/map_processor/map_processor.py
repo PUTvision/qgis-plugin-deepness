@@ -106,6 +106,20 @@ class MapProcessor(QgsTask):
             image_shape_yx=(self.img_size_y_pixels, self.img_size_x_pixels),
             files_handler=self.file_handler)  # type: Optional[np.ndarray]
 
+        self._result_img = None
+
+    def set_results_img(self, img):
+        if self._result_img is not None:
+            raise Exception("Result image already created!")
+        
+        self._result_img = img
+
+    def get_result_img(self):
+        if self._result_img is None:
+            raise Exception("Result image not yet created!")
+
+        return self._result_img
+
     def _assert_qgis_doesnt_need_reload(self):
         """ If the plugin is somehow invalid, it cannot compare the enums correctly
         I suppose it could be fixed somehow, but no need to investigate it now,

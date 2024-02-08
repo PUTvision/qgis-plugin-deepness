@@ -31,10 +31,6 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             **kwargs)
         self.segmentation_parameters = params
         self.model = params.model
-        self._result_img = None
-
-    def get_result_img(self):
-        return self._result_img
 
     def _run(self) -> MapProcessingResult:
         final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
@@ -55,10 +51,12 @@ class MapProcessorSegmentation(MapProcessorWithModel):
 
         blur_size = int(self.segmentation_parameters.postprocessing_dilate_erode_size // 2) * 2 + 1  # needs to be odd
         full_result_img = cv2.medianBlur(full_result_img, blur_size)
-        self._result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
-        self._create_vlayer_from_mask_for_base_extent(self._result_img)
-
-        result_message = self._create_result_message(self._result_img)
+        full_result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
+        
+        self.set_results_img(full_result_img)
+        
+        self._create_vlayer_from_mask_for_base_extent(self.get_result_img())
+        result_message = self._create_result_message(self.get_result_img())
         return MapProcessingResultSuccess(result_message)
 
     def _create_result_message(self, result_img: np.ndarray) -> str:

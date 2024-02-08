@@ -3,6 +3,7 @@ import ast
 import json
 from typing import List, Optional
 
+import cv2
 import numpy as np
 
 from deepness.common.lazy_package_loader import LazyPackageLoader
@@ -357,6 +358,10 @@ class ModelBase:
             Preprocessed batch of image (N,C,H,W), RGB, 0-1
         """
         tiles_batched = tiles_batched[:, :, :, :self.input_shape[-3]]
+        
+        if tiles_batched.shape[0] == 1 and tiles_batched.shape[1:3] != self.input_shape[2:4]:
+            # if the model has a fixed batch size, we can resize the input
+            tiles_batched = np.array([cv2.resize(tiles_batched[0], (self.input_shape[3], self.input_shape[2]))])
 
         tiles_batched = tiles_batched.astype('float32')
         tiles_batched /= 255
