@@ -2,7 +2,7 @@
 """
 
 
-from typing import Callable
+from typing import Callable, Optional
 
 
 class MapProcessingResult:
@@ -10,7 +10,7 @@ class MapProcessingResult:
     Base class for signaling finished processing result
     """
 
-    def __init__(self, message: str, gui_delegate: Callable | None = None):
+    def __init__(self, message: str, gui_delegate: Optional[Callable] = None):
         """
         :param message: message to be shown to the user
         :param gui_delegate: function to be called in GUI thread, as it is not safe to call GUI functions from other threads
@@ -24,7 +24,7 @@ class MapProcessingResultSuccess(MapProcessingResult):
     Processing result on success
     """
 
-    def __init__(self, message: str = '', gui_delegate: Callable | None = None):
+    def __init__(self, message: str = '', gui_delegate: Optional[Callable] = None):
         super().__init__(message=message, gui_delegate=gui_delegate)
 
 
