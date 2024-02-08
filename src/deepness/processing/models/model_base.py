@@ -181,8 +181,8 @@ class ModelBase:
             Standardization parameters or None if not found
         """
         meta = self.sess.get_modelmeta()
-        name_mean = 'standardization_parameters_mean'
-        name_std = 'standardization_parameters_std'
+        name_mean = 'standardization_mean'
+        name_std = 'standardization_std'
 
         if name_mean in meta.custom_metadata_map and name_std in meta.custom_metadata_map:
             mean = json.loads(meta.custom_metadata_map[name_mean])
