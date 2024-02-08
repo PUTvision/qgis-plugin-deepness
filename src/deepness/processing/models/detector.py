@@ -168,12 +168,14 @@ class Detector(ModelBase):
             return Exception(
                 "Model type is not set for model. Use self.set_model_type_param"
             )
-        
+
         batch_detection = []
-        for i in range(len(model_output)):
+        outputs_range = len(model_output[0])if self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION else len(model_output)
+
+        for i in range(outputs_range):
             masks = None
             detections = []
-            
+
             if self.model_type == DetectorType.YOLO_v5_v7_DEFAULT:
                 boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output[0][i])
             elif self.model_type == DetectorType.YOLO_v6:
@@ -184,7 +186,7 @@ class Detector(ModelBase):
                 boxes, conf, classes, masks = self._postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(model_output[0][i], model_output[1][i])
             else:
                 raise NotImplementedError(f"Model type not implemented! ('{self.model_type}')")
-            
+
             masks = masks if masks is not None else [None] * len(boxes)
 
             for b, c, cl, m in zip(boxes, conf, classes, masks):
