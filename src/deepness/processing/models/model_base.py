@@ -183,6 +183,8 @@ class ModelBase:
         meta = self.sess.get_modelmeta()
         name_mean = 'standardization_mean'
         name_std = 'standardization_std'
+        
+        param = StandardizationParameters(channels_number=self.get_input_shape()[-3])
 
         if name_mean in meta.custom_metadata_map and name_std in meta.custom_metadata_map:
             mean = json.loads(meta.custom_metadata_map[name_mean])
@@ -191,12 +193,11 @@ class ModelBase:
             mean = [float(x) for x in mean]
             std = [float(x) for x in std]
 
-            param = StandardizationParameters()
             param.set_mean_std(mean=mean, std=std)
 
             return param
 
-        return StandardizationParameters()  # default, no standardization
+        return param  # default, no standardization
 
     def get_metadata_resolution(self) -> Optional[float]:
         """ Get resolution from metadata if exists
