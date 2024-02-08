@@ -82,4 +82,4 @@ Steps based on the `tensorflow-onnx <https://github.com/onnx/tensorflow-onnx>`_ 
 Update ONNX model to support dynamic batch size
 ===============================================
 
-To convert model to support dynamic batch size, you need to update :code:`model.onnx` file. You can do it manually using `this <https://github.com/onnx/onnx/issues/2182#issuecomment-881752539>` script. Please note that the script is not perfect and may not work for all models.
+To convert model to support dynamic batch size, you need to update :code:`model.onnx` file. You can do it manually using `this <https://github.com/onnx/onnx/issues/2182#issuecomment-881752539>`_ script. Please note that the script is not perfect and may not work for all models.
