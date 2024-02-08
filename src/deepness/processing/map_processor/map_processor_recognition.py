@@ -38,7 +38,11 @@ class MapProcessorRecognition(MapProcessorWithModel):
         except Exception as e:
             return MapProcessingResultFailed(f"Error occurred while reading query image: {e}")
 
-        query_img_emb = self.model.process(np.array([query_img]))[0]
+        # some hardcoded code for recognition model
+        query_img_resized = cv2.resize(query_img, self.model.get_input_shape()[2:4][::-1])
+        query_img_batched = np.array([query_img_resized])
+
+        query_img_emb = self.model.process(query_img_batched)[0]
 
         final_shape_px = (
             self.img_size_y_pixels,

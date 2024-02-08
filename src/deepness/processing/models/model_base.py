@@ -6,7 +6,9 @@ from typing import List, Optional
 import cv2
 import numpy as np
 
+import deepness.processing.models.preprocessing_utils as preprocessing_utils
 from deepness.common.lazy_package_loader import LazyPackageLoader
+from deepness.common.processing_parameters.standardization_parameters import StandardizationParameters
 
 ort = LazyPackageLoader('onnxruntime')
 
@@ -44,6 +46,7 @@ class ModelBase:
         self.input_name = input_0.name
 
         self.outputs_layers = self.sess.get_outputs()
+        self.standardization_parameters: StandardizationParameters = self.get_metadata_standarization_parameters()
 
     @classmethod
     def get_model_type_from_metadata(cls, model_file_path: str) -> Optional[str]:
@@ -168,6 +171,25 @@ class ModelBase:
             value = json.loads(meta.custom_metadata_map[name])
             return str(value).capitalize()
         return None
+
+    def get_metadata_standarization_parameters(self) -> Optional[StandardizationParameters]:
+        """ Get standardization parameters from metadata if exists
+
+        Returns
+        -------
+        Optional[StandardizationParameters]
+            Standardization parameters or None if not found
+        """
+        meta = self.sess.get_modelmeta()
+        name_mean = 'standardization_parameters_mean'
+        name_std = 'standardization_parameters_std'
+
+        if name_mean in meta.custom_metadata_map and name_std in meta.custom_metadata_map:
+            mean = json.loads(meta.custom_metadata_map[name_mean])
+            std = json.loads(meta.custom_metadata_map[name_std])
+            return StandardizationParameters().set_mean_std(mean=mean, std=std)
+
+        return StandardizationParameters()  # default, no standardization
 
     def get_metadata_resolution(self) -> Optional[float]:
         """ Get resolution from metadata if exists
@@ -357,15 +379,10 @@ class ModelBase:
         np.ndarray
             Preprocessed batch of image (N,C,H,W), RGB, 0-1
         """
-        tiles_batched = tiles_batched[:, :, :, :self.input_shape[-3]]
-        
-        if tiles_batched.shape[0] == 1 and tiles_batched.shape[1:3] != self.input_shape[2:4]:
-            # if the model has a fixed batch size, we can resize the input
-            tiles_batched = np.array([cv2.resize(tiles_batched[0], (self.input_shape[3], self.input_shape[2]))])
-
-        tiles_batched = tiles_batched.astype('float32')
-        tiles_batched /= 255
-        tiles_batched = tiles_batched.transpose(0, 3, 1, 2)
+        tiles_batched = preprocessing_utils.limit_channels_number(tiles_batched, limit=self.input_shape[-3])
+        tiles_batched = preprocessing_utils.normalize_values_to_01(tiles_batched)
+        tiles_batched = preprocessing_utils.standardize_values(tiles_batched, params=self.standardization_parameters)
+        tiles_batched = preprocessing_utils.transpose_nhwc_to_nchw(tiles_batched)
 
         return tiles_batched
 

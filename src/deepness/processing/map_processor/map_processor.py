@@ -111,7 +111,7 @@ class MapProcessor(QgsTask):
     def set_results_img(self, img):
         if self._result_img is not None:
             raise Exception("Result image already created!")
-        
+
         self._result_img = img
 
     def get_result_img(self):
@@ -215,17 +215,17 @@ class MapProcessor(QgsTask):
         """
         Iterate over all tiles, as a Python generator function, but return them in batches
         """
-        
+
         tile_img_batch, tile_params_batch = [], []
-        
+
         for tile_img, tile_params in self.tiles_generator():
             tile_img_batch.append(tile_img)
             tile_params_batch.append(tile_params)
-            
+
             if len(tile_img_batch) >= self.params.batch_size:
                 yield np.array(tile_img_batch), tile_params_batch
                 tile_img_batch, tile_params_batch = [], []
-                
+
         if len(tile_img_batch) > 0:
             yield np.array(tile_img_batch), tile_params_batch
             tile_img_batch, tile_params_batch = [], []
