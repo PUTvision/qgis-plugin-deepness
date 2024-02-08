@@ -42,7 +42,7 @@ class MapProcessorRegression(MapProcessorWithModel):
                 return MapProcessingResultCanceled()
 
             tile_results_batched = self._process_tile(tile_img_batched)
-            
+
             for tile_results, tile_params in zip(tile_results_batched, tile_params_batched):
                 for i in range(number_of_output_channels):
                     tile_params.set_mask_on_full_img(
@@ -52,10 +52,13 @@ class MapProcessorRegression(MapProcessorWithModel):
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
         full_result_imgs = self.limit_extended_extent_images_to_base_extent_with_mask(full_imgs=full_result_imgs)
         self.set_results_img(full_result_imgs)
-        
-        self._create_rlayers_from_images_for_base_extent(self.get_result_img())
+
+        gui_delegate = self._create_rlayers_from_images_for_base_extent(self.get_result_img())
         result_message = self._create_result_message(self.get_result_img())
-        return MapProcessingResultSuccess(result_message)
+        return MapProcessingResultSuccess(
+            message=result_message,
+            gui_delegate=gui_delegate,
+        )
 
     def _create_result_message(self, result_imgs: List[np.ndarray]) -> str:
         channels = self._get_indexes_of_model_output_channels_to_create()
@@ -99,11 +102,10 @@ class MapProcessorRegression(MapProcessorWithModel):
         return rlayer
 
     def _create_rlayers_from_images_for_base_extent(self, result_imgs: List[np.ndarray]):
-        group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
-
         # TODO: We are creating a new file for each layer.
         # Maybe can we pass ownership of this file to QGis?
         # Or maybe even create vlayer directly from array, without a file?
+        rlayers = []
 
         for i, channel_id in enumerate(self._get_indexes_of_model_output_channels_to_create()):
             result_img = result_imgs[i]
@@ -114,9 +116,15 @@ class MapProcessorRegression(MapProcessorWithModel):
             rlayer = self.load_rlayer_from_file(file_path)
             OUTPUT_RLAYER_OPACITY = 0.5
             rlayer.renderer().setOpacity(OUTPUT_RLAYER_OPACITY)
+            rlayers.append(rlayer)
 
-            QgsProject.instance().addMapLayer(rlayer, False)
-            group.addLayer(rlayer)
+        def add_to_gui():
+            group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
+            for rlayer in rlayers:
+                QgsProject.instance().addMapLayer(rlayer, False)
+                group.addLayer(rlayer)
+
+        return add_to_gui
 
     def save_result_img_as_tif(self, file_path: str, img: np.ndarray):
         """
