@@ -12,7 +12,7 @@ from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOver
 from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
 from deepness.common.processing_parameters.recognition_parameters import RecognitionParameters
 from deepness.processing.map_processor.map_processor_recognition import MapProcessorRecognition
-from deepness.processing.models.segmentor import Segmentor
+from deepness.processing.models.recognition import Recognition
 
 RASTER_FILE_PATH = get_dummy_recognition_map_path()
 
@@ -30,12 +30,12 @@ def test_dummy_model_processing__entire_file():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
-    model = Segmentor(MODEL_FILE_PATH)
+    model = Recognition(MODEL_FILE_PATH)
 
     params = RecognitionParameters(
         resolution_cm_per_px=50,
         tile_size_px=model.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
-        batch_size=1,
+        batch_size=2,
         local_cache=False,
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
@@ -63,7 +63,7 @@ def test_dummy_model_processing__entire_file():
     vmin = result_img.min()
     vmax = result_img.max()
 
-    assert np.isclose(vmin, 0.9623341, atol=1e-6)
+    assert np.isclose(vmin, -0.06747727, atol=1e-6)
     assert np.isclose(vmax, 1.0, atol=1e-6)
 
     assert len(np.argwhere(result_img == result_img.max())) == 891
