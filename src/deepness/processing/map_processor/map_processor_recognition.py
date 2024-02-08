@@ -39,10 +39,11 @@ class MapProcessorRecognition(MapProcessorWithModel):
             return MapProcessingResultFailed(f"Error occurred while reading query image: {e}")
 
         # some hardcoded code for recognition model
+        query_img = cv2.cvtColor(query_img, cv2.COLOR_BGR2RGB)
         query_img_resized = cv2.resize(query_img, self.model.get_input_shape()[2:4][::-1])
         query_img_batched = np.array([query_img_resized])
 
-        query_img_emb = self.model.process(query_img_batched)[0]
+        query_img_emb = self.model.process(query_img_batched)[0][0]
 
         final_shape_px = (
             self.img_size_y_pixels,
@@ -57,7 +58,7 @@ class MapProcessorRecognition(MapProcessorWithModel):
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
-            tile_result_batched = self._process_tile(tile_img_batched)
+            tile_result_batched = self._process_tile(tile_img_batched)[0]
 
             for tile_result, tile_params in zip(tile_result_batched, tile_params_batched):
                 cossim = np.dot(query_img_emb, tile_result)/(norm(query_img_emb)*norm(tile_result))

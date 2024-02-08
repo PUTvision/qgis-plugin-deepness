@@ -187,7 +187,14 @@ class ModelBase:
         if name_mean in meta.custom_metadata_map and name_std in meta.custom_metadata_map:
             mean = json.loads(meta.custom_metadata_map[name_mean])
             std = json.loads(meta.custom_metadata_map[name_std])
-            return StandardizationParameters().set_mean_std(mean=mean, std=std)
+
+            mean = [float(x) for x in mean]
+            std = [float(x) for x in std]
+
+            param = StandardizationParameters()
+            param.set_mean_std(mean=mean, std=std)
+
+            return param
 
         return StandardizationParameters()  # default, no standardization
 
