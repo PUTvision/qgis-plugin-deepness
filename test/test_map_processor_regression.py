@@ -60,7 +60,7 @@ def test_dummy_model_processing__entire_file():
     )
 
     map_processor.run()
-    result_imgs = map_processor.get_result_imgs()
+    result_imgs = map_processor.get_result_img()
     result_img = result_imgs[0]
 
     assert result_img.shape == (561, 829)
@@ -96,7 +96,7 @@ def test_dummy_model_processing__entire_file_batched():
     )
 
     map_processor.run()
-    result_imgs = map_processor.get_result_imgs()
+    result_imgs = map_processor.get_result_img()
     result_img = result_imgs[0]
 
     assert result_img.shape == (561, 829)
@@ -131,7 +131,7 @@ def test_dummy_model_processing__entire_file_with_cache():
     )
 
     map_processor.run()
-    result_imgs = map_processor.get_result_imgs()
+    result_imgs = map_processor.get_result_img()
     result_img = result_imgs[0]
 
     assert result_img.shape == (561, 829)

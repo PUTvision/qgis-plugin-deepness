@@ -46,7 +46,7 @@ class Detection:
             _description_
         """
         self.bbox.apply_offset(offset_x=offset_x, offset_y=offset_y)
-        
+
         if self.mask is not None:
             self.mask_offsets = (offset_x, offset_y)
 
@@ -83,7 +83,7 @@ class Detector(ModelBase):
         """float: Confidence threshold"""
         self.iou_threshold = None
         """float: IoU threshold"""
-        self.model_type: DetectorType | None = None
+        self.model_type: Optional[DetectorType] = None
         """DetectorType: Model type"""
 
     def set_inference_params(self, confidence: float, iou_threshold: float):
@@ -168,12 +168,14 @@ class Detector(ModelBase):
             return Exception(
                 "Model type is not set for model. Use self.set_model_type_param"
             )
-        
+
         batch_detection = []
-        for i in range(len(model_output)):
+        outputs_range = len(model_output[0])if self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION else len(model_output)
+
+        for i in range(outputs_range):
             masks = None
             detections = []
-            
+
             if self.model_type == DetectorType.YOLO_v5_v7_DEFAULT:
                 boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output[0][i])
             elif self.model_type == DetectorType.YOLO_v6:
@@ -184,7 +186,7 @@ class Detector(ModelBase):
                 boxes, conf, classes, masks = self._postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(model_output[0][i], model_output[1][i])
             else:
                 raise NotImplementedError(f"Model type not implemented! ('{self.model_type}')")
-            
+
             masks = masks if masks is not None else [None] * len(boxes)
 
             for b, c, cl, m in zip(boxes, conf, classes, masks):
@@ -199,7 +201,7 @@ class Detector(ModelBase):
                     mask=m,
                 )
                 detections.append(det)
-                
+
             batch_detection.append(detections)
 
         return batch_detection

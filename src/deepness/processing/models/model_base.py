@@ -3,9 +3,12 @@ import ast
 import json
 from typing import List, Optional
 
+import cv2
 import numpy as np
 
+import deepness.processing.models.preprocessing_utils as preprocessing_utils
 from deepness.common.lazy_package_loader import LazyPackageLoader
+from deepness.common.processing_parameters.standardization_parameters import StandardizationParameters
 
 ort = LazyPackageLoader('onnxruntime')
 
@@ -43,6 +46,7 @@ class ModelBase:
         self.input_name = input_0.name
 
         self.outputs_layers = self.sess.get_outputs()
+        self.standardization_parameters: StandardizationParameters = self.get_metadata_standarization_parameters()
 
     @classmethod
     def get_model_type_from_metadata(cls, model_file_path: str) -> Optional[str]:
@@ -167,6 +171,33 @@ class ModelBase:
             value = json.loads(meta.custom_metadata_map[name])
             return str(value).capitalize()
         return None
+
+    def get_metadata_standarization_parameters(self) -> Optional[StandardizationParameters]:
+        """ Get standardization parameters from metadata if exists
+
+        Returns
+        -------
+        Optional[StandardizationParameters]
+            Standardization parameters or None if not found
+        """
+        meta = self.sess.get_modelmeta()
+        name_mean = 'standardization_mean'
+        name_std = 'standardization_std'
+        
+        param = StandardizationParameters(channels_number=self.get_input_shape()[-3])
+
+        if name_mean in meta.custom_metadata_map and name_std in meta.custom_metadata_map:
+            mean = json.loads(meta.custom_metadata_map[name_mean])
+            std = json.loads(meta.custom_metadata_map[name_std])
+
+            mean = [float(x) for x in mean]
+            std = [float(x) for x in std]
+
+            param.set_mean_std(mean=mean, std=std)
+
+            return param
+
+        return param  # default, no standardization
 
     def get_metadata_resolution(self) -> Optional[float]:
         """ Get resolution from metadata if exists
@@ -356,11 +387,10 @@ class ModelBase:
         np.ndarray
             Preprocessed batch of image (N,C,H,W), RGB, 0-1
         """
-        tiles_batched = tiles_batched[:, :, :, :self.input_shape[-3]]
-
-        tiles_batched = tiles_batched.astype('float32')
-        tiles_batched /= 255
-        tiles_batched = tiles_batched.transpose(0, 3, 1, 2)
+        tiles_batched = preprocessing_utils.limit_channels_number(tiles_batched, limit=self.input_shape[-3])
+        tiles_batched = preprocessing_utils.normalize_values_to_01(tiles_batched)
+        tiles_batched = preprocessing_utils.standardize_values(tiles_batched, params=self.standardization_parameters)
+        tiles_batched = preprocessing_utils.transpose_nhwc_to_nchw(tiles_batched)
 
         return tiles_batched
 

@@ -59,7 +59,7 @@ def test_dummy_model_processing__entire_file():
     )
 
     map_processor.run()
-    result_img = map_processor.get_result_imgs()
+    result_img = map_processor.get_result_img()
     result_img = result_img  # take only the first band
 
     assert result_img.shape == (int(560*2), int(828*2), 3)  # 2x upscaled
@@ -96,7 +96,7 @@ def test_dummy_model_processing__entire_file_cached():
     )
 
     map_processor.run()
-    result_img = map_processor.get_result_imgs()
+    result_img = map_processor.get_result_img()
     result_img = result_img  # take only the first band
 
     assert result_img.shape == (int(560*2), int(828*2), 3)  # 2x upscaled
@@ -132,7 +132,7 @@ def test_dummy_model_processing__entire_file_batched():
     )
 
     map_processor.run()
-    result_img = map_processor.get_result_imgs()
+    result_img = map_processor.get_result_img()
     result_img = result_img  # take only the first band
 
     assert result_img.shape == (int(560*2), int(828*2), 3)  # 2x upscaled

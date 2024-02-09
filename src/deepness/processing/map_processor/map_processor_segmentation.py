@@ -1,5 +1,6 @@
 """ This file implements map processing for segmentation model """
 
+from typing import Callable
 import numpy as np
 from qgis.core import QgsProject, QgsVectorLayer
 
@@ -31,16 +32,12 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             **kwargs)
         self.segmentation_parameters = params
         self.model = params.model
-        self._result_img = None
-
-    def get_result_img(self):
-        return self._result_img
 
     def _run(self) -> MapProcessingResult:
         final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
-        
+
         full_result_img = self._get_array_or_mmapped_array(final_shape_px)
-            
+
         for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
@@ -55,11 +52,17 @@ class MapProcessorSegmentation(MapProcessorWithModel):
 
         blur_size = int(self.segmentation_parameters.postprocessing_dilate_erode_size // 2) * 2 + 1  # needs to be odd
         full_result_img = cv2.medianBlur(full_result_img, blur_size)
-        self._result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
-        self._create_vlayer_from_mask_for_base_extent(self._result_img)
+        full_result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
 
-        result_message = self._create_result_message(self._result_img)
-        return MapProcessingResultSuccess(result_message)
+        self.set_results_img(full_result_img)
+
+        gui_delegate = self._create_vlayer_from_mask_for_base_extent(self.get_result_img())
+
+        result_message = self._create_result_message(self.get_result_img())
+        return MapProcessingResultSuccess(
+            message=result_message,
+            gui_delegate=gui_delegate,
+        )
 
     def _create_result_message(self, result_img: np.ndarray) -> str:
         unique, counts = np.unique(result_img, return_counts=True)
@@ -85,9 +88,11 @@ class MapProcessorSegmentation(MapProcessorWithModel):
 
         return txt
 
-    def _create_vlayer_from_mask_for_base_extent(self, mask_img):
-        # create vector layer with polygons from the mask image
-        group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
+    def _create_vlayer_from_mask_for_base_extent(self, mask_img) -> Callable:
+        """ create vector layer with polygons from the mask image
+        :return: function to be called in GUI thread
+        """
+        vlayers = []
 
         for channel_id in self._get_indexes_of_model_output_channels_to_create():
             # See note in the class description why are we adding/subtracting 1 here
@@ -130,18 +135,26 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             prov.addFeatures(features)
             vlayer.updateExtents()
 
-            QgsProject.instance().addMapLayer(vlayer, False)
-            group.addLayer(vlayer)
+            vlayers.append(vlayer)
+
+        # accessing GUI from non-GUI thread is not safe, so we need to delegate it to the GUI thread
+        def add_to_gui():
+            group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
+            for vlayer in vlayers:
+                QgsProject.instance().addMapLayer(vlayer, False)
+                group.addLayer(vlayer)
+
+        return add_to_gui
 
     def _process_tile(self, tile_img_batched: np.ndarray) -> np.ndarray:
         # TODO - create proper mapping for output channels
         result = self.model.process(tile_img_batched)
-        
+
         result[result < self.segmentation_parameters.pixel_classification__probability_threshold] = 0.0
-                
+
         if (result.shape[1] == 1):
-            result = (result != 0).astype(int)[:, 0]         
+            result = (result != 0).astype(int)[:, 0]
         else:
             result = np.argmax(result, axis=1)
-            
+
         return result

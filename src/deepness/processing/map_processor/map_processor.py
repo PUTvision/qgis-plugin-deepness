@@ -106,6 +106,20 @@ class MapProcessor(QgsTask):
             image_shape_yx=(self.img_size_y_pixels, self.img_size_x_pixels),
             files_handler=self.file_handler)  # type: Optional[np.ndarray]
 
+        self._result_img = None
+
+    def set_results_img(self, img):
+        if self._result_img is not None:
+            raise Exception("Result image already created!")
+
+        self._result_img = img
+
+    def get_result_img(self):
+        if self._result_img is None:
+            raise Exception("Result image not yet created!")
+
+        return self._result_img
+
     def _assert_qgis_doesnt_need_reload(self):
         """ If the plugin is somehow invalid, it cannot compare the enums correctly
         I suppose it could be fixed somehow, but no need to investigate it now,
@@ -132,7 +146,11 @@ class MapProcessor(QgsTask):
         raise NotImplementedError('Base class not implemented!')
 
     def finished(self, result: bool):
-        if not result:
+        if result:
+            gui_delegate = self._processing_result.gui_delegate
+            if gui_delegate is not None:
+                gui_delegate()
+        else:
             self._processing_result = MapProcessingResultFailed("Unhandled processing error!")
         self.finished_signal.emit(self._processing_result)
 
@@ -167,7 +185,7 @@ class MapProcessor(QgsTask):
                 shape=final_shape_px)
         else:
             full_result_img = np.zeros(final_shape_px, np.uint8)
-            
+
         return full_result_img
 
     def tiles_generator(self) -> Tuple[np.ndarray, TileParams]:
@@ -194,24 +212,24 @@ class MapProcessor(QgsTask):
 
                 tile_img = processing_utils.get_tile_image(
                     rlayer=self.rlayer, extent=tile_params.extent, params=self.params)
-                
+
                 yield tile_img, tile_params
 
     def tiles_generator_batched(self) -> Tuple[np.ndarray, List[TileParams]]:
         """
         Iterate over all tiles, as a Python generator function, but return them in batches
         """
-        
+
         tile_img_batch, tile_params_batch = [], []
-        
+
         for tile_img, tile_params in self.tiles_generator():
             tile_img_batch.append(tile_img)
             tile_params_batch.append(tile_params)
-            
+
             if len(tile_img_batch) >= self.params.batch_size:
                 yield np.array(tile_img_batch), tile_params_batch
                 tile_img_batch, tile_params_batch = [], []
-                
+
         if len(tile_img_batch) > 0:
             yield np.array(tile_img_batch), tile_params_batch
             tile_img_batch, tile_params_batch = [], []
