@@ -37,6 +37,8 @@ def test_dummy_model_processing__entire_file():
     params = SegmentationParameters(
         resolution_cm_per_px=3,
         tile_size_px=model.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        batch_size=1,
+        local_cache=False,
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
         input_layer_id=rlayer.id(),
@@ -71,6 +73,8 @@ def test_dummy_model_processing__entire_file_overlap_in_pixels():
     params = SegmentationParameters(
         resolution_cm_per_px=3,
         tile_size_px=model.get_input_size_in_pixels()[0],  # same x and y dimensions, so take x
+        batch_size=1,
+        local_cache=False,
         processed_area_type=ProcessedAreaType.ENTIRE_LAYER,
         mask_layer_id=None,
         input_layer_id=rlayer.id(),
@@ -96,8 +100,8 @@ def test_dummy_model_processing__entire_file_overlap_in_pixels():
     assert result_img.shape == (561, 829)
 
 def model_process_mock(x):
-    x = x[:, :, 0:2]
-    return np.transpose(x, (2, 0, 1))
+    x = x[:, :, :, 0:2]
+    return np.transpose(x, (0, 3, 1, 2))
 
 
 def test_generic_processing_test__specified_extent_from_vlayer():
@@ -114,6 +118,8 @@ def test_generic_processing_test__specified_extent_from_vlayer():
     params = SegmentationParameters(
         resolution_cm_per_px=3,
         tile_size_px=512,
+        batch_size=1,
+        local_cache=False,
         processed_area_type=ProcessedAreaType.FROM_POLYGONS,
         mask_layer_id=vlayer_mask.id(),
         input_layer_id=rlayer.id(),
@@ -143,6 +149,50 @@ def test_generic_processing_test__specified_extent_from_vlayer():
     # and counts of different values
     np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([166903, 45270, 171919]), atol=3)
 
+def test_generic_processing_test__specified_extent_from_vlayer_using_cache():
+    qgs = init_qgis()
+
+    rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
+    vlayer_mask = create_vlayer_from_file(VLAYER_MASK_FILE_PATH)
+    model = MagicMock()
+    model.process = model_process_mock
+    model.get_number_of_channels = lambda: 2
+    model.get_number_of_output_channels = lambda: 2
+    model.get_channel_name = lambda x: str(x)
+
+    params = SegmentationParameters(
+        resolution_cm_per_px=3,
+        tile_size_px=512,
+        batch_size=1,
+        local_cache=True,
+        processed_area_type=ProcessedAreaType.FROM_POLYGONS,
+        mask_layer_id=vlayer_mask.id(),
+        input_layer_id=rlayer.id(),
+        input_channels_mapping=INPUT_CHANNELS_MAPPING,
+        postprocessing_dilate_erode_size=5,
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=20),
+        pixel_classification__probability_threshold=0.5,
+        model_output_format=ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER,
+        model_output_format__single_class_number=1,
+        model=model,
+    )
+    map_processor = MapProcessorSegmentation(
+        rlayer=rlayer,
+        vlayer_mask=vlayer_mask,
+        map_canvas=MagicMock(),
+        params=params,
+    )
+
+    # just run - we will check the results in a more detailed test
+    map_processor.run()
+    result_img = map_processor.get_result_img()
+    assert result_img.shape == (524, 733)
+
+    # just check a few pixels
+    assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
+               np.asarray([0, 2, 2, 2, 2, 0, 0, 2, 0]))
+    # and counts of different values
+    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([166903, 45270, 171919]), atol=3)
 
 def test_generic_processing_test__specified_extent_from_vlayer_crs3857():
     qgs = init_qgis()
@@ -158,6 +208,8 @@ def test_generic_processing_test__specified_extent_from_vlayer_crs3857():
     params = SegmentationParameters(
         resolution_cm_per_px=3,
         tile_size_px=512,
+        batch_size=1,
+        local_cache=False,
         processed_area_type=ProcessedAreaType.FROM_POLYGONS,
         mask_layer_id=vlayer_mask.id(),
         input_layer_id=rlayer.id(),
@@ -203,6 +255,8 @@ def test_generic_processing_test__specified_extent_from_active_map_extent():
     params = SegmentationParameters(
         resolution_cm_per_px=3,
         tile_size_px=512,
+        batch_size=1,
+        local_cache=False,
         processed_area_type=ProcessedAreaType.VISIBLE_PART,
         mask_layer_id=None,
         input_layer_id=rlayer.id(),

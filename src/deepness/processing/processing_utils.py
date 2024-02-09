@@ -14,6 +14,7 @@ from deepness.common.defines import IS_DEBUG
 from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
+from deepness.common.temp_files_handler import TempFilesHandler
 
 cv2 = LazyPackageLoader('cv2')
 
@@ -30,20 +31,21 @@ def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
 
 def get_numpy_data_type_for_qgis_type(data_type_qgis: Qgis.DataType):
     """Conver QGIS data type to corresponding numpy data type
+    In [58]: Qgis.DataType?
+    implemented: Byte, UInt16, Int16, Float32, Float64
     """
     if data_type_qgis == Qgis.DataType.Byte:
-        data_type_numpy = np.uint8
-    elif data_type_qgis == Qgis.DataType.UInt16:
-        data_type_numpy = np.uint16
-    elif data_type_qgis == Qgis.DataType.Int16:
-        data_type_numpy = np.int16
-    elif data_type_qgis in [Qgis.DataType.Float32]:
-        data_type_numpy = np.float32
-    else:
-        # TODO - maybe add support for more data types (change also the numpy type below then)
-        raise Exception("Invalid input layer data type!")
-
-    return data_type_numpy
+        return np.uint8
+    if data_type_qgis == Qgis.DataType.UInt16:
+        return np.uint16
+    if data_type_qgis == Qgis.DataType.Int16:
+        return np.int16
+    if data_type_qgis in Qgis.DataType.Float32:
+        return np.float32
+    if data_type_qgis in Qgis.DataType.Float64:
+        return np.float64
+    # TODO - maybe add support for more data types (change also the numpy type below then)
+    raise Exception("Invalid input layer data type!")
 
 
 def get_tile_image(
@@ -68,7 +70,8 @@ def get_tile_image(
     """
 
     expected_meters_per_pixel = params.resolution_cm_per_px / 100
-    expected_units_per_pixel = convert_meters_to_rlayer_units(rlayer, expected_meters_per_pixel)
+    expected_units_per_pixel = convert_meters_to_rlayer_units(
+        rlayer, expected_meters_per_pixel)
     expected_units_per_pixel_2d = expected_units_per_pixel, expected_units_per_pixel
     # to get all pixels - use the 'rlayer.rasterUnitsPerPixelX()' instead of 'expected_units_per_pixel_2d'
     image_size = round((extent.width()) / expected_units_per_pixel_2d[0]), \
@@ -84,8 +87,10 @@ def get_tile_image(
         raise Exception("Somehow invalid rlayer!")
     data_provider.enableProviderResampling(True)
     original_resampling_method = data_provider.zoomedInResamplingMethod()
-    data_provider.setZoomedInResamplingMethod(data_provider.ResamplingMethod.Bilinear)
-    data_provider.setZoomedOutResamplingMethod(data_provider.ResamplingMethod.Bilinear)
+    data_provider.setZoomedInResamplingMethod(
+        data_provider.ResamplingMethod.Bilinear)
+    data_provider.setZoomedOutResamplingMethod(
+        data_provider.ResamplingMethod.Bilinear)
 
     def get_raster_block(band_number_):
         raster_block = rlayer.dataProvider().block(
@@ -93,7 +98,7 @@ def get_tile_image(
             extent,
             image_size[0], image_size[1])
         block_height, block_width = raster_block.height(), raster_block.width()
-        if block_width == 0 or block_width == 0:
+        if block_height == 0 or block_width == 0:
             raise Exception("No data on layer within the expected extent!")
         return raster_block
 
@@ -104,9 +109,11 @@ def get_tile_image(
     if input_channels_mapping.are_all_inputs_standalone_bands():
         band_count = rlayer.bandCount()
         for i in range(number_of_model_inputs):
-            image_channel = input_channels_mapping.get_image_channel_for_model_input(i)
+            image_channel = input_channels_mapping.get_image_channel_for_model_input(
+                i)
             band_number = image_channel.get_band_number()
-            assert band_number <= band_count  # we cannot obtain a higher band than the maximum in the image
+            # we cannot obtain a higher band than the maximum in the image
+            assert band_number <= band_count
             rb = get_raster_block(band_number)
             raw_data = rb.data()
             bytes_array = bytes(raw_data)
@@ -121,21 +128,26 @@ def get_tile_image(
         bytes_array = bytes(raw_data)
         dt = rb.dataType()
         number_of_image_channels = input_channels_mapping.get_number_of_image_channels()
-        assert number_of_image_channels == 4  # otherwise we did something wrong earlier...
+        # otherwise we did something wrong earlier...
+        assert number_of_image_channels == 4
         if dt != Qgis.DataType.ARGB32:
             raise Exception("Invalid input layer data type!")
         a = np.frombuffer(bytes_array, dtype=np.uint8)
         b = a.reshape((image_size[1], image_size[0], number_of_image_channels))
 
         for i in range(number_of_model_inputs):
-            image_channel = input_channels_mapping.get_image_channel_for_model_input(i)
+            image_channel = input_channels_mapping.get_image_channel_for_model_input(
+                i)
             byte_number = image_channel.get_byte_number()
-            assert byte_number < number_of_image_channels  # we cannot get more bytes than there are
-            tile_data.append(b[:, :, byte_number:byte_number+1])  # last index to keep dimension
+            # we cannot get more bytes than there are
+            assert byte_number < number_of_image_channels
+            # last index to keep dimension
+            tile_data.append(b[:, :, byte_number:byte_number+1])
     else:
         raise Exception("Unsupported image channels composition!")
 
-    data_provider.setZoomedInResamplingMethod(original_resampling_method)  # restore old resampling method
+    data_provider.setZoomedInResamplingMethod(
+        original_resampling_method)  # restore old resampling method
     img = np.concatenate(tile_data, axis=2)
     return img
 
@@ -410,7 +422,8 @@ def transform_polygon_with_rings_epsg_to_extended_xy_pixels(
         for point_epsg in polygon:
             x_epsg, y_epsg = point_epsg
             x = round((x_epsg - x_min_epsg) / rlayer_units_per_pixel)
-            y = y_max_pixel - round((y_epsg - y_min_epsg) / rlayer_units_per_pixel)
+            y = y_max_pixel - \
+                round((y_epsg - y_min_epsg) / rlayer_units_per_pixel)
             # NOTE: here we can get pixels +-1 values, because we operate on already rounded bounding boxes
             xy_pixel_contour.append((x, y))
 
@@ -426,7 +439,8 @@ def create_area_mask_image(vlayer_mask,
                            rlayer: QgsRasterLayer,
                            extended_extent: QgsRectangle,
                            rlayer_units_per_pixel: float,
-                           image_shape_yx) -> Optional[np.ndarray]:
+                           image_shape_yx: Tuple[int, int],
+                           files_handler: Optional[TempFilesHandler] = None) -> Optional[np.ndarray]:
     """
     Mask determining area to process (within extended_extent coordinates)
     None if no mask layer provided.
@@ -434,7 +448,15 @@ def create_area_mask_image(vlayer_mask,
 
     if vlayer_mask is None:
         return None
-    img = np.zeros(shape=image_shape_yx, dtype=np.uint8)
+    
+    if files_handler is None:
+        img = np.zeros(shape=image_shape_yx, dtype=np.uint8)
+    else:
+        img = np.memmap(files_handler.get_area_mask_img_path(),
+                        dtype=np.uint8,
+                        mode='w+',
+                        shape=image_shape_yx)
+
     features = vlayer_mask.getFeatures()
 
     if vlayer_mask.crs() != rlayer.crs():

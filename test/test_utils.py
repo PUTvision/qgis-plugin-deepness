@@ -24,12 +24,38 @@ def get_dummy_segmentation_model_different_output_size_path():
     """
     return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_model_different_output_size.onnx')
 
+def get_dummy_recognition_model_path():
+    """
+    Get path of a dummy onnx model. See details in README in model directory.
+    Model used for unit tests processing purposes
+    """
+    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_recognition_model.onnx')
+
+def get_dummy_recognition_image_path():
+    """
+    Get path of a dummy image, which can be used for testing with conjunction with dummy_mode (see get_dummy_model_path)
+    """
+    return os.path.join(TEST_DATA_DIR, 'dummy_recognition_image.png')
+
+def get_dummy_recognition_map_path():
+    """
+    Get path of a dummy map, which can be used for testing with conjunction with dummy_mode (see get_dummy_model_path)
+    """
+    return os.path.join(TEST_DATA_DIR, 'dummy_recognition_map.tif')
+
 def get_dummy_regression_model_path():
     """
     Get path of a dummy onnx model. See details in README in model directory.
     Model used for unit tests processing purposes
     """
     return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_regression_model.onnx')
+
+def get_dummy_regression_model_path_batched():
+    """
+    Get path of a dummy onnx model. See details in README in model directory.
+    Model used for unit tests processing purposes
+    """
+    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_regression_model_batched.onnx')
 
 def get_dummy_superresolution_model_path():
     """

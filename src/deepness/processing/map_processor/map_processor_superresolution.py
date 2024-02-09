@@ -1,20 +1,17 @@
 """ This file implements map processing for Super Resolution model """
 
-import uuid
-from typing import List
 import os
 import uuid
 from typing import List
 
 import numpy as np
 from osgeo import gdal, osr
-from qgis.core import QgsProject
-from qgis.core import QgsRasterLayer
+from qgis.core import QgsProject, QgsRasterLayer
 
 from deepness.common.misc import TMP_DIR_PATH
 from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
-from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
-    MapProcessingResultCanceled, MapProcessingResultSuccess
+from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
+                                                                     MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 
 
@@ -32,34 +29,35 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
             **kwargs)
         self.superresolution_parameters = params
         self.model = params.model
-        self._result_imgs = None
-
-    def get_result_imgs(self):
-        return self._result_imgs
 
     def _run(self) -> MapProcessingResult:
-        number_of_output_channels = len(self._get_indexes_of_model_output_channels_to_create())
+        number_of_output_channels = self.model.get_number_of_output_channels()
         final_shape_px = (int(self.img_size_y_pixels*self.superresolution_parameters.scale_factor), int(self.img_size_x_pixels*self.superresolution_parameters.scale_factor), number_of_output_channels)
 
         # NOTE: consider whether we can use float16/uint16 as datatype
-        full_result_imgs = np.zeros(final_shape_px, np.float32)
+        full_result_imgs = self._get_array_or_mmapped_array(final_shape_px)
 
-        for tile_img, tile_params in self.tiles_generator():
+        for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
-            tile_results = self._process_tile(tile_img)
-            full_result_imgs[int(tile_params.start_pixel_y*self.superresolution_parameters.scale_factor):int((tile_params.start_pixel_y+tile_params.stride_px)*self.superresolution_parameters.scale_factor),
-                             int(tile_params.start_pixel_x*self.superresolution_parameters.scale_factor):int((tile_params.start_pixel_x+tile_params.stride_px)*self.superresolution_parameters.scale_factor),
-                             :] = tile_results.transpose(1, 2, 0)  # transpose to chanels last
+            tile_results_batched = self._process_tile(tile_img_batched)
+
+            for tile_results, tile_params in zip(tile_results_batched, tile_params_batched):
+                full_result_imgs[int(tile_params.start_pixel_y*self.superresolution_parameters.scale_factor):int((tile_params.start_pixel_y+tile_params.stride_px)*self.superresolution_parameters.scale_factor),
+                                int(tile_params.start_pixel_x*self.superresolution_parameters.scale_factor):int((tile_params.start_pixel_x+tile_params.stride_px)*self.superresolution_parameters.scale_factor),
+                                :] = tile_results.transpose(1, 2, 0)  # transpose to chanels last
 
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
         full_result_imgs = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_imgs)
-        self._result_imgs = full_result_imgs
-        self._create_rlayers_from_images_for_base_extent(self._result_imgs)
+        self.set_results_img(full_result_imgs)
 
-        result_message = self._create_result_message(self._result_imgs)
-        return MapProcessingResultSuccess(result_message)
+        gui_delegate = self._create_rlayers_from_images_for_base_extent(self.get_result_img())
+        result_message = self._create_result_message(self.get_result_img())
+        return MapProcessingResultSuccess(
+            message=result_message,
+            gui_delegate=gui_delegate,
+        )
 
     def _create_result_message(self, result_img: List[np.ndarray]) -> str:
         channels = self._get_indexes_of_model_output_channels_to_create()
@@ -100,11 +98,10 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
         return rlayer
 
     def _create_rlayers_from_images_for_base_extent(self, result_imgs: List[np.ndarray]):
-        group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'Super Resolution Results')
-
         # TODO: We are creating a new file for each layer.
         # Maybe can we pass ownership of this file to QGis?
         # Or maybe even create vlayer directly from array, without a file?
+        rlayers = []
 
         for i, channel_id in enumerate(['Super Resolution']):
             result_img = result_imgs
@@ -115,9 +112,15 @@ class MapProcessorSuperresolution(MapProcessorWithModel):
             rlayer = self.load_rlayer_from_file(file_path)
             OUTPUT_RLAYER_OPACITY = 0.5
             rlayer.renderer().setOpacity(OUTPUT_RLAYER_OPACITY)
+            rlayers.append(rlayer)
 
-            QgsProject.instance().addMapLayer(rlayer, False)
-            group.addLayer(rlayer)
+        def add_to_gui():
+            group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'Super Resolution Results')
+            for rlayer in rlayers:
+                QgsProject.instance().addMapLayer(rlayer, False)
+                group.addLayer(rlayer)
+
+        return add_to_gui
 
     def save_result_img_as_tif(self, file_path: str, img: np.ndarray):
         """

@@ -1,22 +1,19 @@
 """ This file implements core map processing logic """
 
 import logging
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
-from qgis.PyQt.QtCore import pyqtSignal
-from qgis.core import QgsRasterLayer
-from qgis.core import QgsTask
-from qgis.core import QgsVectorLayer
+from qgis.core import QgsRasterLayer, QgsTask, QgsVectorLayer
 from qgis.gui import QgsMapCanvas
+from qgis.PyQt.QtCore import pyqtSignal
 
 from deepness.common.defines import IS_DEBUG
 from deepness.common.lazy_package_loader import LazyPackageLoader
-from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, \
-    ProcessedAreaType
-from deepness.processing import processing_utils, extent_utils
-from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
-    MapProcessingResultFailed
+from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
+from deepness.common.temp_files_handler import TempFilesHandler
+from deepness.processing import extent_utils, processing_utils
+from deepness.processing.map_processor.map_processing_result import MapProcessingResult, MapProcessingResultFailed
 from deepness.processing.tile_params import TileParams
 
 cv2 = LazyPackageLoader('cv2')
@@ -33,8 +30,10 @@ class MapProcessor(QgsTask):
     Work is done within QgsTask, for seamless integration with QGis GUI and logic.
     """
 
-    finished_signal = pyqtSignal(MapProcessingResult)  # error message if finished with error, empty string otherwise
-    show_img_signal = pyqtSignal(object, str)  # request to show an image. Params: (image, window_name)
+    # error message if finished with error, empty string otherwise
+    finished_signal = pyqtSignal(MapProcessingResult)
+    # request to show an image. Params: (image, window_name)
+    show_img_signal = pyqtSignal(object, str)
 
     def __init__(self,
                  rlayer: QgsRasterLayer,
@@ -65,6 +64,8 @@ class MapProcessor(QgsTask):
         self.rlayer_units_per_pixel = processing_utils.convert_meters_to_rlayer_units(
             self.rlayer, self.params.resolution_m_per_px)  # number of rlayer units for one tile pixel
 
+        self.file_handler = TempFilesHandler() if self.params.local_cache else None
+
         # extent in which the actual required area is contained, without additional extensions, rounded to rlayer grid
         self.base_extent = extent_utils.calculate_base_processing_extent_in_rlayer_crs(
             map_canvas=map_canvas,
@@ -93,10 +94,8 @@ class MapProcessor(QgsTask):
 
         # Number of tiles in x and y dimensions which will be used during processing
         # As we are using "extended_extent" this should divide without any rest
-        self.x_bins_number = round((self.img_size_x_pixels - self.params.tile_size_px)
-                                   / self.stride_px) + 1
-        self.y_bins_number = round((self.img_size_y_pixels - self.params.tile_size_px)
-                                   / self.stride_px) + 1
+        self.x_bins_number = round((self.img_size_x_pixels - self.params.tile_size_px) / self.stride_px) + 1
+        self.y_bins_number = round((self.img_size_y_pixels - self.params.tile_size_px) / self.stride_px) + 1
 
         # Mask determining area to process (within extended_extent coordinates)
         self.area_mask_img = processing_utils.create_area_mask_image(
@@ -104,7 +103,22 @@ class MapProcessor(QgsTask):
             rlayer=self.rlayer,
             extended_extent=self.extended_extent,
             rlayer_units_per_pixel=self.rlayer_units_per_pixel,
-            image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])  # type: Optional[np.ndarray]
+            image_shape_yx=(self.img_size_y_pixels, self.img_size_x_pixels),
+            files_handler=self.file_handler)  # type: Optional[np.ndarray]
+
+        self._result_img = None
+
+    def set_results_img(self, img):
+        if self._result_img is not None:
+            raise Exception("Result image already created!")
+
+        self._result_img = img
+
+    def get_result_img(self):
+        if self._result_img is None:
+            raise Exception("Result image not yet created!")
+
+        return self._result_img
 
     def _assert_qgis_doesnt_need_reload(self):
         """ If the plugin is somehow invalid, it cannot compare the enums correctly
@@ -132,7 +146,11 @@ class MapProcessor(QgsTask):
         raise NotImplementedError('Base class not implemented!')
 
     def finished(self, result: bool):
-        if not result:
+        if result:
+            gui_delegate = self._processing_result.gui_delegate
+            if gui_delegate is not None:
+                gui_delegate()
+        else:
             self._processing_result = MapProcessingResultFailed("Unhandled processing error!")
         self.finished_signal.emit(self._processing_result)
 
@@ -158,6 +176,18 @@ class MapProcessor(QgsTask):
         result_img = full_img[b.y_min:b.y_max+1, b.x_min:b.x_max+1]
         return result_img
 
+    def _get_array_or_mmapped_array(self, final_shape_px):
+        if self.file_handler is not None:
+            full_result_img = np.memmap(
+                self.file_handler.get_results_img_path(),
+                dtype=np.uint8,
+                mode='w+',
+                shape=final_shape_px)
+        else:
+            full_result_img = np.zeros(final_shape_px, np.uint8)
+
+        return full_result_img
+
     def tiles_generator(self) -> Tuple[np.ndarray, TileParams]:
         """
         Iterate over all tiles, as a Python generator function
@@ -182,4 +212,24 @@ class MapProcessor(QgsTask):
 
                 tile_img = processing_utils.get_tile_image(
                     rlayer=self.rlayer, extent=tile_params.extent, params=self.params)
+
                 yield tile_img, tile_params
+
+    def tiles_generator_batched(self) -> Tuple[np.ndarray, List[TileParams]]:
+        """
+        Iterate over all tiles, as a Python generator function, but return them in batches
+        """
+
+        tile_img_batch, tile_params_batch = [], []
+
+        for tile_img, tile_params in self.tiles_generator():
+            tile_img_batch.append(tile_img)
+            tile_params_batch.append(tile_params)
+
+            if len(tile_img_batch) >= self.params.batch_size:
+                yield np.array(tile_img_batch), tile_params_batch
+                tile_img_batch, tile_params_batch = [], []
+
+        if len(tile_img_batch) > 0:
+            yield np.array(tile_img_batch), tile_params_batch
+            tile_img_batch, tile_params_batch = [], []

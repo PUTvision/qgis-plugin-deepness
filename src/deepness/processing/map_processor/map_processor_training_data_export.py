@@ -6,11 +6,10 @@ import os
 from qgis.core import QgsProject
 
 from deepness.common.lazy_package_loader import LazyPackageLoader
-from deepness.common.processing_parameters.training_data_export_parameters import \
-    TrainingDataExportParameters
+from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deepness.processing import processing_utils
-from deepness.processing.map_processor.map_processing_result import MapProcessingResultSuccess, \
-    MapProcessingResultCanceled
+from deepness.processing.map_processor.map_processing_result import (MapProcessingResultCanceled,
+                                                                     MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor import MapProcessor
 from deepness.processing.tile_params import TileParams
 
@@ -48,10 +47,11 @@ class MapProcessorTrainingDataExport(MapProcessor):
                 vlayer_mask=vlayer_segmentation,
                 extended_extent=self.extended_extent,
                 rlayer_units_per_pixel=self.rlayer_units_per_pixel,
-                image_shape_yx=[self.img_size_y_pixels, self.img_size_x_pixels])
+                image_shape_yx=(self.img_size_y_pixels, self.img_size_x_pixels),
+                files_handler=self.file_handler)
 
         number_of_written_tiles = 0
-        for tile_img, tile_params in self.tiles_generator():
+        for tile_img, tile_params in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 

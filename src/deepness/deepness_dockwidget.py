@@ -18,6 +18,7 @@ from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOver
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
 from deepness.common.processing_parameters.map_processing_parameters import (MapProcessingParameters, ModelOutputFormat,
                                                                              ProcessedAreaType)
+from deepness.common.processing_parameters.recognition_parameters import RecognitionParameters
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
@@ -92,8 +93,9 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             # needs to be loaded after the model is set up
             self.comboBox_outputFormatClassNumber.setCurrentIndex(ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.get())
-
             self.doubleSpinBox_resolution_cm_px.setValue(ConfigEntryKey.PREPROCESSING_RESOLUTION.get())
+            self.spinBox_batchSize.setValue(ConfigEntryKey.MODEL_BATCH_SIZE.get())
+            self.checkBox_local_cache.setChecked(ConfigEntryKey.PROCESS_LOCAL_CACHE.get())
             self.spinBox_processingTileOverlapPercentage.setValue(ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.get())
 
             self.doubleSpinBox_probabilityThreshold.setValue(
@@ -129,6 +131,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.set(self.comboBox_outputFormatClassNumber.currentIndex())
 
         ConfigEntryKey.PREPROCESSING_RESOLUTION.set(self.doubleSpinBox_resolution_cm_px.value())
+        ConfigEntryKey.MODEL_BATCH_SIZE.set(self.spinBox_batchSize.value())
+        ConfigEntryKey.PROCESS_LOCAL_CACHE.set(self.checkBox_local_cache.isChecked())
         ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.set(self.spinBox_processingTileOverlapPercentage.value())
 
         ConfigEntryKey.SEGMENTATION_PROBABILITY_THRESHOLD_ENABLED.set(
@@ -193,6 +197,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _create_connections(self):
         self.pushButton_runInference.clicked.connect(self._run_inference)
         self.pushButton_runTrainingDataExport.clicked.connect(self._run_training_data_export)
+        self.pushButton_browseQueryImagePath.clicked.connect(self._browse_query_image_path)
         self.pushButton_browseModelPath.clicked.connect(self._browse_model_path)
         self.comboBox_processedAreaSelection.currentIndexChanged.connect(self._set_processed_area_mask_options)
         self.comboBox_modelType.currentIndexChanged.connect(self._model_type_changed)
@@ -213,6 +218,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         detection_enabled = False
         regression_enabled = False
         superresolution_enabled = False
+        recognition_enabled = False
 
         if model_type == ModelType.SEGMENTATION:
             segmentation_enabled = True
@@ -222,13 +228,19 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             regression_enabled = True
         elif model_type == ModelType.SUPERRESOLUTION:
             superresolution_enabled = True
+        elif model_type == ModelType.RECOGNITION:
+            recognition_enabled = True
         else:
             raise Exception(f"Unsupported model type ({model_type})!")
 
-        self.mGroupBox_segmentationParameters.setEnabled(segmentation_enabled)
-        self.mGroupBox_detectionParameters.setEnabled(detection_enabled)
-        self.mGroupBox_regressionParameters.setEnabled(regression_enabled)
-        self.mGroupBox_superresolutionParameters.setEnabled(superresolution_enabled)
+        self.mGroupBox_segmentationParameters.setVisible(segmentation_enabled)
+        self.mGroupBox_detectionParameters.setVisible(detection_enabled)
+        self.mGroupBox_regressionParameters.setVisible(regression_enabled)
+        self.mGroupBox_superresolutionParameters.setVisible(superresolution_enabled)
+        self.mGroupBox_recognitionParameters.setVisible(recognition_enabled)
+        # Disable output format options for super-resolution or recognition models.
+        if recognition_enabled or superresolution_enabled:
+            self.mGroupBox_6.setEnabled(False)
 
     def _detector_type_changed(self):
         detector_type = DetectorType(self.comboBox_detectorType.currentText())
@@ -263,6 +275,16 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.lineEdit_modelPath.setText(file_path)
             self._load_model_and_display_info()
 
+    def _browse_query_image_path(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select image file...",
+            os.path.expanduser("~"),
+            "All files (*.*)",
+        )
+        if file_path:
+            self.lineEdit_recognitionPath.setText(file_path)
+    
     def _load_default_model_parameters(self):
         """
         Load the default parameters from model metadata
@@ -270,6 +292,13 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         value = self._model.get_metadata_resolution()
         if value is not None:
             self.doubleSpinBox_resolution_cm_px.setValue(value)
+            
+        value = self._model.get_model_batch_size()
+        if value is not None:
+            self.spinBox_batchSize.setValue(value)
+            self.spinBox_batchSize.setEnabled(False)
+        else:
+            self.spinBox_batchSize.setEnabled(True)
 
         value = self._model.get_metadata_tile_size()
         if value is not None:
@@ -353,10 +382,18 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             input_0_shape = self._model.get_input_shape()
             txt += f'Input shape: {input_0_shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
             input_size_px = input_0_shape[-1]
+            batch_size = self._model.get_model_batch_size()
 
             # TODO idk how variable input will be handled
             self.spinBox_tileSize_px.setValue(input_size_px)
             self.spinBox_tileSize_px.setEnabled(False)
+            
+            if batch_size is not None:
+                self.spinBox_batchSize.setValue(batch_size)
+                self.spinBox_batchSize.setEnabled(False)
+            else:
+                self.spinBox_batchSize.setEnabled(True)
+            
             self._input_channels_mapping_widget.set_model(self._model)
 
             # super resolution
@@ -364,6 +401,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 output_0_shape = self._model.get_output_shape()
                 scale_factor = output_0_shape[-1] / input_size_px
                 self.doubleSpinBox_superresolutionScaleFactor.setValue(int(scale_factor))
+                # Disable output format options for super-resolution models
+                self.mGroupBox_6.setEnabled(False)
         except Exception as e:
             if IS_DEBUG:
                 raise e
@@ -371,6 +410,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                   "Model may be not usable."
             logging.exception(txt)
             self.spinBox_tileSize_px.setEnabled(True)
+            self.spinBox_batchSize.setEnabled(True)
             length_limit = 300
             exception_msg = (str(e)[:length_limit] + '..') if len(str(e)) > length_limit else str(e)
             msg = txt + f'\n\nException: {exception_msg}'
@@ -455,6 +495,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             params = self.get_regression_parameters(map_processing_parameters)
         elif model_type == ModelType.SUPERRESOLUTION:
             params = self.get_superresolution_parameters(map_processing_parameters)
+        elif model_type == ModelType.RECOGNITION:
+            params = self.get_recognition_parameters(map_processing_parameters)
         elif model_type == ModelType.DETECTION:
             params = self.get_detection_parameters(map_processing_parameters)
 
@@ -492,6 +534,14 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         )
         return params
 
+    def get_recognition_parameters(self, map_processing_parameters: MapProcessingParameters) -> RecognitionParameters:
+        params = RecognitionParameters(
+            **map_processing_parameters.__dict__,
+            model=self._model,
+            query_image_path=self.lineEdit_recognitionPath.text(),
+        )
+        return params
+    
     def get_detection_parameters(self, map_processing_parameters: MapProcessingParameters) -> DetectionParameters:
 
         params = DetectionParameters(
@@ -513,6 +563,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         params = MapProcessingParameters(
             resolution_cm_per_px=self.doubleSpinBox_resolution_cm_px.value(),
             tile_size_px=self.spinBox_tileSize_px.value(),
+            batch_size=self.spinBox_batchSize.value(),
+            local_cache=self.checkBox_local_cache.isChecked(),
             processed_area_type=processed_area_type,
             mask_layer_id=self.get_mask_layer_id(),
             input_layer_id=self._get_input_layer_id(),

@@ -43,12 +43,12 @@ class MapProcessorDetection(MapProcessorWithModel):
 
     def _run(self) -> MapProcessingResult:
         all_bounding_boxes = []  # type: List[Detection]
-        for tile_img, tile_params in self.tiles_generator():
+        for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
-            bounding_boxes_in_tile = self._process_tile(tile_img, tile_params)
-            all_bounding_boxes += bounding_boxes_in_tile
+            bounding_boxes_in_tile_batched = self._process_tile(tile_img_batched, tile_params_batched)
+            all_bounding_boxes += [d for det in bounding_boxes_in_tile_batched for d in det]
 
         if len(all_bounding_boxes) > 0:
             all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
@@ -56,11 +56,14 @@ class MapProcessorDetection(MapProcessorWithModel):
         else:
             all_bounding_boxes_restricted = []
 
-        self._create_vlayer_for_output_bounding_boxes(all_bounding_boxes_restricted)
+        gui_delegate = self._create_vlayer_for_output_bounding_boxes(all_bounding_boxes_restricted)
 
         result_message = self._create_result_message(all_bounding_boxes_restricted)
         self._all_detections = all_bounding_boxes_restricted
-        return MapProcessingResultSuccess(result_message)
+        return MapProcessingResultSuccess(
+            message=result_message,
+            gui_delegate=gui_delegate,
+        )
 
     def limit_bounding_boxes_to_processed_area(self, bounding_boxes: List[Detection]) -> List[Detection]:
         """
@@ -112,7 +115,7 @@ class MapProcessorDetection(MapProcessorWithModel):
         return txt
 
     def _create_vlayer_for_output_bounding_boxes(self, bounding_boxes: List[Detection]):
-        group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
+        vlayers = []
 
         for channel_id in self._get_indexes_of_model_output_channels_to_create():
             filtered_bounding_boxes = [det for det in bounding_boxes if det.clss == channel_id]
@@ -177,8 +180,16 @@ class MapProcessorDetection(MapProcessorWithModel):
             prov.addFeatures(features)
             vlayer.updateExtents()
 
-            QgsProject.instance().addMapLayer(vlayer, False)
-            group.addLayer(vlayer)
+            vlayers.append(vlayer)
+
+        # accessing GUI from non-GUI thread is not safe, so we need to delegate it to the GUI thread
+        def add_to_gui():
+            group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
+            for vlayer in vlayers:
+                QgsProject.instance().addMapLayer(vlayer, False)
+                group.addLayer(vlayer)
+
+        return add_to_gui
 
     def apply_non_maximum_suppression(self, bounding_boxes: List[Detection]) -> List[Detection]:
         bboxes = []
@@ -219,7 +230,10 @@ class MapProcessorDetection(MapProcessorWithModel):
         for det in bounding_boxes_relative:
             det.convert_to_global(offset_x=tile_params.start_pixel_x, offset_y=tile_params.start_pixel_y)
 
-    def _process_tile(self, tile_img: np.ndarray, tile_params: TileParams) -> np.ndarray:
-        bounding_boxes: List[Detection] = self.model.process(tile_img)
-        self.convert_bounding_boxes_to_absolute_positions(bounding_boxes, tile_params)
-        return bounding_boxes
+    def _process_tile(self, tile_img: np.ndarray, tile_params_batched: List[TileParams]) -> np.ndarray:
+        bounding_boxes_batched: List[Detection] = self.model.process(tile_img)
+
+        for bounding_boxes, tile_params in zip(bounding_boxes_batched, tile_params_batched):
+            self.convert_bounding_boxes_to_absolute_positions(bounding_boxes, tile_params)
+
+        return bounding_boxes_batched

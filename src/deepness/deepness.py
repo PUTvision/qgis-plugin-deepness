@@ -8,24 +8,22 @@ Skeleton of this file was generate with the QGis plugin to create plugin skeleto
 import logging
 import traceback
 
+from qgis.core import Qgis, QgsApplication, QgsProject, QgsVectorLayer
+from qgis.gui import QgisInterface
 from qgis.PyQt.QtCore import QCoreApplication, Qt
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
-from qgis.PyQt.QtWidgets import QMessageBox
-from qgis.core import Qgis
-from qgis.core import QgsApplication
-from qgis.core import QgsProject
-from qgis.core import QgsVectorLayer
-from qgis.gui import QgisInterface
+from qgis.PyQt.QtWidgets import QAction, QMessageBox
 
-from deepness.common.defines import PLUGIN_NAME, IS_DEBUG
+from deepness.common.defines import IS_DEBUG, PLUGIN_NAME
 from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deepness.deepness_dockwidget import DeepnessDockWidget
+from deepness.dialogs.resizable_message_box import ResizableMessageBox
 from deepness.images.get_image_path import get_icon_path
-from deepness.processing.map_processor.map_processing_result import MapProcessingResult, MapProcessingResultFailed, \
-    MapProcessingResultCanceled, MapProcessingResultSuccess
+from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
+                                                                     MapProcessingResultFailed,
+                                                                     MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
 from deepness.processing.models.model_types import ModelDefinition
 
@@ -308,5 +306,11 @@ class Deepness:
             msg = 'Processing finished!'
             self.iface.messageBar().pushMessage(PLUGIN_NAME, msg, level=Qgis.Success, duration=3)
             message_to_show = result.message
-            QMessageBox.information(self.dockwidget, "Processing Result", message_to_show)
+
+            msgBox = ResizableMessageBox(self.dockwidget)
+            msgBox.setWindowTitle("Processing Result")
+            msgBox.setText(message_to_show)
+            msgBox.setStyleSheet("QLabel{min-width:800 px; font-size: 24px;} QPushButton{ width:250px; font-size: 18px; }")
+            msgBox.exec()
+
         self._map_processor = None

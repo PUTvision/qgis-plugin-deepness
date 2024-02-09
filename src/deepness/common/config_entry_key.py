@@ -20,6 +20,8 @@ class ConfigEntryKey(enum.Enum):
     PROCESSED_AREA_TYPE = enum.auto(), ''  # string of ProcessedAreaType, e.g. "ProcessedAreaType.VISIBLE_PART.value"
     MODEL_TYPE = enum.auto(), ''  # string of ModelType enum, e.g. "ModelType.SEGMENTATION.value"
     PREPROCESSING_RESOLUTION = enum.auto(), 3.0
+    MODEL_BATCH_SIZE = enum.auto(), 1
+    PROCESS_LOCAL_CACHE = enum.auto(), False
     PREPROCESSING_TILES_OVERLAP = enum.auto(), 15
 
     SEGMENTATION_PROBABILITY_THRESHOLD_ENABLED = enum.auto(), True

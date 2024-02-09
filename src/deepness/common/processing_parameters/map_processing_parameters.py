@@ -20,6 +20,7 @@ class ModelOutputFormat(enum.Enum):
     ALL_CLASSES_AS_SEPARATE_LAYERS = 'All classes as separate layers'
     CLASSES_AS_SEPARATE_LAYERS_WITHOUT_ZERO_CLASS = 'Classes as separate layers (without 0 class)'
     ONLY_SINGLE_CLASS_AS_LAYER = 'Single class as a vector layer'
+    RECOGNITION_RESULT = 'Cosine distance between query image and map'
 
     @classmethod
     def get_all_names(cls):
@@ -37,6 +38,8 @@ class MapProcessingParameters:
     resolution_cm_per_px: float  # image resolution to used during processing
     processed_area_type: ProcessedAreaType  # whether to perform operation on the entire field or part
     tile_size_px: int  # Tile size for processing (model input size)
+    batch_size: int  # Batch size for processing
+    local_cache: bool  # Whether to use local cache for tiles (on disk, /tmp directory)
 
     input_layer_id: str  # raster layer to process
     mask_layer_id: Optional[str]  # Processing of masked layer - if processed_area_type is FROM_POLYGONS

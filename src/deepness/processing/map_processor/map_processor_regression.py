@@ -1,20 +1,17 @@
 """ This file implements map processing for regression model """
 
-import uuid
-from typing import List
 import os
 import uuid
 from typing import List
 
 import numpy as np
 from osgeo import gdal, osr
-from qgis.core import QgsProject
-from qgis.core import QgsRasterLayer
+from qgis.core import QgsProject, QgsRasterLayer
 
 from deepness.common.misc import TMP_DIR_PATH
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
-from deepness.processing.map_processor.map_processing_result import MapProcessingResult, \
-    MapProcessingResultCanceled, MapProcessingResultSuccess
+from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
+                                                                     MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
 
 
@@ -32,35 +29,36 @@ class MapProcessorRegression(MapProcessorWithModel):
             **kwargs)
         self.regression_parameters = params
         self.model = params.model
-        self._result_imgs = None
-
-    def get_result_imgs(self):
-        return self._result_imgs
 
     def _run(self) -> MapProcessingResult:
         number_of_output_channels = len(self._get_indexes_of_model_output_channels_to_create())
-        final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
+        final_shape_px = (number_of_output_channels, self.img_size_y_pixels, self.img_size_x_pixels)
 
         # NOTE: consider whether we can use float16/uint16 as datatype
-        full_result_imgs = [np.zeros(final_shape_px, np.float32) for i in range(number_of_output_channels)]
+        full_result_imgs = self._get_array_or_mmapped_array(final_shape_px)
 
-        for tile_img, tile_params in self.tiles_generator():
+        for tile_img_batched, tile_params_batched in self.tiles_generator_batched():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
-            tile_results = self._process_tile(tile_img)
-            for i in range(number_of_output_channels):
-                tile_params.set_mask_on_full_img(
-                    tile_result=tile_results[i],
-                    full_result_img=full_result_imgs[i])
+            tile_results_batched = self._process_tile(tile_img_batched)
+
+            for tile_results, tile_params in zip(tile_results_batched, tile_params_batched):
+                for i in range(number_of_output_channels):
+                    tile_params.set_mask_on_full_img(
+                        tile_result=tile_results[i],
+                        full_result_img=full_result_imgs[i])
 
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
         full_result_imgs = self.limit_extended_extent_images_to_base_extent_with_mask(full_imgs=full_result_imgs)
-        self._result_imgs = full_result_imgs
-        self._create_rlayers_from_images_for_base_extent(self._result_imgs)
+        self.set_results_img(full_result_imgs)
 
-        result_message = self._create_result_message(self._result_imgs)
-        return MapProcessingResultSuccess(result_message)
+        gui_delegate = self._create_rlayers_from_images_for_base_extent(self.get_result_img())
+        result_message = self._create_result_message(self.get_result_img())
+        return MapProcessingResultSuccess(
+            message=result_message,
+            gui_delegate=gui_delegate,
+        )
 
     def _create_result_message(self, result_imgs: List[np.ndarray]) -> str:
         channels = self._get_indexes_of_model_output_channels_to_create()
@@ -104,11 +102,10 @@ class MapProcessorRegression(MapProcessorWithModel):
         return rlayer
 
     def _create_rlayers_from_images_for_base_extent(self, result_imgs: List[np.ndarray]):
-        group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
-
         # TODO: We are creating a new file for each layer.
         # Maybe can we pass ownership of this file to QGis?
         # Or maybe even create vlayer directly from array, without a file?
+        rlayers = []
 
         for i, channel_id in enumerate(self._get_indexes_of_model_output_channels_to_create()):
             result_img = result_imgs[i]
@@ -119,9 +116,15 @@ class MapProcessorRegression(MapProcessorWithModel):
             rlayer = self.load_rlayer_from_file(file_path)
             OUTPUT_RLAYER_OPACITY = 0.5
             rlayer.renderer().setOpacity(OUTPUT_RLAYER_OPACITY)
+            rlayers.append(rlayer)
 
-            QgsProject.instance().addMapLayer(rlayer, False)
-            group.addLayer(rlayer)
+        def add_to_gui():
+            group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
+            for rlayer in rlayers:
+                QgsProject.instance().addMapLayer(rlayer, False)
+                group.addLayer(rlayer)
+
+        return add_to_gui
 
     def save_result_img_as_tif(self, file_path: str, img: np.ndarray):
         """

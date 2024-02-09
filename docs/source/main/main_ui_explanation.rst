@@ -56,11 +56,15 @@ Processing parameters
 
 .. image:: ../images/ui_processing_params.webp
 
+These options may be a fixed value for some models.
+
 **Resolution** - Size of the images passed to the model in pixels. Usually needs to be the same as the one used during training.
 
 **Tile size** - Defines the processing resolution (in px/cm) of the Input layer Determines the resolution of images fed into the model, allowing to scale of the input images. Should be similar to the resolution used to train the model.
 
-**Tiles overlap** - Defines how much tiles should overlap with their neighbors during processing. Especially required for a model which introduces distortions on the edges of images, so that they can be removed in postprocessing.
+**Batch size** - Number of images passed to the model at once.
+
+**Tiles overlap** - Defines how much tiles should overlap with their neighbors during processing. Especially required for a model which introduces distortions on the edges of images, so that they can be removed in postprocessing. Can be defined in percent of tile size or in pixels.
 
 .. image:: ../images/ui_segment_params.webp
 
