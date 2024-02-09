@@ -46,7 +46,7 @@ class Detection:
             _description_
         """
         self.bbox.apply_offset(offset_x=offset_x, offset_y=offset_y)
-        
+
         if self.mask is not None:
             self.mask_offsets = (offset_x, offset_y)
 
@@ -83,7 +83,7 @@ class Detector(ModelBase):
         """float: Confidence threshold"""
         self.iou_threshold = None
         """float: IoU threshold"""
-        self.model_type: DetectorType | None = None
+        self.model_type: Optional[DetectorType] = None
         """DetectorType: Model type"""
 
     def set_inference_params(self, confidence: float, iou_threshold: float):
@@ -201,7 +201,7 @@ class Detector(ModelBase):
                     mask=m,
                 )
                 detections.append(det)
-                
+
             batch_detection.append(detections)
 
         return batch_detection

@@ -146,7 +146,11 @@ class MapProcessor(QgsTask):
         raise NotImplementedError('Base class not implemented!')
 
     def finished(self, result: bool):
-        if not result:
+        if result:
+            gui_delegate = self._processing_result.gui_delegate
+            if gui_delegate is not None:
+                gui_delegate()
+        else:
             self._processing_result = MapProcessingResultFailed("Unhandled processing error!")
         self.finished_signal.emit(self._processing_result)
 
@@ -181,7 +185,7 @@ class MapProcessor(QgsTask):
                 shape=final_shape_px)
         else:
             full_result_img = np.zeros(final_shape_px, np.uint8)
-            
+
         return full_result_img
 
     def tiles_generator(self) -> Tuple[np.ndarray, TileParams]:
@@ -208,7 +212,7 @@ class MapProcessor(QgsTask):
 
                 tile_img = processing_utils.get_tile_image(
                     rlayer=self.rlayer, extent=tile_params.extent, params=self.params)
-                
+
                 yield tile_img, tile_params
 
     def tiles_generator_batched(self) -> Tuple[np.ndarray, List[TileParams]]:

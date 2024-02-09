@@ -2,9 +2,6 @@ import numpy as np
 
 
 class StandardizationParameters:
-    mean: float
-    std: float
-
     def __init__(self, channels_number: int):
         self.mean = np.array([0.0 for _ in range(channels_number)], dtype=np.float32)
         self.std = np.array([1.0 for _ in range(channels_number)], dtype=np.float32)

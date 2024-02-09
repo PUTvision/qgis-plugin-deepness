@@ -78,9 +78,12 @@ class MapProcessorRecognition(MapProcessorWithModel):
         full_result_img = full_result_img/mask
         self.set_results_img(full_result_img)
 
-        self._create_rlayers_from_images_for_base_extent(self.get_result_img(), x_high, y_high, size, stride)
+        gui_delegate = self._create_rlayers_from_images_for_base_extent(self.get_result_img(), x_high, y_high, size, stride)
         result_message = self._create_result_message(self.get_result_img(), x_high*self.params.tile_size_px, y_high*self.params.tile_size_px)
-        return MapProcessingResultSuccess(result_message)
+        return MapProcessingResultSuccess(
+            message=result_message,
+            gui_delegate=gui_delegate,
+        )
 
     def _create_result_message(self, result_img: List[np.ndarray], x_high, y_high) -> str:
         txt = f"Recognition ended, best result found at {x_high}, {y_high}, {result_img.shape}"
@@ -132,12 +135,6 @@ class MapProcessorRecognition(MapProcessorWithModel):
         size,
         stride
     ):
-        group = (
-            QgsProject.instance()
-            .layerTreeRoot()
-            .insertGroup(0, "Cosine similarity score")
-        )
-
         y = y_high * stride
         x = x_high * stride
 
@@ -158,8 +155,17 @@ class MapProcessorRecognition(MapProcessorWithModel):
         OUTPUT_RLAYER_OPACITY = 0.5
         rlayer.renderer().setOpacity(OUTPUT_RLAYER_OPACITY)
 
-        QgsProject.instance().addMapLayer(rlayer, False)
-        group.addLayer(rlayer)
+        # accessing GUI from non-GUI thread is not safe, so we need to delegate it to the GUI thread
+        def add_to_gui():
+            group = (
+                QgsProject.instance()
+                .layerTreeRoot()
+                .insertGroup(0, "Cosine similarity score")
+            )
+            QgsProject.instance().addMapLayer(rlayer, False)
+            group.addLayer(rlayer)
+
+        return add_to_gui
 
     def save_result_img_as_tif(self, file_path: str, img: np.ndarray):
         """
