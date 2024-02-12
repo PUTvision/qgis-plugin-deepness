@@ -1,5 +1,6 @@
 """ This file implements map processing for detection model """
 
+import re
 from itertools import count
 from typing import List
 
@@ -51,8 +52,10 @@ class MapProcessorDetection(MapProcessorWithModel):
             all_bounding_boxes += [d for det in bounding_boxes_in_tile_batched for d in det]
 
         if len(all_bounding_boxes) > 0:
-            all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
-            all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_suppressed)
+            if self.detection_parameters.remove_overlapping_detections:
+                all_bounding_boxes = self.apply_non_maximum_suppression(all_bounding_boxes)
+
+            all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes)
         else:
             all_bounding_boxes_restricted = []
 
@@ -191,7 +194,7 @@ class MapProcessorDetection(MapProcessorWithModel):
 
         return add_to_gui
 
-    def apply_non_maximum_suppression(self, bounding_boxes: List[Detection]) -> List[Detection]:
+    def apply_non_maximum_suppression(self, bounding_boxes: List[Detection]) -> List[Detection]:       
         bboxes = []
         probs = []
         for det in bounding_boxes:
@@ -205,22 +208,21 @@ class MapProcessorDetection(MapProcessorWithModel):
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
 
-        if self.detection_parameters.remove_overlapping_detections:
-            filtered_bounding_boxes = sorted(filtered_bounding_boxes, reverse=True)
+        filtered_bounding_boxes = sorted(filtered_bounding_boxes, reverse=True)
 
-            to_remove = []
-            for i in range(len(filtered_bounding_boxes)):
-                if i in to_remove:
+        to_remove = []
+        for i in range(len(filtered_bounding_boxes)):
+            if i in to_remove:
+                continue
+            for j in range(i + 1, len(filtered_bounding_boxes)):
+                if j in to_remove:
                     continue
-                for j in range(i + 1, len(filtered_bounding_boxes)):
-                    if j in to_remove:
-                        continue
-                    if i != j:
-                        if filtered_bounding_boxes[i].bbox.calculate_intersection_over_smaler_area(
-                                filtered_bounding_boxes[j].bbox) > self.detection_parameters.iou_threshold:
-                            to_remove.append(j)
+                if i != j:
+                    if filtered_bounding_boxes[i].bbox.calculate_intersection_over_smaler_area(
+                            filtered_bounding_boxes[j].bbox) > self.detection_parameters.iou_threshold:
+                        to_remove.append(j)
 
-            filtered_bounding_boxes = [x for i, x in enumerate(filtered_bounding_boxes) if i not in to_remove]
+        filtered_bounding_boxes = [x for i, x in enumerate(filtered_bounding_boxes) if i not in to_remove]
 
         return filtered_bounding_boxes
 

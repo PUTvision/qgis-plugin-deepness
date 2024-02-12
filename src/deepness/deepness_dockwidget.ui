@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-325</y>
+         <y>-452</y>
          <width>452</width>
-         <height>1742</height>
+         <height>1748</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -44,7 +44,6 @@
           <property name="font">
            <font>
             <pointsize>9</pointsize>
-            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
@@ -238,7 +237,6 @@
             <widget class="QLabel" name="label_12">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -401,7 +399,6 @@
             <widget class="QLabel" name="label_13">
              <property name="font">
               <font>
-               <weight>75</weight>
                <italic>false</italic>
                <bold>true</bold>
               </font>
@@ -518,7 +515,6 @@
             <widget class="QLabel" name="label_2">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -642,7 +638,6 @@
             <widget class="QLabel" name="label_23">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -714,7 +709,6 @@
             <widget class="QLabel" name="label_20">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -766,6 +760,9 @@
              <property name="text">
               <string>Remove overlapping detections</string>
              </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
           </layout>
@@ -808,7 +805,6 @@
             <widget class="QLabel" name="label_17">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
