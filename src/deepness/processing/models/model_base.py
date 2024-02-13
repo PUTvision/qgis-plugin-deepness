@@ -3,7 +3,6 @@ import ast
 import json
 from typing import List, Optional
 
-import cv2
 import numpy as np
 
 import deepness.processing.models.preprocessing_utils as preprocessing_utils
@@ -84,7 +83,7 @@ class ModelBase:
             Batch size or None if not found (dynamic batch size)
         """
         bs = self.input_shape[0]
-                
+
         if isinstance(bs, str):
             return None
         else:
@@ -183,7 +182,7 @@ class ModelBase:
         meta = self.sess.get_modelmeta()
         name_mean = 'standardization_mean'
         name_std = 'standardization_std'
-        
+
         param = StandardizationParameters(channels_number=self.get_input_shape()[-3])
 
         if name_mean in meta.custom_metadata_map and name_std in meta.custom_metadata_map:
