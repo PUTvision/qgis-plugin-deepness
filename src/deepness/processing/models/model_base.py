@@ -333,16 +333,6 @@ class ModelBase:
             return float(value)
         return None
 
-    def get_metadata_detection_remove_overlapping(self) -> Optional[bool]:
-        """ Get detection parameter 'should remove overlapping detections' from metadata if exists
-        """
-        meta = self.sess.get_modelmeta()
-        name = 'det_remove_overlap'
-        if name in meta.custom_metadata_map:
-            value = json.loads(meta.custom_metadata_map[name])
-            return bool(value)
-        return None
-
     def get_number_of_channels(self) -> int:
         """ Returns number of channels in the input layer
 

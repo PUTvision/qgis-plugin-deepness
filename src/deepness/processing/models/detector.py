@@ -1,5 +1,6 @@
 """ Module including the class for the object detection task and related functions
 """
+import stat
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
@@ -59,6 +60,16 @@ class Detection:
             Array in (x1, y1, x2, y2) format
         """
         return self.bbox.get_xyxy()
+
+    def get_bbox_center(self) -> Tuple[int, int]:
+        """Get center of the bounding box
+
+        Returns
+        -------
+        Tuple[int, int]
+            Center of the bounding box
+        """
+        return self.bbox.get_center()
 
     def __lt__(self, other):
         return self.bbox.get_area() < other.bbox.get_area()

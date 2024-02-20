@@ -33,7 +33,6 @@ class ConfigEntryKey(enum.Enum):
 
     DETECTION_CONFIDENCE = enum.auto(), 0.5
     DETECTION_IOU = enum.auto(), 0.5
-    DETECTION_REMOVE_OVERLAPPING = enum.auto(), True
     DETECTOR_TYPE = enum.auto(), 'YOLO_v5_v7_DEFAULT'
 
     DATA_EXPORT_DIR = enum.auto(), ''

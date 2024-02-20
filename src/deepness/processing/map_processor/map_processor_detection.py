@@ -1,7 +1,9 @@
 """ This file implements map processing for detection model """
 
 import re
+import stat
 from itertools import count
+from turtle import distance
 from typing import List
 
 import cv2
@@ -52,10 +54,8 @@ class MapProcessorDetection(MapProcessorWithModel):
             all_bounding_boxes += [d for det in bounding_boxes_in_tile_batched for d in det]
 
         if len(all_bounding_boxes) > 0:
-            if self.detection_parameters.remove_overlapping_detections:
-                all_bounding_boxes = self.apply_non_maximum_suppression(all_bounding_boxes)
-
-            all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes)
+            all_bounding_boxes_nms = self.remove_overlaping_detections(all_bounding_boxes, iou_threshold=self.detection_parameters.iou_threshold)
+            all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_nms)
         else:
             all_bounding_boxes_restricted = []
 
@@ -194,7 +194,8 @@ class MapProcessorDetection(MapProcessorWithModel):
 
         return add_to_gui
 
-    def apply_non_maximum_suppression(self, bounding_boxes: List[Detection]) -> List[Detection]:       
+    @staticmethod
+    def remove_overlaping_detections(bounding_boxes: List[Detection], iou_threshold: float) -> List[Detection]:
         bboxes = []
         probs = []
         for det in bounding_boxes:
@@ -204,27 +205,62 @@ class MapProcessorDetection(MapProcessorWithModel):
         bboxes = np.array(bboxes)
         probs = np.array(probs)
 
-        pick_ids = self.model.non_max_suppression_fast(bboxes, probs, self.detection_parameters.iou_threshold)
+        import time
+
+        start = time.time()
+        pick_ids = Detector.non_max_suppression_fast(bboxes, probs, iou_threshold)
+        stop = time.time()
+        print(f"Time: {stop - start}")
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
-
         filtered_bounding_boxes = sorted(filtered_bounding_boxes, reverse=True)
 
-        to_remove = []
-        for i in range(len(filtered_bounding_boxes)):
-            if i in to_remove:
-                continue
-            for j in range(i + 1, len(filtered_bounding_boxes)):
-                if j in to_remove:
-                    continue
-                if i != j:
-                    if filtered_bounding_boxes[i].bbox.calculate_intersection_over_smaler_area(
-                            filtered_bounding_boxes[j].bbox) > self.detection_parameters.iou_threshold:
-                        to_remove.append(j)
+        start = time.time()
+        pick_ids_kde = MapProcessorDetection.non_max_kdtree(filtered_bounding_boxes, iou_threshold)
+        stop = time.time()
+        print(f"Time: {stop - start}")
 
-        filtered_bounding_boxes = [x for i, x in enumerate(filtered_bounding_boxes) if i not in to_remove]
+        filtered_bounding_boxes = [x for i, x in enumerate(filtered_bounding_boxes) if i in pick_ids_kde]
 
         return filtered_bounding_boxes
+
+    @staticmethod
+    def non_max_kdtree(bounding_boxes: List[Detection], iou_threshold: float) -> List[int]:
+        """ Remove overlapping bounding boxes using kdtree
+
+        :param bounding_boxes: List of bounding boxes in (xyxy format)
+        :param iou_threshold: Threshold for intersection over union
+        :return: Pick ids to keep
+        """
+        from scipy.spatial import cKDTree
+
+        centers = np.array([det.get_bbox_center() for det in bounding_boxes])
+
+        kdtree = cKDTree(centers)
+        pick_ids = set()
+        removed_ids = set()
+
+        for i, bbox in enumerate(bounding_boxes):
+            if i in removed_ids:
+                continue
+
+            _, indices = kdtree.query(bbox.get_bbox_center(), k=10)
+
+            for j in indices:
+                if j in removed_ids:
+                    continue
+
+                if i == j:
+                    continue
+
+                iou = bbox.bbox.calculate_intersection_over_smaler_area(bounding_boxes[j].bbox)
+                
+                if iou > iou_threshold:
+                    removed_ids.add(j)
+
+            pick_ids.add(i)
+            
+        return pick_ids
 
     @staticmethod
     def convert_bounding_boxes_to_absolute_positions(bounding_boxes_relative: List[Detection],

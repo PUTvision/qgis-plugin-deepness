@@ -59,6 +59,5 @@ class DetectionParameters(MapProcessingParameters):
 
     confidence: float
     iou_threshold: float
-    remove_overlapping_detections: bool  # whether overlapping detections can be deleted
 
     detector_type: DetectorType = DetectorType.YOLO_v5_v7_DEFAULT  # parameters specific for each model type

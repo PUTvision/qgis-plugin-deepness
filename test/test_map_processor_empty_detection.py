@@ -38,7 +38,6 @@ def test_map_processor_empty_detection():
         model=model_wrapper,
         confidence=0.99,
         iou_threshold=0.99,
-        remove_overlapping_detections=False,
         model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
         model_output_format__single_class_number=-1,
     )
