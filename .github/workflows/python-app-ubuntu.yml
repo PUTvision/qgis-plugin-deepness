@@ -56,7 +56,7 @@ jobs:
         # apparently there is some issue with opencv-python-headless, we need to reinstall it 
         pip uninstall opencv-python-headless --yes
         
-        pip install opencv-python-headless==4.6.0.66
+        pip install --upgrade -r requirements.txt
         # run one this without pytest, because pytest creates obfuscated error messages
         # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
         xvfb-run python3 test/test_map_processor_segmentation.py
