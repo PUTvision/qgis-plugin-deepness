@@ -34,6 +34,9 @@ For each output class, a separate vector layer can be created.
 
 Output report contains information about percentage coverage of each class.
 
+The model should have at least two output classes, one for the background and one (or more) for the object of interest. The background class should be the first class in the output.
+Model outputs should sum to 1.0 for each pixel, so the output is a probability map. To achieve this, the output should be passed through a softmax function.
+
 
 ===============
 Detection Model

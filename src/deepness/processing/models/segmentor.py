@@ -37,7 +37,8 @@ class Segmentor(ModelBase):
         np.ndarray
             Batch of postprocessed masks (N,H,W,C), 0-1
         """
-        labels = np.clip(model_output[0], 0, 1)
+        # labels = np.clip(model_output[0], 0, 1)
+        labels = model_output[0]  # no need for clipping I think - see #149
 
         return labels
 
