@@ -51,7 +51,7 @@ class MapProcessorTrainingDataExport(MapProcessor):
                 files_handler=self.file_handler)
 
         number_of_written_tiles = 0
-        for tile_img, tile_params in self.tiles_generator_batched():
+        for tile_img, tile_params in self.tiles_generator():
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 

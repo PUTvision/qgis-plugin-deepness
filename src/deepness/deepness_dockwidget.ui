@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-325</y>
+         <y>-423</y>
          <width>452</width>
-         <height>1742</height>
+         <height>1719</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -44,7 +44,6 @@
           <property name="font">
            <font>
             <pointsize>9</pointsize>
-            <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
@@ -238,7 +237,6 @@
             <widget class="QLabel" name="label_12">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -401,7 +399,6 @@
             <widget class="QLabel" name="label_13">
              <property name="font">
               <font>
-               <weight>75</weight>
                <italic>false</italic>
                <bold>true</bold>
               </font>
@@ -518,7 +515,6 @@
             <widget class="QLabel" name="label_2">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -642,7 +638,6 @@
             <widget class="QLabel" name="label_23">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -677,10 +672,10 @@
            <string>Detection parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_9">
-           <item row="5" column="0">
-            <widget class="QLabel" name="label_22">
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_21">
              <property name="text">
-              <string>IoU threshold:</string>
+              <string>Confidence:</string>
              </property>
             </widget>
            </item>
@@ -694,39 +689,10 @@
            <item row="1" column="1">
             <widget class="QComboBox" name="comboBox_detectorType"/>
            </item>
-           <item row="5" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_iouScore">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Parameter used in Non Maximum Suppression in post processing.&lt;/p&gt;&lt;p&gt;Defines the threshold of overlap between to neighbouring detections, to consider them as the same object.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="decimals">
-              <number>2</number>
-             </property>
-             <property name="maximum">
-              <double>1.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.050000000000000</double>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="0" colspan="2">
-            <widget class="QLabel" name="label_20">
-             <property name="font">
-              <font>
-               <weight>75</weight>
-               <bold>true</bold>
-              </font>
-             </property>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_22">
              <property name="text">
-              <string>NOTE: Applicable only if a detection model is used</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_21">
-             <property name="text">
-              <string>Confidence:</string>
+              <string>IoU threshold:</string>
              </property>
             </widget>
            </item>
@@ -746,6 +712,18 @@
              </property>
             </widget>
            </item>
+           <item row="0" column="0" colspan="2">
+            <widget class="QLabel" name="label_20">
+             <property name="font">
+              <font>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>NOTE: Applicable only if a detection model is used</string>
+             </property>
+            </widget>
+           </item>
            <item row="2" column="0" colspan="2">
             <widget class="QLabel" name="label_detectorTypeDescription">
              <property name="font">
@@ -758,13 +736,19 @@
              </property>
             </widget>
            </item>
-           <item row="6" column="0" colspan="2">
-            <widget class="QCheckBox" name="checkBox_removeOverlappingDetections">
+           <item row="5" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_iouScore">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked then the overlapping detections (which may be a artifact of overlapped processing) will be removed&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Parameter used in Non Maximum Suppression in post processing.&lt;/p&gt;&lt;p&gt;Defines the threshold of overlap between to neighbouring detections, to consider them as the same object.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
-             <property name="text">
-              <string>Remove overlapping detections</string>
+             <property name="decimals">
+              <number>2</number>
+             </property>
+             <property name="maximum">
+              <double>1.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.050000000000000</double>
              </property>
             </widget>
            </item>
@@ -808,7 +792,6 @@
             <widget class="QLabel" name="label_17">
              <property name="font">
               <font>
-               <weight>75</weight>
                <bold>true</bold>
               </font>
              </property>
@@ -841,6 +824,9 @@ number:</string>
           </property>
           <property name="title">
            <string>Training data export</string>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>

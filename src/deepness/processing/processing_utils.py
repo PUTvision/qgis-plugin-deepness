@@ -301,6 +301,19 @@ class BoundingBox:
             self.x_max - self.x_min,
             self.y_max - self.y_min
         ]
+        
+    def get_center(self) -> Tuple[int, int]:
+        """ Returns the center of the bounding box as a tuple (x, y)
+
+        Returns
+        -------
+        Tuple[int, int]
+            (x, y)
+        """
+        return [
+            (self.x_min + self.x_max) // 2,
+            (self.y_min + self.y_max) // 2
+        ]
 
     def get_area(self) -> float:
         """Calculate bounding box reactangle area

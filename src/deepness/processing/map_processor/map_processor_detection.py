@@ -1,17 +1,16 @@
 """ This file implements map processing for detection model """
-
-from itertools import count
 from typing import List
 
 import cv2
 import numpy as np
 from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer
 
-from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
+from deepness.common.processing_parameters.detection_parameters import DetectionParameters
 from deepness.processing import processing_utils
 from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
                                                                      MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
+from deepness.processing.map_processor.utils.ckdtree import cKDTree
 from deepness.processing.models.detector import Detection, Detector
 from deepness.processing.tile_params import TileParams
 
@@ -51,8 +50,8 @@ class MapProcessorDetection(MapProcessorWithModel):
             all_bounding_boxes += [d for det in bounding_boxes_in_tile_batched for d in det]
 
         if len(all_bounding_boxes) > 0:
-            all_bounding_boxes_suppressed = self.apply_non_maximum_suppression(all_bounding_boxes)
-            all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_suppressed)
+            all_bounding_boxes_nms = self.remove_overlaping_detections(all_bounding_boxes, iou_threshold=self.detection_parameters.iou_threshold)
+            all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_nms)
         else:
             all_bounding_boxes_restricted = []
 
@@ -191,7 +190,8 @@ class MapProcessorDetection(MapProcessorWithModel):
 
         return add_to_gui
 
-    def apply_non_maximum_suppression(self, bounding_boxes: List[Detection]) -> List[Detection]:
+    @staticmethod
+    def remove_overlaping_detections(bounding_boxes: List[Detection], iou_threshold: float) -> List[Detection]:
         bboxes = []
         probs = []
         for det in bounding_boxes:
@@ -201,28 +201,53 @@ class MapProcessorDetection(MapProcessorWithModel):
         bboxes = np.array(bboxes)
         probs = np.array(probs)
 
-        pick_ids = self.model.non_max_suppression_fast(bboxes, probs, self.detection_parameters.iou_threshold)
+        pick_ids = Detector.non_max_suppression_fast(bboxes, probs, iou_threshold)
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
+        filtered_bounding_boxes = sorted(filtered_bounding_boxes, reverse=True)
+        
+        pick_ids_kde = MapProcessorDetection.non_max_kdtree(filtered_bounding_boxes, iou_threshold)
 
-        if self.detection_parameters.remove_overlapping_detections:
-            filtered_bounding_boxes = sorted(filtered_bounding_boxes, reverse=True)
-
-            to_remove = []
-            for i in range(len(filtered_bounding_boxes)):
-                if i in to_remove:
-                    continue
-                for j in range(i + 1, len(filtered_bounding_boxes)):
-                    if j in to_remove:
-                        continue
-                    if i != j:
-                        if filtered_bounding_boxes[i].bbox.calculate_intersection_over_smaler_area(
-                                filtered_bounding_boxes[j].bbox) > self.detection_parameters.iou_threshold:
-                            to_remove.append(j)
-
-            filtered_bounding_boxes = [x for i, x in enumerate(filtered_bounding_boxes) if i not in to_remove]
+        filtered_bounding_boxes = [x for i, x in enumerate(filtered_bounding_boxes) if i in pick_ids_kde]
 
         return filtered_bounding_boxes
+
+    @staticmethod
+    def non_max_kdtree(bounding_boxes: List[Detection], iou_threshold: float) -> List[int]:
+        """ Remove overlapping bounding boxes using kdtree
+
+        :param bounding_boxes: List of bounding boxes in (xyxy format)
+        :param iou_threshold: Threshold for intersection over union
+        :return: Pick ids to keep
+        """
+
+        centers = np.array([det.get_bbox_center() for det in bounding_boxes])
+
+        kdtree = cKDTree(centers)
+        pick_ids = set()
+        removed_ids = set()
+
+        for i, bbox in enumerate(bounding_boxes):
+            if i in removed_ids:
+                continue
+
+            indices = kdtree.query(bbox.get_bbox_center(), k=min(10, len(bounding_boxes)))
+
+            for j in indices:
+                if j in removed_ids:
+                    continue
+
+                if i == j:
+                    continue
+
+                iou = bbox.bbox.calculate_intersection_over_smaler_area(bounding_boxes[j].bbox)
+
+                if iou > iou_threshold:
+                    removed_ids.add(j)
+
+            pick_ids.add(i)
+
+        return pick_ids
 
     @staticmethod
     def convert_bounding_boxes_to_absolute_positions(bounding_boxes_relative: List[Detection],

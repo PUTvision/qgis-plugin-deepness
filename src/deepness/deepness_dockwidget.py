@@ -113,7 +113,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
             self.doubleSpinBox_confidence.setValue(ConfigEntryKey.DETECTION_CONFIDENCE.get())
             self.doubleSpinBox_iouScore.setValue(ConfigEntryKey.DETECTION_IOU.get())
-            self.checkBox_removeOverlappingDetections.setChecked(ConfigEntryKey.DETECTION_REMOVE_OVERLAPPING.get())
             self.comboBox_detectorType.setCurrentText(ConfigEntryKey.DETECTOR_TYPE.get())
         except Exception:
             logging.exception("Failed to load the ui state from config!")
@@ -146,7 +145,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         ConfigEntryKey.DETECTION_CONFIDENCE.set(self.doubleSpinBox_confidence.value())
         ConfigEntryKey.DETECTION_IOU.set(self.doubleSpinBox_iouScore.value())
-        ConfigEntryKey.DETECTION_REMOVE_OVERLAPPING.set(self.checkBox_removeOverlappingDetections.isChecked())
         ConfigEntryKey.DETECTOR_TYPE.set(self.comboBox_detectorType.currentText())
 
         self._input_channels_mapping_widget.save_ui_to_config()
@@ -168,6 +166,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.mMapLayerComboBox_inputLayer.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.mMapLayerComboBox_areaMaskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        
+        self.mGroupBox_8.setCollapsed(True)  # collapse the group by default
         self._set_processed_area_mask_options()
         self._set_processing_overlap_enabled()
 
@@ -338,10 +338,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         value = self._model.get_metadata_detection_iou_threshold()
         if value is not None:
             self.doubleSpinBox_iouScore.setValue(value)
-
-        value = self._model.get_metadata_detection_remove_overlapping()
-        if value is not None:
-            self.checkBox_removeOverlappingDetections.setChecked(value)
 
     def _load_model_with_type_from_metadata(self, model_class_from_ui, file_path):
         """
@@ -548,7 +544,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             **map_processing_parameters.__dict__,
             confidence=self.doubleSpinBox_confidence.value(),
             iou_threshold=self.doubleSpinBox_iouScore.value(),
-            remove_overlapping_detections=self.checkBox_removeOverlappingDetections.isChecked(),
             model=self._model,
             detector_type=DetectorType(self.comboBox_detectorType.currentText()),
         )
