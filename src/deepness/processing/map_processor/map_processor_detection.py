@@ -1,20 +1,16 @@
 """ This file implements map processing for detection model """
-
-import re
-import stat
-from itertools import count
-from turtle import distance
 from typing import List
 
 import cv2
 import numpy as np
 from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer
 
-from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
+from deepness.common.processing_parameters.detection_parameters import DetectionParameters
 from deepness.processing import processing_utils
 from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
                                                                      MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
+from deepness.processing.map_processor.utils.ckdtree import cKDTree
 from deepness.processing.models.detector import Detection, Detector
 from deepness.processing.tile_params import TileParams
 
@@ -205,20 +201,12 @@ class MapProcessorDetection(MapProcessorWithModel):
         bboxes = np.array(bboxes)
         probs = np.array(probs)
 
-        import time
-
-        start = time.time()
         pick_ids = Detector.non_max_suppression_fast(bboxes, probs, iou_threshold)
-        stop = time.time()
-        print(f"Time: {stop - start}")
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
         filtered_bounding_boxes = sorted(filtered_bounding_boxes, reverse=True)
-
-        start = time.time()
+        
         pick_ids_kde = MapProcessorDetection.non_max_kdtree(filtered_bounding_boxes, iou_threshold)
-        stop = time.time()
-        print(f"Time: {stop - start}")
 
         filtered_bounding_boxes = [x for i, x in enumerate(filtered_bounding_boxes) if i in pick_ids_kde]
 
@@ -232,7 +220,6 @@ class MapProcessorDetection(MapProcessorWithModel):
         :param iou_threshold: Threshold for intersection over union
         :return: Pick ids to keep
         """
-        from scipy.spatial import cKDTree
 
         centers = np.array([det.get_bbox_center() for det in bounding_boxes])
 
@@ -244,7 +231,7 @@ class MapProcessorDetection(MapProcessorWithModel):
             if i in removed_ids:
                 continue
 
-            _, indices = kdtree.query(bbox.get_bbox_center(), k=10)
+            indices = kdtree.query(bbox.get_bbox_center(), k=min(10, len(bounding_boxes)))
 
             for j in indices:
                 if j in removed_ids:
@@ -254,12 +241,12 @@ class MapProcessorDetection(MapProcessorWithModel):
                     continue
 
                 iou = bbox.bbox.calculate_intersection_over_smaler_area(bounding_boxes[j].bbox)
-                
+
                 if iou > iou_threshold:
                     removed_ids.add(j)
 
             pick_ids.add(i)
-            
+
         return pick_ids
 
     @staticmethod

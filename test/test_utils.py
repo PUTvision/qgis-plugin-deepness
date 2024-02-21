@@ -86,6 +86,13 @@ def get_dummy_fotomap_area_crs3857_path():
     return os.path.join(TEST_DATA_DIR, 'dummy_fotomap_area_3857.gpkg')
 
 
+def get_predicted_detections_path():
+    """
+    Get path of the file with predicted detections, for testing purposes
+    """
+    return os.path.join(TEST_DATA_DIR, 'test_bounding_boxes.npy')
+
+
 def create_rlayer_from_file(file_path):
     """
     Create raster layer from tif file and add it to current QgsProject
