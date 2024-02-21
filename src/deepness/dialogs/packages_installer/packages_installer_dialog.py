@@ -9,6 +9,7 @@ import os
 import subprocess
 import sys
 import traceback
+import urllib
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Thread
@@ -40,42 +41,49 @@ class PackageToInstall:
     import_name: str  # name while importing package
 
     def __str__(self):
-        return f'{self.name}=={self.version}'
+        return f'{self.name}{self.version}'
 
 
-# NOTE! For the time being requirement are repeated as in `requirements.txt` file
-# Consider merging it into some common file in the future
-# (if we can use a fixed version of pip packages for all python versions)
+REQUIREMENTS_PATH = 'https://raw.githubusercontent.com/PUTvision/qgis-plugin-deepness/update_requirements/requirements.txt'
+raw_txt = urllib.request.urlopen(REQUIREMENTS_PATH).read().decode('utf-8')
+libraries_versions = {}
 
-opencv_version = '4.6.0.66'
-if sys.platform == "linux" or sys.platform == "linux2":
-    try:
-        import lsb_release
-        if lsb_release.get_os_release()['CODENAME'] == 'focal':
-            opencv_version = '4.5.5.64'
-    except Exception as e:
-        logging.warning(f'Could not check Ubuntu version: {e}')
-        pass
+for line in raw_txt.split('\n'):
+    if line.startswith('#') or not line.strip():
+        continue
+
+    line = line.split(';')[0]
+
+    if '==' in line:
+        lib, version = line.split('==')
+        libraries_versions[lib] = '==' + version
+    elif '>=' in line:
+        lib, version = line.split('>=')
+        libraries_versions[lib] = '>=' + version
+    elif '<=' in line:
+        lib, version = line.split('<=')
+        libraries_versions[lib] = '<=' + version
+    else:
+        libraries_versions[line] = ''
 
 
 packages_to_install = [
-    PackageToInstall(name='opencv-python-headless', version=opencv_version, import_name='cv2'),
+    PackageToInstall(name='opencv-python-headless', version=libraries_versions['opencv-python-headless'], import_name='cv2'),
 ]
 
-onnx_runtime_version = '1.12.1'
 if sys.platform == "linux" or sys.platform == "linux2":
     packages_to_install += [
-        PackageToInstall(name='onnxruntime-gpu', version=onnx_runtime_version, import_name='onnxruntime'),
+        PackageToInstall(name='onnxruntime-gpu', version=libraries_versions['onnxruntime-gpu'], import_name='onnxruntime'),
     ]
     PYTHON_EXECUTABLE_PATH = sys.executable
 elif sys.platform == "darwin":  # MacOS
     packages_to_install += [
-        PackageToInstall(name='onnxruntime', version=onnx_runtime_version, import_name='onnxruntime'),
+        PackageToInstall(name='onnxruntime', version=libraries_versions['onnxruntime-gpu'], import_name='onnxruntime'),
     ]
     PYTHON_EXECUTABLE_PATH = str(Path(sys.prefix) / 'bin' / 'python3')  # sys.executable yields QGIS in macOS
 elif sys.platform == "win32":
     packages_to_install += [
-        PackageToInstall(name='onnxruntime', version=onnx_runtime_version, import_name='onnxruntime'),
+        PackageToInstall(name='onnxruntime', version=libraries_versions['onnxruntime-gpu'], import_name='onnxruntime'),
     ]
     PYTHON_EXECUTABLE_PATH = 'python'  # sys.executable yields QGis.exe in Windows
 else:
@@ -132,12 +140,16 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.signal_log_line.emit(txt)
 
     def _setup_message(self) -> None:
-        required_plugins_str = '\n'.join([f'   - {plugin}' for plugin in packages_to_install])
+          
         self.log(f'<h2><span style="color: #000080;"><strong>  '
                  f'Plugin {PLUGIN_NAME} - Packages installer </strong></span></h2> \n'
                  f'\n'
-                 f'<b>This plugin requires the following Python packages to be installed:</b>\n'
-                 f'{required_plugins_str}\n\n'
+                 f'<b>This plugin requires the following Python packages to be installed:</b>')
+        
+        for package in packages_to_install:
+            self.log(f'\t- {package.name}{package.version}')
+
+        self.log('\n\n'
                  f'If this packages are not installed in the global environment '
                  f'(or environment in which QGIS is started) '
                  f'you can install these packages in the local directory (which is included to the Python path).\n\n'
@@ -238,8 +250,13 @@ class PackagesInstallerDialog(QDialog, FORM_CLASS):
         self.log('\n')
 
     def _pip_install_packages(self, packages: List[PackageToInstall]) -> None:
-        cmd = [PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install', f'--target={PACKAGES_INSTALL_DIR}', *map(str, packages)]
+        cmd = [PYTHON_EXECUTABLE_PATH, '-m', 'pip', 'install', '-U', f'--target={PACKAGES_INSTALL_DIR}']        
         cmd_string = ' '.join(cmd)
+        
+        for pck in packages:
+            cmd.append(f"{pck}")
+            cmd_string += f"{pck}"
+        
         self.log(f'<em>Running command: \n  $ {cmd_string} </em>')
         with subprocess.Popen(cmd,
                               stdout=subprocess.PIPE,
