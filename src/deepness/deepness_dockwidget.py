@@ -166,6 +166,8 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.mMapLayerComboBox_inputLayer.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.mMapLayerComboBox_areaMaskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
+        
+        self.mGroupBox_8.setCollapsed(True)  # collapse the group by default
         self._set_processed_area_mask_options()
         self._set_processing_overlap_enabled()
 

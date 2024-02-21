@@ -24,9 +24,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-452</y>
+         <y>-423</y>
          <width>452</width>
-         <height>1748</height>
+         <height>1719</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -672,10 +672,10 @@
            <string>Detection parameters</string>
           </property>
           <layout class="QGridLayout" name="gridLayout_9">
-           <item row="5" column="0">
-            <widget class="QLabel" name="label_22">
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_21">
              <property name="text">
-              <string>IoU threshold:</string>
+              <string>Confidence:</string>
              </property>
             </widget>
            </item>
@@ -689,10 +689,17 @@
            <item row="1" column="1">
             <widget class="QComboBox" name="comboBox_detectorType"/>
            </item>
-           <item row="5" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_iouScore">
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_22">
+             <property name="text">
+              <string>IoU threshold:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_confidence">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Parameter used in Non Maximum Suppression in post processing.&lt;/p&gt;&lt;p&gt;Defines the threshold of overlap between to neighbouring detections, to consider them as the same object.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Minimal confidence of the potential detection, to consider it as a detection.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="decimals">
               <number>2</number>
@@ -717,29 +724,6 @@
              </property>
             </widget>
            </item>
-           <item row="3" column="0">
-            <widget class="QLabel" name="label_21">
-             <property name="text">
-              <string>Confidence:</string>
-             </property>
-            </widget>
-           </item>
-           <item row="3" column="1">
-            <widget class="QDoubleSpinBox" name="doubleSpinBox_confidence">
-             <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Minimal confidence of the potential detection, to consider it as a detection.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-             </property>
-             <property name="decimals">
-              <number>2</number>
-             </property>
-             <property name="maximum">
-              <double>1.000000000000000</double>
-             </property>
-             <property name="singleStep">
-              <double>0.050000000000000</double>
-             </property>
-            </widget>
-           </item>
            <item row="2" column="0" colspan="2">
             <widget class="QLabel" name="label_detectorTypeDescription">
              <property name="font">
@@ -752,16 +736,19 @@
              </property>
             </widget>
            </item>
-           <item row="6" column="0" colspan="2">
-            <widget class="QCheckBox" name="checkBox_removeOverlappingDetections">
+           <item row="5" column="1">
+            <widget class="QDoubleSpinBox" name="doubleSpinBox_iouScore">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If checked then the overlapping detections (which may be a artifact of overlapped processing) will be removed&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Parameter used in Non Maximum Suppression in post processing.&lt;/p&gt;&lt;p&gt;Defines the threshold of overlap between to neighbouring detections, to consider them as the same object.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
-             <property name="text">
-              <string>Remove overlapping detections</string>
+             <property name="decimals">
+              <number>2</number>
              </property>
-             <property name="checked">
-              <bool>true</bool>
+             <property name="maximum">
+              <double>1.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.050000000000000</double>
              </property>
             </widget>
            </item>
@@ -837,6 +824,9 @@ number:</string>
           </property>
           <property name="title">
            <string>Training data export</string>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_4">
            <item>
