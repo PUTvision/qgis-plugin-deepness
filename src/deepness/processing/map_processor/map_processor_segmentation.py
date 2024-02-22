@@ -1,6 +1,7 @@
 """ This file implements map processing for segmentation model """
 
 from typing import Callable
+
 import numpy as np
 from qgis.core import QgsProject, QgsVectorLayer
 
@@ -152,9 +153,14 @@ class MapProcessorSegmentation(MapProcessorWithModel):
 
         result[result < self.segmentation_parameters.pixel_classification__probability_threshold] = 0.0
 
-        if (result.shape[1] == 1):
-            result = (result != 0).astype(int)[:, 0]
+        if len(result.shape) == 3:
+            result = (result != 0).astype(int)
+        elif len(result.shape) == 4:
+            if (result.shape[1] == 1):
+                result = (result != 0).astype(int)[:, 0]
+            else:
+                result = np.argmax(result, axis=1)
         else:
-            result = np.argmax(result, axis=1)
+            raise ValueError(f'Unexpected result shape: {result.shape}')
 
         return result

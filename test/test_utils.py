@@ -15,14 +15,32 @@ def get_dummy_segmentation_model_path():
     Get path of a dummy onnx model. See details in README in model directory.
     Model used for unit tests processing purposes
     """
-    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_model.onnx')
+    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_models', 'dummy_model.onnx')
 
 def get_dummy_segmentation_model_different_output_size_path():
     """
     Get path of a dummy onnx model. See details in README in model directory.
     Model used for unit tests processing purposes. Its output size is different than input size.
     """
-    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_model_different_output_size.onnx')
+    return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_models', 'different_output_size_512_to_484.onnx')
+
+def get_dummy_segmentation_models_dict():
+    """
+    Get dictionary with dummy segmentation models paths. See details in README in model directory.
+    Models used for unit tests processing purposes
+    """
+    return {
+        'one_output': {
+            '1x1x512x512': os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_models', 'one_output_sigmoid_bsx1x512x512.onnx'),
+            '1x512x512': os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_models', 'one_output_sigmoid_bsx512x512.onnx'),
+            '1x2x512x512': os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_models', 'one_output_softmax_bsx2x512x512.onnx'),
+        },
+        'two_outputs': {
+            '1x1x512x512': os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_models', 'two_output_sigmoid_bsx1x512x512.onnx'),
+            '1x512x512': os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_models', 'two_output_sigmoid_bsx512x512.onnx'),
+            '1x2x512x512': os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_models', 'two_output_softmax_bsx2x512x512.onnx'),
+        }
+    }
 
 def get_dummy_recognition_model_path():
     """
