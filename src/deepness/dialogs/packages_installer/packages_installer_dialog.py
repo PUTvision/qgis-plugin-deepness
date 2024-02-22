@@ -44,8 +44,11 @@ class PackageToInstall:
         return f'{self.name}{self.version}'
 
 
-REQUIREMENTS_PATH = 'https://raw.githubusercontent.com/PUTvision/qgis-plugin-deepness/master/requirements.txt'
-raw_txt = urllib.request.urlopen(REQUIREMENTS_PATH).read().decode('utf-8')
+REQUIREMENTS_PATH = os.path.join(PLUGIN_ROOT_DIR, 'python_requirements/requirements.txt')
+
+with open(REQUIREMENTS_PATH, 'r') as f:
+    raw_txt = f.read()
+
 libraries_versions = {}
 
 for line in raw_txt.split('\n'):

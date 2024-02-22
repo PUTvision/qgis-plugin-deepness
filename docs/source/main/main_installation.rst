@@ -47,7 +47,7 @@ The plugin should install all required dependencies automatically during the fir
 
 .. note:: 
    
-     The plugin requirements and versions are listed in the `requirements.txt <https://github.com/PUTvision/qgis-plugin-deepness/blob/master/requirements.txt>`_ file.
+     The plugin requirements and versions are listed in the `requirements.txt <https://github.com/PUTvision/qgis-plugin-deepness/blob/master/src/deepness/python_requirements/requirements.txt>`_ file.
 
 * Ubuntu
   
