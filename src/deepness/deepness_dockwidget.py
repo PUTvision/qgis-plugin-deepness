@@ -11,6 +11,7 @@ from qgis.PyQt import QtWidgets, uic
 from qgis.PyQt.QtCore import pyqtSignal
 from qgis.PyQt.QtWidgets import QComboBox, QFileDialog, QMessageBox
 
+from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.config_entry_key import ConfigEntryKey
 from deepness.common.defines import IS_DEBUG, PLUGIN_NAME
 from deepness.common.errors import OperationFailedException
@@ -23,11 +24,12 @@ from deepness.common.processing_parameters.regression_parameters import Regressi
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
 from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
-from deepness.processing.models.detector import Detector
 from deepness.processing.models.model_base import ModelBase
 from deepness.processing.models.model_types import ModelDefinition, ModelType
 from deepness.widgets.input_channels_mapping.input_channels_mapping_widget import InputChannelsMappingWidget
 from deepness.widgets.training_data_export_widget.training_data_export_widget import TrainingDataExportWidget
+
+detector_module = LazyPackageLoader('deepness.processing.models.detector')
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'deepness_dockwidget.ui'))
@@ -414,7 +416,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.label_modelInfo.setText(txt)
 
-        if isinstance(self._model, Detector):
+        if isinstance(self._model, detector_module.Detector):
             detector_type = DetectorType(self.comboBox_detectorType.currentText())
             self._model.set_model_type_param(detector_type)
 
