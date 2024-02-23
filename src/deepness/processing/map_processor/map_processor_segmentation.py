@@ -155,7 +155,8 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             if (result.shape[1] == 1):
                 result = (result != 0).astype(int)
             else:
-                result = np.argmax(result, axis=1, keepdims=True)
+                shape = result.shape
+                result = np.argmax(result, axis=1).reshape(shape[0], 1, shape[2], shape[3])
 
             assert len(result.shape) == 4
             assert result.shape[1] == 1
