@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from qgis.core import (QgsApplication, QgsCoordinateReferenceSystem, QgsProject, QgsRasterLayer, QgsRectangle,
                        QgsVectorLayer)
@@ -197,7 +198,7 @@ class SignalCollector(QWidget):
         raise Exception("No argument were provided for the signal!")
 
 
-_APP_INSTANCE: QgsApplication | None = None
+_APP_INSTANCE: Optional[QgsApplication] = None
 
 
 def init_qgis():
