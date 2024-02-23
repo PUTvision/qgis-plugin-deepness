@@ -57,14 +57,9 @@ jobs:
         pip uninstall opencv-python-headless --yes
 
         pip install --upgrade -r ./src/deepness/python_requirements/requirements.txt
-        # run one this without pytest, because pytest creates obfuscated error messages
-        # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
-        # xvfb-run -e /dev/stdout python3 test/test_map_processor_segmentation.py
-        # rm -rf /tmp/.X9*  # remove the Xvfb lock file, otherwise the next xvfb-run will fail
 
-        # run the actual tests
+        # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
         xvfb-run -e /dev/stdout python3 -m pytest --cov=src/deepness/ --cov-report html test/
-        rm -rf /tmp/.X9*  # remove the Xvfb lock file, otherwise the next xvfb-run will fail
     - name: 'Upload Artifact - test coverage'
       uses: actions/upload-artifact@v3
       with:
