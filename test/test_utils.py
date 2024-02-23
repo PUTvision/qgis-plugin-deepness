@@ -189,8 +189,16 @@ class SignalCollector(QWidget):
         raise Exception("No argument were provided for the signal!")
 
 
+_APP_INSTANCE = None
+
+
 def init_qgis():
-    qgs = QgsApplication([b''], False)
+    global _APP_INSTANCE
+    if _APP_INSTANCE:
+        return _APP_INSTANCE
+
+    qgs = QgsApplication([b''], GUIenabled=False)
     qgs.setPrefixPath('/usr/bin/qgis', True)
     qgs.initQgis()
-    return qgs
+    _APP_INSTANCE = qgs
+    return _APP_INSTANCE
