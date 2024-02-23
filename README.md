@@ -49,7 +49,7 @@ ln -s $PROJECT_DIR/src/deepness ~/.local/share/QGIS/QGIS3/profiles/default/pytho
 
 ```bash
 . venv/bin/activate
-pip install -r requirements.txt
+pip install -r ./src/deepness/python_requirements/requirements.txt
 ```
 
 - Run QGis in the virtual environment:

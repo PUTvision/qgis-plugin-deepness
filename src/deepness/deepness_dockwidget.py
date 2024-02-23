@@ -14,6 +14,7 @@ from qgis.PyQt.QtWidgets import QComboBox, QFileDialog, QMessageBox
 from deepness.common.config_entry_key import ConfigEntryKey
 from deepness.common.defines import IS_DEBUG, PLUGIN_NAME
 from deepness.common.errors import OperationFailedException
+from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
 from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
@@ -22,9 +23,7 @@ from deepness.common.processing_parameters.regression_parameters import Regressi
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
 from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
-from deepness.processing.models.detector import Detector
 from deepness.processing.models.model_base import ModelBase
-from deepness.processing.models.model_types import ModelDefinition, ModelType
 from deepness.widgets.input_channels_mapping.input_channels_mapping_widget import InputChannelsMappingWidget
 from deepness.widgets.training_data_export_widget.training_data_export_widget import TrainingDataExportWidget
 
@@ -147,6 +146,9 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _setup_misc_ui(self):
         """ Setup some misceleounous ui forms
         """
+        from deepness.processing.models.model_types import \
+            ModelDefinition  # import here to avoid pulling external dependencies to early
+
         self._show_debug_warning()
         combobox = self.comboBox_processedAreaSelection
         for name in ProcessedAreaType.get_all_names():
@@ -157,7 +159,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.mMapLayerComboBox_inputLayer.setFilters(QgsMapLayerProxyModel.RasterLayer)
         self.mMapLayerComboBox_areaMaskLayer.setFilters(QgsMapLayerProxyModel.VectorLayer)
-        
+
         self.mGroupBox_8.setCollapsed(True)  # collapse the group by default
         self._set_processed_area_mask_options()
         self._set_processing_overlap_enabled()
@@ -198,6 +200,9 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.radioButton_processingTileOverlapPixels.toggled.connect(self._set_processing_overlap_enabled)
 
     def _model_type_changed(self):
+        from deepness.processing.models.model_types import \
+            ModelType  # import here to avoid pulling external dependencies to early
+
         model_type = ModelType(self.comboBox_modelType.currentText())
 
         segmentation_enabled = False
@@ -232,7 +237,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
     def _set_processing_overlap_enabled(self):
         overlap_percentage_enabled = self.radioButton_processingTileOverlapPercentage.isChecked()
         self.spinBox_processingTileOverlapPercentage.setEnabled(overlap_percentage_enabled)
-        
+
         overlap_pixels_enabled = self.radioButton_processingTileOverlapPixels.isChecked()
         self.spinBox_processingTileOverlapPixels.setEnabled(overlap_pixels_enabled)
 
@@ -261,7 +266,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         )
         if file_path:
             self.lineEdit_recognitionPath.setText(file_path)
-    
+
     def _load_default_model_parameters(self):
         """
         Load the default parameters from model metadata
@@ -269,7 +274,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         value = self._model.get_metadata_resolution()
         if value is not None:
             self.doubleSpinBox_resolution_cm_px.setValue(value)
-            
+
         value = self._model.get_model_batch_size()
         if value is not None:
             self.spinBox_batchSize.setValue(value)
@@ -321,6 +326,9 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         If model has model_type in metadata - use this type to create proper model class.
         Otherwise model_class_from_ui will be used
         """
+        from deepness.processing.models.model_types import (  # import here to avoid pulling external dependencies to early
+            ModelDefinition, ModelType)
+
         model_class = model_class_from_ui
 
         model_type_str_from_metadata = ModelBase.get_model_type_from_metadata(file_path)
@@ -338,6 +346,10 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """
         Tries to load the model and display its message.
         """
+        import deepness.processing.models.detector as detector_module  # import here to avoid pulling external dependencies to early
+        from deepness.processing.models.model_types import \
+            ModelType  # import here to avoid pulling external dependencies to early
+
         file_path = self.lineEdit_modelPath.text()
 
         if not file_path and abort_if_no_file_path:
@@ -360,13 +372,13 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             # TODO idk how variable input will be handled
             self.spinBox_tileSize_px.setValue(input_size_px)
             self.spinBox_tileSize_px.setEnabled(False)
-            
+
             if batch_size is not None:
                 self.spinBox_batchSize.setValue(batch_size)
                 self.spinBox_batchSize.setEnabled(False)
             else:
                 self.spinBox_batchSize.setEnabled(True)
-            
+
             self._input_channels_mapping_widget.set_model(self._model)
 
             # super resolution
@@ -390,7 +402,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
 
         self.label_modelInfo.setText(txt)
 
-        if isinstance(self._model, Detector):
+        if isinstance(self._model, detector_module.Detector):
             detector_type = DetectorType(self.comboBox_detectorType.currentText())
             self._model.set_model_type_param(detector_type)
 
@@ -430,10 +442,13 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             return 0
         return self.doubleSpinBox_probabilityThreshold.value()
 
-    def get_selected_model_class_definition(self) -> ModelDefinition:
+    def get_selected_model_class_definition(self):   # -> ModelDefinition: # we cannot import it here yet
         """
         Get the currently selected model class (in UI)
         """
+        from deepness.processing.models.model_types import (  # import here to avoid pulling external dependencies to early
+            ModelDefinition, ModelType)
+
         model_type_txt = self.comboBox_modelType.currentText()
         model_type = ModelType(model_type_txt)
         model_definition = ModelDefinition.get_definition_for_type(model_type)
@@ -443,6 +458,9 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         """ Get the parameters for the model interface.
         The returned type is derived from `MapProcessingParameters` class, depending on the selected model type.
         """
+        from deepness.processing.models.model_types import \
+            ModelType  # import here to avoid pulling external dependencies to early
+
         map_processing_parameters = self._get_map_processing_parameters()
 
         if self._model is None:
@@ -501,7 +519,7 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             query_image_path=self.lineEdit_recognitionPath.text(),
         )
         return params
-    
+
     def get_detection_parameters(self, map_processing_parameters: MapProcessingParameters) -> DetectionParameters:
 
         params = DetectionParameters(

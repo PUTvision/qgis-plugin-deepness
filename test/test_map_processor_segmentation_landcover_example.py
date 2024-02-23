@@ -19,7 +19,6 @@ RASTER_FILE_PATH = os.path.join(EXAMPLE_DATA_DIR, 'N-33-60-D-c-4-2.tif')
 
 INPUT_CHANNELS_MAPPING = create_default_input_channels_mapping_for_rgb_bands()
 
-
 def test_map_processor_segmentation_landcover_example():
     qgs = init_qgis()
 
@@ -57,7 +56,7 @@ def test_map_processor_segmentation_landcover_example():
     assert result_img[0, 2000, 2000] == 2
     assert np.isclose(result_img[0, 150:300, 150:300].sum(), 18978, rtol=3)
     
-    unique, counts = np.unique(result_img, return_counts=True)
+    unique, counts = np.unique(result_img[0], return_counts=True)
     
     counts = dict(zip(unique, counts))
     

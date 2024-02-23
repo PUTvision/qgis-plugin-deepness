@@ -5,7 +5,6 @@ from typing import List, Optional
 
 import numpy as np
 
-import deepness.processing.models.preprocessing_utils as preprocessing_utils
 from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.standardization_parameters import StandardizationParameters
 
@@ -376,6 +375,11 @@ class ModelBase:
         np.ndarray
             Preprocessed batch of image (N,C,H,W), RGB, 0-1
         """
+
+        # imported here, to avoid isseue with uninstalled dependencies during the first plugin start
+        # in other places we use LazyPackageLoader, but here it is not so easy
+        import deepness.processing.models.preprocessing_utils as preprocessing_utils
+
         tiles_batched = preprocessing_utils.limit_channels_number(tiles_batched, limit=self.input_shape[-3])
         tiles_batched = preprocessing_utils.normalize_values_to_01(tiles_batched)
         tiles_batched = preprocessing_utils.standardize_values(tiles_batched, params=self.standardization_parameters)

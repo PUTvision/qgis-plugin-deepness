@@ -25,7 +25,6 @@ from deepness.processing.map_processor.map_processing_result import (MapProcessi
                                                                      MapProcessingResultFailed,
                                                                      MapProcessingResultSuccess)
 from deepness.processing.map_processor.map_processor_training_data_export import MapProcessorTrainingDataExport
-from deepness.processing.models.model_types import ModelDefinition
 
 cv2 = LazyPackageLoader('cv2')
 
@@ -252,6 +251,8 @@ class Deepness:
         self._display_processing_started_info()
 
     def _run_model_inference(self, params: MapProcessingParameters):
+        from deepness.processing.models.model_types import ModelDefinition  # import here to avoid pulling external dependencies to early
+
         if not self._are_map_processing_parameters_are_correct(params):
             return
 

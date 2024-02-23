@@ -2,37 +2,6 @@ Installation
 ============
 
 
-============
-Requirements
-============
-
-* Ubuntu
-  
-  * (option 1) Install requirements using system Python interpreter:
-  
-  .. code-block:: 
-
-    python3 -m pip install opencv-python-headless onnxruntime-gpu
-
-  * (option 2) Run QGIS and Python Console. Then call command:
-
-  .. code-block:: 
-
-    import pip; pip.main(['install', 'opencv-python-headless', 'onnxruntime-gpu'])
-
-
-* Windows
-  
-  * Go to QGIS installation path (for example :code:`C:\Program Files\QGIS 3.26.3\`)
-  
-  * Run :code:`OSGeo4W.bat` and type installation command:
-  
-  .. code-block:: 
-
-    python3 -m pip install opencv-python-headless onnxruntime-gpu
-
-* MacOS - SOON
-
 ===================
 Plugin installation
 ===================
@@ -69,3 +38,40 @@ Plugin installation
   * Select the ZIP file using system prompt
 
   * Click the Install Plugin button
+
+============
+Requirements
+============
+
+The plugin should install all required dependencies automatically during the first run. However, if you want to install them manually, you can use the following commands:
+
+.. note:: 
+   
+     The plugin requirements and versions are listed in the `requirements.txt <https://github.com/PUTvision/qgis-plugin-deepness/blob/master/src/deepness/python_requirements/requirements.txt>`_ file.
+
+* Ubuntu
+  
+  * (option 1) Install requirements using system Python interpreter:
+  
+  .. code-block:: 
+
+    python3 -m pip install opencv-python-headless onnxruntime-gpu
+
+  * (option 2) Run QGIS and Python Console. Then call command:
+
+  .. code-block:: 
+
+    import pip; pip.main(['install', 'opencv-python-headless', 'onnxruntime-gpu'])
+
+
+* Windows
+  
+  * Go to QGIS installation path (for example :code:`C:\Program Files\QGIS 3.26.3\`)
+  
+  * Run :code:`OSGeo4W.bat` and type installation command:
+  
+  .. code-block:: 
+
+    python3 -m pip install opencv-python-headless onnxruntime-gpu
+
+* MacOS - SOON

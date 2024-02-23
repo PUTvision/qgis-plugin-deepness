@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 
 from qgis.core import (QgsApplication, QgsCoordinateReferenceSystem, QgsProject, QgsRasterLayer, QgsRectangle,
                        QgsVectorLayer)
@@ -16,6 +17,7 @@ def get_dummy_segmentation_model_path():
     Model used for unit tests processing purposes
     """
     return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_segmentation_models', 'dummy_model.onnx')
+
 
 def get_dummy_segmentation_model_different_output_size_path():
     """
@@ -42,6 +44,7 @@ def get_dummy_segmentation_models_dict():
         }
     }
 
+
 def get_dummy_recognition_model_path():
     """
     Get path of a dummy onnx model. See details in README in model directory.
@@ -49,11 +52,13 @@ def get_dummy_recognition_model_path():
     """
     return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_recognition_model.onnx')
 
+
 def get_dummy_recognition_image_path():
     """
     Get path of a dummy image, which can be used for testing with conjunction with dummy_mode (see get_dummy_model_path)
     """
     return os.path.join(TEST_DATA_DIR, 'dummy_recognition_image.png')
+
 
 def get_dummy_recognition_map_path():
     """
@@ -61,12 +66,14 @@ def get_dummy_recognition_map_path():
     """
     return os.path.join(TEST_DATA_DIR, 'dummy_recognition_map.tif')
 
+
 def get_dummy_regression_model_path():
     """
     Get path of a dummy onnx model. See details in README in model directory.
     Model used for unit tests processing purposes
     """
     return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_regression_models', 'dummy_regression_model.onnx')
+
 
 def get_dummy_regression_model_path_batched():
     """
@@ -91,12 +98,14 @@ def get_dummy_regression_models_dict():
         }
     }
 
+
 def get_dummy_superresolution_model_path():
     """
     Get path of a dummy onnx model. See details in README in model directory.
     Model used for unit tests processing purposes
     """
     return os.path.join(TEST_DATA_DIR, 'dummy_model', 'dummy_superresolution_model.onnx')
+
 
 def get_dummy_fotomap_small_path():
     """
@@ -223,8 +232,19 @@ class SignalCollector(QWidget):
         raise Exception("No argument were provided for the signal!")
 
 
+_APP_INSTANCE: Optional[QgsApplication] = None
+
+
 def init_qgis():
-    qgs = QgsApplication([b''], False)
+    print("Initializing QGIS")
+    global _APP_INSTANCE
+    if _APP_INSTANCE:
+        print("QGIS already initialized")
+        return _APP_INSTANCE
+
+    print("QGIS not initialized yet")
+    qgs = QgsApplication([b''], GUIenabled=False)
     qgs.setPrefixPath('/usr/bin/qgis', True)
     qgs.initQgis()
-    return qgs
+    _APP_INSTANCE = qgs
+    return _APP_INSTANCE
