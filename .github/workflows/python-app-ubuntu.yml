@@ -59,10 +59,10 @@ jobs:
         pip install --upgrade -r ./src/deepness/python_requirements/requirements.txt
         # run one this without pytest, because pytest creates obfuscated error messages
         # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
-        python3 test/test_map_processor_segmentation.py
+        xvfb-run -e /dev/stdout python3 test/test_map_processor_segmentation.py
 
         # run the actual tests
-        python3 -m pytest --cov=src/deepness/ --cov-report html test/
+        xvfb-run -e /dev/stdout python3 -m pytest --cov=src/deepness/ --cov-report html test/
     - name: 'Upload Artifact - test coverage'
       uses: actions/upload-artifact@v3
       with:
