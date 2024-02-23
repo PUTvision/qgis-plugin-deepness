@@ -8,8 +8,6 @@ from deepness.processing.processing_utils import BoundingBox
 
 
 def test__remove_overlaping_detections():
-    init_qgis()
-
     with open(get_predicted_detections_path(), 'rb') as f:
         dets = np.load(f)
 

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
-from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
+from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deepness.processing.map_processor.map_processor_detection import MapProcessorDetection
 from deepness.processing.models.detector import Detector
 
@@ -39,8 +39,6 @@ def test_map_processor_detection_yolo_ultralytics():
         model=model_wrapper,
         confidence=0.5,
         iou_threshold=0.4,
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
         detector_type=DetectorType.YOLO_ULTRALYTICS_SEGMENTATION,
     )
 

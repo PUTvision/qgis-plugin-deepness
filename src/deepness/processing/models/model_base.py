@@ -134,7 +134,7 @@ class ModelBase:
 
         return None
 
-    def get_channel_name(self, channel_id: int) -> str:
+    def get_channel_name(self, layer_id: int, channel_id: int) -> str:
         """ Get channel name by id if exists in model metadata
 
         Parameters
@@ -149,7 +149,7 @@ class ModelBase:
         """
         class_names = self.get_class_names()
         channel_id_str = str(channel_id)
-        default_return = f'channel_{channel_id_str}'
+        default_return = f'o_{layer_id}_{channel_id_str}'
 
         if class_names is not None and channel_id < len(class_names):
             return class_names[channel_id]
@@ -398,7 +398,7 @@ class ModelBase:
         """
         raise NotImplementedError('Base class not implemented!')
 
-    def get_number_of_output_channels(self) -> int:
+    def get_number_of_output_channels(self) -> List[int]:
         """ Abstract method for getting number of classes in the output layer
 
         Returns

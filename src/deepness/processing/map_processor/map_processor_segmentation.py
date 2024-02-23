@@ -18,10 +18,6 @@ cv2 = LazyPackageLoader('cv2')
 class MapProcessorSegmentation(MapProcessorWithModel):
     """
     MapProcessor specialized for Segmentation model (where each pixel is assigned to one class).
-
-    Implementation note: due to opencv operations on arrays, it is easier to use value 0 for special meaning,
-    (that is pixel out of processing area) instead of just a class with number 0.
-    Therefore, internally during processing, pixels representing classes have value `class_number + 1`.
     """
 
     def __init__(self,
@@ -35,7 +31,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         self.model = params.model
 
     def _run(self) -> MapProcessingResult:
-        final_shape_px = (self.img_size_y_pixels, self.img_size_x_pixels)
+        final_shape_px = (len(self._get_indexes_of_model_output_channels_to_create()), self.img_size_y_pixels, self.img_size_x_pixels)
 
         full_result_img = self._get_array_or_mmapped_array(final_shape_px)
 
@@ -43,8 +39,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             if self.isCanceled():
                 return MapProcessingResultCanceled()
 
-            # See note in the class description why are we adding/subtracting 1 here
-            tile_result_batched = self._process_tile(tile_img_batched) + 1
+            tile_result_batched = self._process_tile(tile_img_batched)
 
             for tile_result, tile_params in zip(tile_result_batched, tile_params_batched):
                 tile_params.set_mask_on_full_img(
@@ -52,7 +47,10 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                     full_result_img=full_result_img)
 
         blur_size = int(self.segmentation_parameters.postprocessing_dilate_erode_size // 2) * 2 + 1  # needs to be odd
-        full_result_img = cv2.medianBlur(full_result_img, blur_size)
+        
+        for i in range(full_result_img.shape[0]):
+            full_result_img[i] = cv2.medianBlur(full_result_img[i], blur_size)
+        
         full_result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
 
         self.set_results_img(full_result_img)
@@ -85,7 +83,8 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                 area_percentage = area / total_area * 100
             else:
                 area_percentage = 0.0
-            txt += f' - {self.model.get_channel_name(channel_id)}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
+                # TODO
+            txt += f' - {self.model.get_channel_name(0, channel_id)}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
 
         return txt
 
@@ -95,48 +94,44 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         """
         vlayers = []
 
-        for channel_id in self._get_indexes_of_model_output_channels_to_create():
-            # See note in the class description why are we adding/subtracting 1 here
-            local_mask_img = np.uint8(mask_img == (channel_id + 1))
+        for layer_id, layer_sizes in enumerate(self._get_indexes_of_model_output_channels_to_create()):
+            for channel_id in range(layer_sizes):
+                # See note in the class description why are we adding/subtracting 1 here
+                local_mask_img = np.uint8(mask_img[layer_id] == channel_id)
 
-            # remove small areas - old implementation. Now we decided to do median blur, because the method below
-            # was producing pixels not belonging to any class
-            # local_mask_img = processing_utils.erode_dilate_image(
-            #     img=local_mask_img,
-            #     segmentation_parameters=self.segmentation_parameters)
+                contours, hierarchy = cv2.findContours(local_mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+                contours = processing_utils.transform_contours_yx_pixels_to_target_crs(
+                    contours=contours,
+                    extent=self.base_extent,
+                    rlayer_units_per_pixel=self.rlayer_units_per_pixel)
+                features = []
 
-            contours, hierarchy = cv2.findContours(local_mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-            contours = processing_utils.transform_contours_yx_pixels_to_target_crs(
-                contours=contours,
-                extent=self.base_extent,
-                rlayer_units_per_pixel=self.rlayer_units_per_pixel)
-            features = []
+                if len(contours):
+                    processing_utils.convert_cv_contours_to_features(
+                        features=features,
+                        cv_contours=contours,
+                        hierarchy=hierarchy[0],
+                        is_hole=False,
+                        current_holes=[],
+                        current_contour_index=0)
+                else:
+                    pass  # just nothing, we already have an empty list of features
 
-            if len(contours):
-                processing_utils.convert_cv_contours_to_features(
-                    features=features,
-                    cv_contours=contours,
-                    hierarchy=hierarchy[0],
-                    is_hole=False,
-                    current_holes=[],
-                    current_contour_index=0)
-            else:
-                pass  # just nothing, we already have an empty list of features
+                layer_name = self.model.get_channel_name(layer_id, channel_id)
+                vlayer = QgsVectorLayer("multipolygon", layer_name, "memory")
+                vlayer.setCrs(self.rlayer.crs())
+                prov = vlayer.dataProvider()
 
-            vlayer = QgsVectorLayer("multipolygon", self.model.get_channel_name(channel_id), "memory")
-            vlayer.setCrs(self.rlayer.crs())
-            prov = vlayer.dataProvider()
+                color = vlayer.renderer().symbol().color()
+                OUTPUT_VLAYER_COLOR_TRANSPARENCY = 80
+                color.setAlpha(OUTPUT_VLAYER_COLOR_TRANSPARENCY)
+                vlayer.renderer().symbol().setColor(color)
+                # TODO - add also outline for the layer (thicker black border)
 
-            color = vlayer.renderer().symbol().color()
-            OUTPUT_VLAYER_COLOR_TRANSPARENCY = 80
-            color.setAlpha(OUTPUT_VLAYER_COLOR_TRANSPARENCY)
-            vlayer.renderer().symbol().setColor(color)
-            # TODO - add also outline for the layer (thicker black border)
+                prov.addFeatures(features)
+                vlayer.updateExtents()
 
-            prov.addFeatures(features)
-            vlayer.updateExtents()
-
-            vlayers.append(vlayer)
+                vlayers.append(vlayer)
 
         # accessing GUI from non-GUI thread is not safe, so we need to delegate it to the GUI thread
         def add_to_gui():
@@ -148,19 +143,25 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         return add_to_gui
 
     def _process_tile(self, tile_img_batched: np.ndarray) -> np.ndarray:
-        # TODO - create proper mapping for output channels
-        result = self.model.process(tile_img_batched)
+        many_result = self.model.process(tile_img_batched)
+        many_outputs = []
 
-        result[result < self.segmentation_parameters.pixel_classification__probability_threshold] = 0.0
+        for result in many_result:
+            result[result < self.segmentation_parameters.pixel_classification__probability_threshold] = 0.0
 
-        if len(result.shape) == 3:
-            result = (result != 0).astype(int)
-        elif len(result.shape) == 4:
+            if len(result.shape) == 3:
+                result = np.expand_dims(result, axis=1)
+
             if (result.shape[1] == 1):
-                result = (result != 0).astype(int)[:, 0]
+                result = (result != 0).astype(int)
             else:
-                result = np.argmax(result, axis=1)
-        else:
-            raise ValueError(f'Unexpected result shape: {result.shape}')
+                result = np.argmax(result, axis=1, keepdims=True)
 
-        return result
+            assert len(result.shape) == 4
+            assert result.shape[1] == 1
+
+            many_outputs.append(result[:, 0])
+
+        many_outputs = np.array(many_outputs).transpose((1, 0, 2, 3))
+        
+        return many_outputs

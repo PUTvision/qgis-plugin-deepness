@@ -44,10 +44,9 @@ class MapProcessorRegression(MapProcessorWithModel):
             tile_results_batched = self._process_tile(tile_img_batched)
 
             for tile_results, tile_params in zip(tile_results_batched, tile_params_batched):
-                for i in range(number_of_output_channels):
-                    tile_params.set_mask_on_full_img(
-                        tile_result=tile_results[i],
-                        full_result_img=full_result_imgs[i])
+                tile_params.set_mask_on_full_img(
+                    tile_result=tile_results,
+                    full_result_img=full_result_imgs)
 
         # plt.figure(); plt.imshow(full_result_img); plt.show(block=False); plt.pause(0.001)
         full_result_imgs = self.limit_extended_extent_images_to_base_extent_with_mask(full_imgs=full_result_imgs)
@@ -67,7 +66,7 @@ class MapProcessorRegression(MapProcessorWithModel):
             result_img = result_imgs[i]
             average_value = np.mean(result_img)
             std = np.std(result_img)
-            txt += f' - {self.model.get_channel_name(channel_id)}: average_value = {average_value:.2f} (std = {std:.2f}, ' \
+            txt += f' - {self.model.get_channel_name(0, channel_id)}: average_value = {average_value:.2f} (std = {std:.2f}, ' \
                    f'min={np.min(result_img)}, max={np.max(result_img)})\n'
 
         if len(channels) > 0:
@@ -82,12 +81,7 @@ class MapProcessorRegression(MapProcessorWithModel):
         :param full_imgs:
         :return:
         """
-        result_imgs = []
-        for i in range(len(full_imgs)):
-            result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_imgs[i])
-            result_imgs.append(result_img)
-
-        return result_imgs
+        return self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_imgs)
 
     def load_rlayer_from_file(self, file_path):
         """
@@ -110,7 +104,7 @@ class MapProcessorRegression(MapProcessorWithModel):
         for i, channel_id in enumerate(self._get_indexes_of_model_output_channels_to_create()):
             result_img = result_imgs[i]
             random_id = str(uuid.uuid4()).replace('-', '')
-            file_path = os.path.join(TMP_DIR_PATH, f'{self.model.get_channel_name(channel_id)}___{random_id}.tif')
+            file_path = os.path.join(TMP_DIR_PATH, f'{self.model.get_channel_name(0, channel_id)}___{random_id}.tif')
             self.save_result_img_as_tif(file_path=file_path, img=result_img)
 
             rlayer = self.load_rlayer_from_file(file_path)
@@ -161,12 +155,22 @@ class MapProcessorRegression(MapProcessorWithModel):
         print(f'***** {file_path = }')
 
     def _process_tile(self, tile_img: np.ndarray) -> np.ndarray:
-        result = self.model.process(tile_img)
-        result[np.isnan(result)] = 0
-        result *= self.regression_parameters.output_scaling
+        many_result = self.model.process(tile_img)
+        many_outputs = []
 
-        # NOTE - currently we are saving result as float32, so we are losing some accuraccy.
-        # result = np.clip(result, 0, 255)  # old version with uint8_t - not used anymore
-        result = result.astype(np.float32)
+        for result in many_result:
+            result[np.isnan(result)] = 0
+            result *= self.regression_parameters.output_scaling
 
-        return result
+            # NOTE - currently we are saving result as float32, so we are losing some accuraccy.
+            # result = np.clip(result, 0, 255)  # old version with uint8_t - not used anymore
+            result = result.astype(np.float32)
+
+            if len(result.shape) == 3:
+                result = np.expand_dims(result, axis=1)
+
+            many_outputs.append(result[:, 0])
+
+        many_outputs = np.array(many_outputs).transpose((1, 0, 2, 3))
+
+        return many_outputs

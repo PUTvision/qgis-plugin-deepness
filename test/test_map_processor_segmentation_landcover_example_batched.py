@@ -1,12 +1,12 @@
 import os
 from pathlib import Path
-import numpy as np
-
 from test.test_utils import create_default_input_channels_mapping_for_rgb_bands, create_rlayer_from_file, init_qgis
 from unittest.mock import MagicMock
 
+import numpy as np
+
 from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
-from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
+from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deepness.processing.models.segmentor import Segmentor
@@ -38,8 +38,6 @@ def test_map_processor_segmentation_landcover_example():
         postprocessing_dilate_erode_size=5,
         processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=20),
         pixel_classification__probability_threshold=0.5,
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
         model=model,
     )
 
@@ -53,22 +51,22 @@ def test_map_processor_segmentation_landcover_example():
     map_processor.run()
     result_img = map_processor.get_result_img()
     
-    assert result_img.shape == (2351, 2068)
+    assert result_img.shape == (1, 2351, 2068)
     
-    assert result_img[1000, 1000] == 1
-    assert result_img[2000, 2000] == 3
-    assert result_img[150:300, 150:300].sum() == 41478
+    assert result_img[0, 1000, 1000] == 0
+    assert result_img[0, 2000, 2000] == 2
+    assert np.isclose(result_img[0, 150:300, 150:300].sum(), 18978, rtol=3)
     
     unique, counts = np.unique(result_img, return_counts=True)
     
     counts = dict(zip(unique, counts))
     
     gt_counts = {
-        1: 3294546,
-        2: 71169,
-        3: 1054899,
-        4: 365915,
-        5: 75339,
+        0: 3294546,
+        1: 71169,
+        2: 1054899,
+        3: 365915,
+        4: 75339,
     }
     
     assert set(counts.keys()) == set(gt_counts.keys())

@@ -40,9 +40,6 @@ class ConfigEntryKey(enum.Enum):
     DATA_EXPORT_SEGMENTATION_MASK_ENABLED = enum.auto(), False
     DATA_EXPORT_SEGMENTATION_MASK_ID = enum.auto(), ''
 
-    MODEL_OUTPUT_FORMAT = enum.auto(), ''  # string of ModelOutputFormat, e.g. "ONLY_SINGLE_CLASS_AS_LAYER.value"
-    MODEL_OUTPUT_FORMAT_CLASS_NUMBER = enum.auto(), 0
-
     INPUT_CHANNELS_MAPPING__ADVANCED_MODE = enum.auto, False
     INPUT_CHANNELS_MAPPING__MAPPING_LIST_STR = enum.auto, []
 

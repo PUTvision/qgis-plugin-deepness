@@ -35,14 +35,11 @@ class Segmentor(ModelBase):
         Returns
         -------
         np.ndarray
-            Batch of postprocessed masks (N,H,W,C), 0-1
+            Output from the (Segmentation) model
         """
-        # labels = np.clip(model_output[0], 0, 1)
-        labels = model_output[0]  # no need for clipping I think - see #149
+        return model_output
 
-        return labels
-
-    def get_number_of_output_channels(self):
+    def get_number_of_output_channels(self) -> List[int]:
         """ Returns model's number of class
 
         Returns
@@ -50,16 +47,16 @@ class Segmentor(ModelBase):
         int
             Number of channels in the output layer
         """
-        if len(self.outputs_layers) == 1:
-            n_output_channels = self.outputs_layers[0].shape[-3]
-            # Support models that return a single output layer, which is converted to 
-            # a binary mask.
-            if n_output_channels == 1:
-                return 2
-            else:
-                return n_output_channels
-        else:
-            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
+        output_channels = []
+        for layer in self.outputs_layers:
+            ls = layer.shape
+
+            if len(ls) == 3:
+                output_channels.append(1)
+            elif len(ls) == 4:
+                output_channels.append(ls[-3])
+
+        return output_channels
 
     @classmethod
     def get_class_display_name(cls):
@@ -76,20 +73,15 @@ class Segmentor(ModelBase):
         """ Checks if the model outputs are valid
 
         Valid means that:
-        - the model has only one output
-        - the output is 4D (N,C,H,W)
-        - the batch size is 1
+        - the model has at least one output
+        - the output is 4D (N,C,H,W) or 3D (N,H,W)
+        - the batch size is 1 or dynamic
         - model resolution is equal to TILE_SIZE (is square)
 
         """
-        if len(self.outputs_layers) == 1:
-            shape = self.outputs_layers[0].shape
+        if len(self.outputs_layers) == 0:
+            raise Exception('Model has no output layers')
 
-            if len(shape) != 4:
-                raise Exception(f'Segmentation model output should have 4 dimensions: (B,C,H,W). Has {shape}')
-
-            if shape[2] != shape[3]:
-                raise Exception(f'Segmentation model can handle only square outputs masks. Has: {shape}')
-
-        else:
-            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
+        for layer in self.outputs_layers:
+            if len(layer.shape) != 4 and len(layer.shape) != 3:
+                raise Exception(f'Segmentation model output should have 4 dimensions: (B,C,H,W) or 3 dimensions: (B,H,W). Has {layer.shape}')

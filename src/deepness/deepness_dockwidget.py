@@ -16,8 +16,7 @@ from deepness.common.defines import IS_DEBUG, PLUGIN_NAME
 from deepness.common.errors import OperationFailedException
 from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters, DetectorType
-from deepness.common.processing_parameters.map_processing_parameters import (MapProcessingParameters, ModelOutputFormat,
-                                                                             ProcessedAreaType)
+from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deepness.common.processing_parameters.recognition_parameters import RecognitionParameters
 from deepness.common.processing_parameters.regression_parameters import RegressionParameters
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
@@ -79,9 +78,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             model_type_txt = ConfigEntryKey.MODEL_TYPE.get()
             self.comboBox_modelType.setCurrentText(model_type_txt)
 
-            model_output_format_txt = ConfigEntryKey.MODEL_OUTPUT_FORMAT.get()
-            self.comboBox_modelOutputFormat.setCurrentText(model_output_format_txt)
-
             self._input_channels_mapping_widget.load_ui_from_config()
             self._training_data_export_widget.load_ui_from_config()
 
@@ -92,7 +88,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 self._load_model_and_display_info(abort_if_no_file_path=True)  # to prepare other ui components
 
             # needs to be loaded after the model is set up
-            self.comboBox_outputFormatClassNumber.setCurrentIndex(ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.get())
             self.doubleSpinBox_resolution_cm_px.setValue(ConfigEntryKey.PREPROCESSING_RESOLUTION.get())
             self.spinBox_batchSize.setValue(ConfigEntryKey.MODEL_BATCH_SIZE.get())
             self.checkBox_local_cache.setChecked(ConfigEntryKey.PROCESS_LOCAL_CACHE.get())
@@ -124,10 +119,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         ConfigEntryKey.INPUT_LAYER_ID.set(self._get_input_layer_id())
         ConfigEntryKey.MODEL_TYPE.set(self.comboBox_modelType.currentText())
         ConfigEntryKey.PROCESSED_AREA_TYPE.set(self.comboBox_processedAreaSelection.currentText())
-
-        model_output_format = self.comboBox_modelOutputFormat.currentText()
-        ConfigEntryKey.MODEL_OUTPUT_FORMAT.set(model_output_format)
-        ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.set(self.comboBox_outputFormatClassNumber.currentIndex())
 
         ConfigEntryKey.PREPROCESSING_RESOLUTION.set(self.doubleSpinBox_resolution_cm_px.value())
         ConfigEntryKey.MODEL_BATCH_SIZE.set(self.spinBox_batchSize.value())
@@ -178,10 +169,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             self.comboBox_detectorType.addItem(detector_type)
         self._detector_type_changed()
 
-        for output_format_type in ModelOutputFormat.get_all_names():
-            self.comboBox_modelOutputFormat.addItem(output_format_type)
-        self._model_output_format_changed()
-
         self._rlayer_updated()  # to force refresh the dependant ui elements
 
     def _set_processed_area_mask_options(self):
@@ -207,7 +194,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.mMapLayerComboBox_inputLayer.layerChanged.connect(self._rlayer_updated)
         self.checkBox_pixelClassEnableThreshold.stateChanged.connect(self._set_probability_threshold_enabled)
         self.checkBox_removeSmallAreas.stateChanged.connect(self._set_remove_small_segment_enabled)
-        self.comboBox_modelOutputFormat.currentIndexChanged.connect(self._model_output_format_changed)
         self.radioButton_processingTileOverlapPercentage.toggled.connect(self._set_processing_overlap_enabled)
         self.radioButton_processingTileOverlapPixels.toggled.connect(self._set_processing_overlap_enabled)
 
@@ -238,19 +224,10 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         self.mGroupBox_regressionParameters.setVisible(regression_enabled)
         self.mGroupBox_superresolutionParameters.setVisible(superresolution_enabled)
         self.mGroupBox_recognitionParameters.setVisible(recognition_enabled)
-        # Disable output format options for super-resolution or recognition models.
-        if recognition_enabled or superresolution_enabled:
-            self.mGroupBox_6.setEnabled(False)
 
     def _detector_type_changed(self):
         detector_type = DetectorType(self.comboBox_detectorType.currentText())
         self.label_detectorTypeDescription.setText(detector_type.get_formatted_description())
-
-    def _model_output_format_changed(self):
-        txt = self.comboBox_modelOutputFormat.currentText()
-        model_output_format = ModelOutputFormat(txt)
-        class_number_selection_enabled = bool(model_output_format == ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER)
-        self.comboBox_outputFormatClassNumber.setEnabled(class_number_selection_enabled)
         
     def _set_processing_overlap_enabled(self):
         overlap_percentage_enabled = self.radioButton_processingTileOverlapPercentage.isChecked()
@@ -398,7 +375,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 scale_factor = output_0_shape[-1] / input_size_px
                 self.doubleSpinBox_superresolutionScaleFactor.setValue(int(scale_factor))
                 # Disable output format options for super-resolution models
-                self.mGroupBox_6.setEnabled(False)
         except Exception as e:
             if IS_DEBUG:
                 raise e
@@ -417,18 +393,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
         if isinstance(self._model, Detector):
             detector_type = DetectorType(self.comboBox_detectorType.currentText())
             self._model.set_model_type_param(detector_type)
-
-        self._update_model_output_format_mapping()
-
-    def _update_model_output_format_mapping(self):
-        self.comboBox_outputFormatClassNumber: QComboBox
-        self.comboBox_outputFormatClassNumber.clear()
-        if not self._model:
-            return
-
-        for output_number in range(self._model.get_number_of_output_channels()):
-            name = f'{output_number} - {self._model.get_channel_name(output_number)}'
-            self.comboBox_outputFormatClassNumber.addItem(name)
 
     def get_mask_layer_id(self):
         if not self.get_selected_processed_area_type() == ProcessedAreaType.FROM_POLYGONS:
@@ -565,8 +529,6 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
             input_layer_id=self._get_input_layer_id(),
             processing_overlap=self._get_overlap_parameter(),
             input_channels_mapping=self._input_channels_mapping_widget.get_channels_mapping(),
-            model_output_format=ModelOutputFormat(self.comboBox_modelOutputFormat.currentText()),
-            model_output_format__single_class_number=self.comboBox_outputFormatClassNumber.currentIndex(),
         )
         return params
 

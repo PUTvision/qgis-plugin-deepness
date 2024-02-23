@@ -39,7 +39,7 @@ class Superresolution(ModelBase):
         """
         return model_output[0]
 
-    def get_number_of_output_channels(self) -> int:
+    def get_number_of_output_channels(self) -> List[int]:
         """ Returns number of channels in the output layer
 
         Returns
@@ -48,7 +48,7 @@ class Superresolution(ModelBase):
             Number of channels in the output layer
         """
         if len(self.outputs_layers) == 1:
-            return self.outputs_layers[0].shape[-3]
+            return [self.outputs_layers[0].shape[-3]]
         else:
             raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
 

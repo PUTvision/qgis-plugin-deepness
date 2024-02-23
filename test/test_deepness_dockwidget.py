@@ -15,8 +15,7 @@ from qgis.PyQt.QtWidgets import QApplication
 
 from deepness.common.channels_mapping import ChannelsMapping
 from deepness.common.config_entry_key import ConfigEntryKey
-from deepness.common.processing_parameters.map_processing_parameters import (MapProcessingParameters, ModelOutputFormat,
-                                                                             ProcessedAreaType)
+from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.common.processing_parameters.training_data_export_parameters import TrainingDataExportParameters
 from deepness.deepness_dockwidget import DeepnessDockWidget
@@ -78,8 +77,6 @@ def test_get_inference_parameters():
     ConfigEntryKey.PREPROCESSING_RESOLUTION.set(7)
     ConfigEntryKey.PROCESSED_AREA_TYPE.set(ProcessedAreaType.VISIBLE_PART.value)
     ConfigEntryKey.PREPROCESSING_TILES_OVERLAP.set(44)
-    ConfigEntryKey.MODEL_OUTPUT_FORMAT.set(ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER.value)
-    ConfigEntryKey.MODEL_OUTPUT_FORMAT_CLASS_NUMBER.set(1)
 
     dockwidget = DeepnessDockWidget(iface=MagicMock())
     dockwidget._get_input_layer_id = MagicMock(return_value=1)  # fake input layer id, just to test
@@ -96,8 +93,6 @@ def test_get_inference_parameters():
     assert params.input_channels_mapping.get_number_of_model_inputs() == 3
     assert params.input_channels_mapping.get_number_of_image_channels() == 4
     assert params.input_channels_mapping.get_image_channel_index_for_model_input(2) == 2
-    assert params.model_output_format == ModelOutputFormat.ONLY_SINGLE_CLASS_AS_LAYER
-    assert params.model_output_format__single_class_number == 1
 
 
 if __name__ == '__main__':

@@ -1,6 +1,5 @@
 """ Module including the class for the object detection task and related functions
 """
-import stat
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
@@ -140,7 +139,7 @@ class Detector(ModelBase):
         """
         class_names = self.get_class_names()
         if class_names is not None:
-            return len(class_names)  # If class names are specified, we expect to have exactly this number of channels as specidied
+            return [len(class_names)]  # If class names are specified, we expect to have exactly this number of channels as specidied
 
         model_type_params = self.model_type.get_parameters()
 
@@ -148,10 +147,10 @@ class Detector(ModelBase):
 
         if len(self.outputs_layers) == 1:
             if model_type_params.skipped_objectness_probability:
-                return self.outputs_layers[0].shape[shape_index] - 4
-            return self.outputs_layers[0].shape[shape_index] - 4 - 1  # shape - 4 bboxes - 1 conf
+                return [self.outputs_layers[0].shape[shape_index] - 4]
+            return [self.outputs_layers[0].shape[shape_index] - 4 - 1]  # shape - 4 bboxes - 1 conf
         elif len(self.outputs_layers) == 2 and self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
-            return self.outputs_layers[0].shape[shape_index] - 4 - self.outputs_layers[1].shape[1]
+            return [self.outputs_layers[0].shape[shape_index] - 4 - self.outputs_layers[1].shape[1]]
         else:
             raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")
 
