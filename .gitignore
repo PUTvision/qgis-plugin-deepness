@@ -333,7 +333,7 @@ compile_commands.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python,pycharm,qt
 
-
+grid_data
 .idea/
-
+src/deepness/python3.10/
 _autosummary/

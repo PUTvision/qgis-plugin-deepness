@@ -1,4 +1,3 @@
-import cv2
 import numpy as np
 
 from deepness.common.processing_parameters.standardization_parameters import StandardizationParameters
