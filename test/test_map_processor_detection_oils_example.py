@@ -40,7 +40,6 @@ def test_map_processor_detection_oil_example():
         model=model_wrapper,
         confidence=0.5,
         iou_threshold=0.1,
-        remove_overlapping_detections=False,
         model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
         model_output_format__single_class_number=-1,
     )
@@ -73,7 +72,6 @@ def test_map_processor_detection_oil_example_using_cache():
         model=model_wrapper,
         confidence=0.5,
         iou_threshold=0.1,
-        remove_overlapping_detections=False,
         model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
         model_output_format__single_class_number=-1,
     )
@@ -106,7 +104,6 @@ def test_map_processor_detection_oil_example_with_remove_small():
         model=model_wrapper,
         confidence=0.5,
         iou_threshold=0.3,
-        remove_overlapping_detections=True,
         model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
         model_output_format__single_class_number=-1,
     )

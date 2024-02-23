@@ -33,11 +33,10 @@ def test_map_processor_detection_planes_example():
         mask_layer_id=None,
         input_layer_id=rlayer.id(),
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
-        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=60),
+        processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=90),
         model=model_wrapper,
         confidence=0.5,
         iou_threshold=0.4,
-        remove_overlapping_detections=False,
         model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
         model_output_format__single_class_number=-1,
     )
@@ -52,6 +51,7 @@ def test_map_processor_detection_planes_example():
     map_processor.run()
 
     assert len(map_processor.get_all_detections()) == 2
+
 
 
 if __name__ == '__main__':

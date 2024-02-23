@@ -39,8 +39,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --upgrade -r requirements.txt
-        pip install --upgrade -r requirements_development.txt
+        pip install --upgrade -r ./src/deepness/python_requirements/requirements.txt
+        pip install --upgrade -r ./src/deepness/python_requirements/requirements_development.txt
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -56,7 +56,7 @@ jobs:
         # apparently there is some issue with opencv-python-headless, we need to reinstall it 
         pip uninstall opencv-python-headless --yes
         
-        pip install opencv-python-headless==4.6.0.66
+        pip install --upgrade -r ./src/deepness/python_requirements/requirements.txt
         # run one this without pytest, because pytest creates obfuscated error messages
         # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
         xvfb-run python3 test/test_map_processor_segmentation.py

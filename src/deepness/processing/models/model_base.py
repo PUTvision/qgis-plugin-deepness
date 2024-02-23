@@ -3,10 +3,8 @@ import ast
 import json
 from typing import List, Optional
 
-import cv2
 import numpy as np
 
-import deepness.processing.models.preprocessing_utils as preprocessing_utils
 from deepness.common.lazy_package_loader import LazyPackageLoader
 from deepness.common.processing_parameters.standardization_parameters import StandardizationParameters
 
@@ -84,7 +82,7 @@ class ModelBase:
             Batch size or None if not found (dynamic batch size)
         """
         bs = self.input_shape[0]
-                
+
         if isinstance(bs, str):
             return None
         else:
@@ -183,7 +181,7 @@ class ModelBase:
         meta = self.sess.get_modelmeta()
         name_mean = 'standardization_mean'
         name_std = 'standardization_std'
-        
+
         param = StandardizationParameters(channels_number=self.get_input_shape()[-3])
 
         if name_mean in meta.custom_metadata_map and name_std in meta.custom_metadata_map:
@@ -334,16 +332,6 @@ class ModelBase:
             return float(value)
         return None
 
-    def get_metadata_detection_remove_overlapping(self) -> Optional[bool]:
-        """ Get detection parameter 'should remove overlapping detections' from metadata if exists
-        """
-        meta = self.sess.get_modelmeta()
-        name = 'det_remove_overlap'
-        if name in meta.custom_metadata_map:
-            value = json.loads(meta.custom_metadata_map[name])
-            return bool(value)
-        return None
-
     def get_number_of_channels(self) -> int:
         """ Returns number of channels in the input layer
 
@@ -387,6 +375,11 @@ class ModelBase:
         np.ndarray
             Preprocessed batch of image (N,C,H,W), RGB, 0-1
         """
+
+        # imported here, to avoid isseue with uninstalled dependencies during the first plugin start
+        # in other places we use LazyPackageLoader, but here it is not so easy
+        import deepness.processing.models.preprocessing_utils as preprocessing_utils
+
         tiles_batched = preprocessing_utils.limit_channels_number(tiles_batched, limit=self.input_shape[-3])
         tiles_batched = preprocessing_utils.normalize_values_to_01(tiles_batched)
         tiles_batched = preprocessing_utils.standardize_values(tiles_batched, params=self.standardization_parameters)
