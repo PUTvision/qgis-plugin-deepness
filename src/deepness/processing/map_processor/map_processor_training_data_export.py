@@ -47,7 +47,7 @@ class MapProcessorTrainingDataExport(MapProcessor):
                 vlayer_mask=vlayer_segmentation,
                 extended_extent=self.extended_extent,
                 rlayer_units_per_pixel=self.rlayer_units_per_pixel,
-                image_shape_yx=(self.img_size_y_pixels, self.img_size_x_pixels),
+                image_shape_yx=(1, self.img_size_y_pixels, self.img_size_x_pixels),
                 files_handler=self.file_handler)
 
         number_of_written_tiles = 0
@@ -69,10 +69,12 @@ class MapProcessorTrainingDataExport(MapProcessor):
                 number_of_written_tiles += 1
 
             if export_segmentation_mask:
+                segmentation_mask_for_tile = tile_params.get_entire_tile_from_full_img(segmentation_mask_full)
+                
                 file_name = f'tile_mask_{tile_params.x_bin_number}_{tile_params.y_bin_number}.png'
                 file_path = os.path.join(self.output_dir_path, file_name)
-                segmentation_mask_for_tile = tile_params.get_entire_tile_from_full_img(segmentation_mask_full)
-                cv2.imwrite(file_path, segmentation_mask_for_tile)
+                
+                cv2.imwrite(file_path, segmentation_mask_for_tile[0])
 
         result_message = self._create_result_message(number_of_written_tiles)
         return MapProcessingResultSuccess(result_message)

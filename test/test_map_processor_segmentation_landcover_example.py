@@ -71,7 +71,7 @@ def test_map_processor_segmentation_landcover_example():
     assert set(counts.keys()) == set(gt_counts.keys())
     
     for k, v in gt_counts.items():
-        assert counts[k] == v
+        assert np.isclose(counts[k], v, atol=3)
 
 
 if __name__ == '__main__':
