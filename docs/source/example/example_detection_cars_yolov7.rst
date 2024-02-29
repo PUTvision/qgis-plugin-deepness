@@ -13,7 +13,7 @@ The example is based on the `ITCVD cars detection dataset <https://arxiv.org/pdf
 Training tutorial
 =========================
 
-The entire training process has been gathered in a tutorial notebook in jupyter notebook:
+The entire training process has been gathered in `a tutorial notebook in jupyter notebook <https://github.com/PUTvision/qgis-plugin-deepness/blob/master/tutorials/detection/cars_yolov7/car_detection__prepare_and_train.ipynb>'_:
 
 
   .. code-block::
