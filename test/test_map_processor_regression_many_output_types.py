@@ -90,8 +90,15 @@ def test_dummy_model_regression_processing__1x1x512x512():
     result_imgs = map_processor.get_result_img()
 
     assert result_imgs.shape == (1, 561, 829)
+    
+    channels = map_processor._get_indexes_of_model_output_channels_to_create()
+    assert len(channels) == 1
+    assert channels[0] == 1
+    
+    name = map_processor.model.get_channel_name(0, 0)
+    assert name == 'Happiness'
 
-def test_dummy_model_regression_processing__1x512x512():
+def test_dummy_model_regression_processing__two_1x512x512():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
@@ -123,7 +130,7 @@ def test_dummy_model_regression_processing__1x512x512():
 
     assert result_imgs.shape == (2, 561, 829)
 
-def test_dummy_model_regression_processing__1x1x512x512():
+def test_dummy_model_regression_processing__two_1x1x512x512():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
@@ -154,10 +161,22 @@ def test_dummy_model_regression_processing__1x1x512x512():
     result_imgs = map_processor.get_result_img()
 
     assert result_imgs.shape == (2, 561, 829)
+    
+        
+    channels = map_processor._get_indexes_of_model_output_channels_to_create()
+    assert len(channels) == 2
+    assert channels[0] == 1
+    assert channels[1] == 1
+    
+    name = map_processor.model.get_channel_name(0, 0)
+    assert name == 'Luck'
+    
+    name = map_processor.model.get_channel_name(1, 0)
+    assert name == 'Failure'
 
 if __name__ == '__init__':
     test_dummy_model_regression_processing__1x512x512()
     test_dummy_model_regression_processing__1x1x512x512()
-    test_dummy_model_regression_processing__1x512x512()
-    test_dummy_model_regression_processing__1x1x512x512()
+    test_dummy_model_regression_processing__two_1x512x512()
+    test_dummy_model_regression_processing__two_1x1x512x512()
     print('All tests passed!')
