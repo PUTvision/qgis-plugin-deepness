@@ -64,27 +64,34 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         )
 
     def _create_result_message(self, result_img: np.ndarray) -> str:
-        unique, counts = np.unique(result_img, return_counts=True)
-        counts_map = {}
-        for i in range(len(unique)):
-            counts_map[unique[i]] = counts[i]
-
-        channels = self._get_indexes_of_model_output_channels_to_create()
-        txt = f'Segmentation done for {len(channels)} model output channels, with the following statistics:\n'
-
-        # we cannot simply take image dimensions, because we may have irregular processing area from polygon
-        number_of_pixels_in_processing_area = np.sum([counts_map[k] for k in counts_map.keys() if k != 0])
-        total_area = number_of_pixels_in_processing_area * self.params.resolution_m_per_px**2
-        for channel_id in channels:
-            # See note in the class description why are we adding/subtracting 1 here
-            pixels_count = counts_map.get(channel_id + 1, 0)
-            area = pixels_count * self.params.resolution_m_per_px**2
-            if total_area:
-                area_percentage = area / total_area * 100
-            else:
-                area_percentage = 0.0
-                # TODO
-            txt += f' - {self.model.get_channel_name(0, channel_id)}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
+        
+        txt = f'Segmentation done, with the following statistics:\n'
+        
+        for output_id, layer_sizes in enumerate(self._get_indexes_of_model_output_channels_to_create()):
+            
+            txt += f'Channels for output {output_id}:\n'
+            
+            unique, counts = np.unique(result_img[output_id], return_counts=True)
+            counts_map = {}
+            for i in range(len(unique)):
+                counts_map[unique[i]] = counts[i]
+                
+            # # we cannot simply take image dimensions, because we may have irregular processing area from polygon
+            number_of_pixels_in_processing_area = np.sum([counts_map[k] for k in counts_map.keys()])
+            total_area = number_of_pixels_in_processing_area * self.params.resolution_m_per_px**2
+            
+            for channel_id in range(layer_sizes):
+                # See note in the class description why are we adding/subtracting 1 here
+                pixels_count = counts_map.get(channel_id, 0)
+                area = pixels_count * self.params.resolution_m_per_px**2
+                
+                if total_area > 0 and not np.isnan(total_area) and not np.isinf(total_area):
+                    area_percentage = area / total_area * 100
+                else:
+                    area_percentage = 0.0
+                    # TODO
+                    
+                txt += f'\t- {self.model.get_channel_name(output_id, channel_id)}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
 
         return txt
 
@@ -94,10 +101,11 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         """
         vlayers = []
 
-        for layer_id, layer_sizes in enumerate(self._get_indexes_of_model_output_channels_to_create()):
+        for output_id, layer_sizes in enumerate(self._get_indexes_of_model_output_channels_to_create()):
+            output_vlayers = []
             for channel_id in range(layer_sizes):
                 # See note in the class description why are we adding/subtracting 1 here
-                local_mask_img = np.uint8(mask_img[layer_id] == channel_id)
+                local_mask_img = np.uint8(mask_img[output_id] == channel_id)
 
                 contours, hierarchy = cv2.findContours(local_mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 contours = processing_utils.transform_contours_yx_pixels_to_target_crs(
@@ -117,7 +125,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                 else:
                     pass  # just nothing, we already have an empty list of features
 
-                layer_name = self.model.get_channel_name(layer_id, channel_id)
+                layer_name = self.model.get_channel_name(output_id, channel_id)
                 vlayer = QgsVectorLayer("multipolygon", layer_name, "memory")
                 vlayer.setCrs(self.rlayer.crs())
                 prov = vlayer.dataProvider()
@@ -131,14 +139,24 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                 prov.addFeatures(features)
                 vlayer.updateExtents()
 
-                vlayers.append(vlayer)
+                output_vlayers.append(vlayer)
+                
+            vlayers.append(output_vlayers)
 
         # accessing GUI from non-GUI thread is not safe, so we need to delegate it to the GUI thread
         def add_to_gui():
             group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
-            for vlayer in vlayers:
-                QgsProject.instance().addMapLayer(vlayer, False)
-                group.addLayer(vlayer)
+            
+            if len(vlayers) == 1:
+                for vlayer in vlayers[0]:
+                    QgsProject.instance().addMapLayer(vlayer, False)
+                    group.addLayer(vlayer)
+            else:
+                for i, output_vlayers in enumerate(vlayers):
+                    output_group = group.insertGroup(0, f'output_{i}')
+                    for vlayer in output_vlayers:
+                        QgsProject.instance().addMapLayer(vlayer, False)
+                        output_group.addLayer(vlayer)
 
         return add_to_gui
 

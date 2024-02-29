@@ -45,6 +45,8 @@ class ModelBase:
 
         self.outputs_layers = self.sess.get_outputs()
         self.standardization_parameters: StandardizationParameters = self.get_metadata_standarization_parameters()
+        
+        self.output_names = self.get_outputs_channel_names()
 
     @classmethod
     def get_model_type_from_metadata(cls, model_file_path: str) -> Optional[str]:
@@ -98,13 +100,13 @@ class ModelBase:
         """
         return self.input_shape[-2:]
 
-    def get_class_names(self) -> Optional[List[str]]:
+    def get_outputs_channel_names(self) -> Optional[List[List[str]]]:
         """ Get class names from metadata
 
         Returns
         -------
-        List[str] | None
-            List of class names or None if not found
+        List[List[str]] | None
+            List of class names for each model output or None if not found
         """
         meta = self.sess.get_modelmeta()
 
@@ -119,15 +121,23 @@ class ModelBase:
             except json.decoder.JSONDecodeError:
                 class_names = ast.literal_eval(txt)  # keys are integers instead of strings - use ast
 
-            sorted_by_key = sorted(class_names.items(), key=lambda kv: int(kv[0]))
+            if isinstance(class_names, dict):
+                class_names = [class_names]
 
-            class_counter = 0
+            sorted_by_key = [sorted(cn.items(), key=lambda kv: int(kv[0])) for cn in class_names]
+
             all_names = []
-            for key, value in sorted_by_key:
-                if int(key) != class_counter:
-                    raise Exception("Class names in the model metadata are not consecutive (missing class label)")
-                class_counter += 1
-                all_names.append(value)
+            
+            for output_index in range(len(sorted_by_key)):
+                output_names = []
+                class_counter = 0
+            
+                for key, value in sorted_by_key[output_index]:
+                    if int(key) != class_counter:
+                        raise Exception("Class names in the model metadata are not consecutive (missing class label)")
+                    class_counter += 1
+                    output_names.append(value)
+                all_names.append(output_names)
 
             return all_names
 
@@ -146,14 +156,20 @@ class ModelBase:
         str
             Channel name or empty string if not found
         """
-        class_names = self.get_class_names()
+        
         channel_id_str = str(channel_id)
-        default_return = f'o_{layer_id}_{channel_id_str}'
+        default_return = f'channel_{channel_id_str}'
 
-        if class_names is not None and channel_id < len(class_names):
-            return class_names[channel_id]
-        else:
+        if self.output_names is None:
             return default_return
+        
+        if layer_id >= len(self.output_names):
+            raise Exception(f'Layer id {layer_id} is out of range of the model outputs')
+        
+        if channel_id >= len(self.output_names[layer_id]):
+            raise Exception(f'Channel id {channel_id} is out of range of the model outputs')
+        
+        return f'{self.output_names[layer_id][channel_id]}'
 
     def get_metadata_model_type(self) -> Optional[str]:
         """ Get model type from metadata

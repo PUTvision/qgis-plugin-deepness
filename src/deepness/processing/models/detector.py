@@ -137,7 +137,7 @@ class Detector(ModelBase):
         int
             Number of output channels
         """
-        class_names = self.get_class_names()
+        class_names = self.get_outputs_channel_names()[0]
         if class_names is not None:
             return [len(class_names)]  # If class names are specified, we expect to have exactly this number of channels as specidied
 

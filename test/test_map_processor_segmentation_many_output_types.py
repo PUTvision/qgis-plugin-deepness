@@ -61,6 +61,13 @@ def test_dummy_model_segmentation_processing__1x1x512x512():
     result_img = map_processor.get_result_img()
 
     assert result_img.shape == (1, 561, 829)
+    
+    channels = map_processor._get_indexes_of_model_output_channels_to_create()
+    assert len(channels) == 1
+    assert channels[0] == 1
+    
+    name = map_processor.model.get_channel_name(0, 0)
+    assert name == 'Coffee'
 
 def test_dummy_model_segmentation_processing__1x512x512():
     qgs = init_qgis()
@@ -94,6 +101,13 @@ def test_dummy_model_segmentation_processing__1x512x512():
     result_img = map_processor.get_result_img()
 
     assert result_img.shape == (1, 561, 829)
+    
+    channels = map_processor._get_indexes_of_model_output_channels_to_create()
+    assert len(channels) == 1
+    assert channels[0] == 1
+    
+    name = map_processor.model.get_channel_name(0, 0)
+    assert name == 'Coffee'
 
 def test_dummy_model_segmentation_processing__1x2x512x512():
     qgs = init_qgis()
@@ -162,6 +176,17 @@ def test_dummy_model_segmentation_processing__two_outputs_1x1x512x512():
     result_img = map_processor.get_result_img()
 
     assert result_img.shape == (2, 561, 829)
+    
+    channels = map_processor._get_indexes_of_model_output_channels_to_create()
+    assert len(channels) == 2
+    assert channels[0] == 1
+    assert channels[1] == 1
+    
+    name = map_processor.model.get_channel_name(0, 0)
+    assert name == 'Coffee'
+    
+    name = map_processor.model.get_channel_name(1, 0)
+    assert name == 'Juice'
 
 def test_dummy_model_segmentation_processing__two_outputs_1x512x512():
     qgs = init_qgis()
@@ -230,6 +255,23 @@ def test_dummy_model_segmentation_processing__two_outputs_1x2x512x512():
     result_img = map_processor.get_result_img()
 
     assert result_img.shape == (2, 561, 829)
+    
+    channels = map_processor._get_indexes_of_model_output_channels_to_create()
+    assert len(channels) == 2
+    assert channels[0] == 2
+    assert channels[1] == 2
+    
+    name = map_processor.model.get_channel_name(0, 0)
+    assert name == 'Coffee'
+    
+    name = map_processor.model.get_channel_name(0, 1)
+    assert name == 'Tea'
+    
+    name = map_processor.model.get_channel_name(1, 0)
+    assert name == 'Juice'
+    
+    name = map_processor.model.get_channel_name(1, 1)
+    assert name == 'Beer'
 
 if __name__ == '__main__':
     test_dummy_model_segmentation_processing__1x1x512x512()
