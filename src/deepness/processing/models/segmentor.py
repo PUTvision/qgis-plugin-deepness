@@ -22,6 +22,8 @@ class Segmentor(ModelBase):
             Path to the model file
         """
         super(Segmentor, self).__init__(model_file_path)
+        
+        self.outputs_are_sigmoid = self.check_loaded_model_outputs()
 
     def postprocessing(self, model_output: List) -> np.ndarray:
         """ Postprocess the model output.
@@ -85,3 +87,25 @@ class Segmentor(ModelBase):
         for layer in self.outputs_layers:
             if len(layer.shape) != 4 and len(layer.shape) != 3:
                 raise Exception(f'Segmentation model output should have 4 dimensions: (B,C,H,W) or 3 dimensions: (B,H,W). Has {layer.shape}')
+
+
+    def check_loaded_model_outputs(self) -> List[bool]:
+        """ Check if the model outputs are sigmoid (for segmentation)
+        
+        Parameters
+        ----------
+        
+        Returns
+        -------
+        List[bool]
+            List of booleans indicating if the model outputs are sigmoid
+        """
+        outputs = []
+        
+        for output in self.outputs_layers:
+            if len(output.shape) == 3:
+                outputs.append(True)
+            else:
+                outputs.append(output.shape[-3] == 1)
+                
+        return outputs

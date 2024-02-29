@@ -1,5 +1,6 @@
 """ This file implements map processing for segmentation model """
 
+from calendar import c
 from typing import Callable
 
 import numpy as np
@@ -62,6 +63,12 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             message=result_message,
             gui_delegate=gui_delegate,
         )
+        
+    def _check_output_layer_is_sigmoid_and_has_more_than_one_name(self, output_id: int) -> bool:
+        if self.model.outputs_names is None or self.model.outputs_are_sigmoid is None:
+            return False
+        
+        return len(self.model.outputs_names[output_id]) > 1 and self.model.outputs_are_sigmoid[output_id]
 
     def _create_result_message(self, result_img: np.ndarray) -> str:
         
@@ -80,7 +87,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             number_of_pixels_in_processing_area = np.sum([counts_map[k] for k in counts_map.keys()])
             total_area = number_of_pixels_in_processing_area * self.params.resolution_m_per_px**2
             
-            for channel_id in range(layer_sizes):
+            for channel_id in range(1, layer_sizes + 1):
                 # See note in the class description why are we adding/subtracting 1 here
                 pixels_count = counts_map.get(channel_id, 0)
                 area = pixels_count * self.params.resolution_m_per_px**2
@@ -90,8 +97,14 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                 else:
                     area_percentage = 0.0
                     # TODO
-                    
-                txt += f'\t- {self.model.get_channel_name(output_id, channel_id)}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
+                
+                # hardcode if someone add "background class" for sigmoid output, we need to skip it
+                if self._check_output_layer_is_sigmoid_and_has_more_than_one_name(output_id):
+                    channel_id_name = channel_id
+                else:
+                    channel_id_name = channel_id - 1
+                
+                txt += f'\t- {self.model.get_channel_name(output_id, channel_id_name)}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
 
         return txt
 
@@ -103,7 +116,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
 
         for output_id, layer_sizes in enumerate(self._get_indexes_of_model_output_channels_to_create()):
             output_vlayers = []
-            for channel_id in range(layer_sizes):
+            for channel_id in range(1, layer_sizes + 1):
                 # See note in the class description why are we adding/subtracting 1 here
                 local_mask_img = np.uint8(mask_img[output_id] == channel_id)
 
@@ -124,8 +137,14 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                         current_contour_index=0)
                 else:
                     pass  # just nothing, we already have an empty list of features
-
-                layer_name = self.model.get_channel_name(output_id, channel_id)
+                
+                # hardcode if someone add "background class" for sigmoid output, we need to skip it
+                if self._check_output_layer_is_sigmoid_and_has_more_than_one_name(output_id):
+                    channel_id_name = channel_id
+                else:
+                    channel_id_name = channel_id - 1
+                
+                layer_name = self.model.get_channel_name(output_id, channel_id_name)
                 vlayer = QgsVectorLayer("multipolygon", layer_name, "memory")
                 vlayer.setCrs(self.rlayer.crs())
                 prov = vlayer.dataProvider()
@@ -174,7 +193,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                 result = (result != 0).astype(int)
             else:
                 shape = result.shape
-                result = np.argmax(result, axis=1).reshape(shape[0], 1, shape[2], shape[3])
+                result = np.argmax(result, axis=1).reshape(shape[0], 1, shape[2], shape[3]) + 1
 
             assert len(result.shape) == 4
             assert result.shape[1] == 1

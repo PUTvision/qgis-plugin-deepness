@@ -53,8 +53,8 @@ def test_map_processor_segmentation_landcover_example():
     
     assert result_img.shape == (1, 2351, 2068)
     
-    assert result_img[0, 1000, 1000] == 0
-    assert result_img[0, 2000, 2000] == 2
+    assert result_img[0, 1000, 1000] == 1
+    assert result_img[0, 2000, 2000] == 3
     assert np.isclose(result_img[0, 150:300, 150:300].sum(), 18978, rtol=3)
     
     unique, counts = np.unique(result_img[0], return_counts=True)
@@ -62,11 +62,11 @@ def test_map_processor_segmentation_landcover_example():
     counts = dict(zip(unique, counts))
     
     gt_counts = {
-        0: 3294546,
-        1: 71169,
-        2: 1054899,
-        3: 365915,
-        4: 75339,
+        1: 3294546,
+        2: 71169,
+        3: 1054899,
+        4: 365915,
+        5: 75339,
     }
     
     assert set(counts.keys()) == set(gt_counts.keys())

@@ -46,7 +46,7 @@ class ModelBase:
         self.outputs_layers = self.sess.get_outputs()
         self.standardization_parameters: StandardizationParameters = self.get_metadata_standarization_parameters()
         
-        self.output_names = self.get_outputs_channel_names()
+        self.outputs_names = self.get_outputs_channel_names()
 
     @classmethod
     def get_model_type_from_metadata(cls, model_file_path: str) -> Optional[str]:
@@ -160,16 +160,16 @@ class ModelBase:
         channel_id_str = str(channel_id)
         default_return = f'channel_{channel_id_str}'
 
-        if self.output_names is None:
+        if self.outputs_names is None:
             return default_return
         
-        if layer_id >= len(self.output_names):
+        if layer_id >= len(self.outputs_names):
             raise Exception(f'Layer id {layer_id} is out of range of the model outputs')
         
-        if channel_id >= len(self.output_names[layer_id]):
+        if channel_id >= len(self.outputs_names[layer_id]):
             raise Exception(f'Channel id {channel_id} is out of range of the model outputs')
         
-        return f'{self.output_names[layer_id][channel_id]}'
+        return f'{self.outputs_names[layer_id][channel_id]}'
 
     def get_metadata_model_type(self) -> Optional[str]:
         """ Get model type from metadata
