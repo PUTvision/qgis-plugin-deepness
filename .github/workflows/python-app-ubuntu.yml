@@ -52,17 +52,14 @@ jobs:
         export PYTHONPATH="/usr/lib/python3/dist-packages":PYTHONPATH && echo "import qgis" | python3
         export PYTHONPATH="$PYTHONPATH:$(pwd)/src"
         export PYTHONPATH="$PYTHONPATH:$(pwd)"
-        
-        # apparently there is some issue with opencv-python-headless, we need to reinstall it 
+
+        # apparently there is some issue with opencv-python-headless, we need to reinstall it
         pip uninstall opencv-python-headless --yes
-        
+
         pip install --upgrade -r ./src/deepness/python_requirements/requirements.txt
-        # run one this without pytest, because pytest creates obfuscated error messages
+
         # we need 'xvfb-run' to simulate UI - otherwise qgis crushes
-        xvfb-run python3 test/test_map_processor_segmentation.py
-        
-        # run the actual tests
-        xvfb-run python3 -m pytest --cov=src/deepness/ --cov-report html test/
+        xvfb-run -e /dev/stdout python3 -m pytest --cov=src/deepness/ --cov-report html test/
     - name: 'Upload Artifact - test coverage'
       uses: actions/upload-artifact@v3
       with:

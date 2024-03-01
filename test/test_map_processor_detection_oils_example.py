@@ -53,6 +53,7 @@ def test_map_processor_detection_oil_example():
 
     map_processor.run()
 
+
 def test_map_processor_detection_oil_example_using_cache():
     qgs = init_qgis()
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
@@ -84,6 +85,7 @@ def test_map_processor_detection_oil_example_using_cache():
     )
 
     map_processor.run()
+
 
 def test_map_processor_detection_oil_example_with_remove_small():
     qgs = init_qgis()
