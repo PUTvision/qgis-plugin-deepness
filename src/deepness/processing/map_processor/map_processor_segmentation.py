@@ -1,6 +1,5 @@
 """ This file implements map processing for segmentation model """
 
-from calendar import c
 from typing import Callable
 
 import numpy as np
