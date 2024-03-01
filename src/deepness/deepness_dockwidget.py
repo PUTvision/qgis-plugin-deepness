@@ -365,9 +365,16 @@ class DeepnessDockWidget(QtWidgets.QDockWidget, FORM_CLASS):
                 file_path=file_path)
             self._model.check_loaded_model_outputs()
             input_0_shape = self._model.get_input_shape()
-            txt += f'Input shape: {input_0_shape}   =   [BATCH_SIZE * CHANNELS * SIZE * SIZE]'
+            txt += 'Legend: [BATCH_SIZE, CHANNELS, HEIGHT, WIDTH]\n'
+            txt += 'Inputs:\n'
+            txt += f'\t- Input: {input_0_shape}\n'
             input_size_px = input_0_shape[-1]
             batch_size = self._model.get_model_batch_size()
+
+            txt += 'Outputs:\n'
+            
+            for i, output_shape in enumerate(self._model.get_output_shapes()):
+                txt += f'\t- Output {i}: {output_shape}\n'
 
             # TODO idk how variable input will be handled
             self.spinBox_tileSize_px.setValue(input_size_px)

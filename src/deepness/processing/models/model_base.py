@@ -75,6 +75,16 @@ class ModelBase:
         """
         return self.input_shape
 
+    def get_output_shapes(self) -> List[tuple]:
+        """ Get shapes of the outputs for the model
+
+        Returns
+        -------
+        List[tuple]
+            Shapes of the outputs (batch_size, channels, height, width)
+        """
+        return [output.shape for output in self.outputs_layers]
+
     def get_model_batch_size(self) -> Optional[int]:
         """ Get batch size of the model
 

@@ -296,7 +296,7 @@ class Detector(ModelBase):
     def _postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(self, detections, protos):        
         detections = np.transpose(detections, (1, 0))
         
-        number_of_class = self.get_number_of_output_channels()
+        number_of_class = self.get_number_of_output_channels()[0]
         mask_start_index = 4 + number_of_class
         
         outputs_filtered = np.array(
