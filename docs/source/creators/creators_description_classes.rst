@@ -28,14 +28,20 @@ Segmentation models allow to solve problem of Image segmentation, that is assign
 Example application is segmenting earth surface areas into the following categories: forest, road, buildings, water, other.
 
 The segmentation model output is also an image, with same dimension as the input tile, but instead of 'CHANNELS' dimension, each output class has a separate image.
-Therefore, the shape of model output is :code:`[BATCH_SIZE, NUM_CLASSES, SIZE_PX, SIZE_PX)`.
+Therefore, the shape of model output is :code:`[BATCH_SIZE, NUM_CLASSES, SIZE_PX, SIZE_PX]`.
 
-For each output class, a separate vector layer can be created.
+We support the following types of models:
+ * single output (one head) with the following output shapes:
+    * :code:`[BATCH_SIZE, 1, SIZE_PX, SIZE_PX]` - one class with sigmoid activation function (binary classification)
+    * :code:`[BATCH_SIZE, NUM_CLASSES, SIZE_PX, SIZE_PX]` - multiple classes with softmax activation function (multi-class classification) - outputs sum to 1.0
+ * multiple outputs (multiple heads) with each output head composed of the same shapes as single output.
+
+ Metaparameter :code:`class_names` saved in the model file should be as follows in this example:
+    * for single output with binary classification (sigmoid): :code:`[{0: "class_name"}]` or :code:`{0: "class_name"}`
+    * for single output with multi-class classification (softmax): :code:`[{0: "class0", 1: "class1", 2: "class2"}]` or :code:`{0: "class0", 1: "class1", 2: "class2"}`
+    * for multiple outputs (multiple heads): :code:`[{0: "class0", 1: "class1", 2: "class2"}, {0: "class0"}]`
 
 Output report contains information about percentage coverage of each class.
-
-The model should have at least two output classes, one for the background and one (or more) for the object of interest. The background class should be the first class in the output.
-Model outputs should sum to 1.0 for each pixel, so the output is a probability map. To achieve this, the output should be passed through a softmax function.
 
 
 ===============

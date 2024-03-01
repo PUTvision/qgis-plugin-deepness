@@ -63,10 +63,10 @@ class MapProcessorRegression(MapProcessorWithModel):
         txt = f'Regression done, with the following statistics:\n'
         for output_id, _ in enumerate(self._get_indexes_of_model_output_channels_to_create()):
             result_img = result_imgs[output_id]
-            
+
             average_value = np.mean(result_img)
             std = np.std(result_img)
-            
+
             txt += f' - {self.model.get_channel_name(output_id, 0)}: average_value = {average_value:.2f} (std = {std:.2f}, ' \
                    f'min={np.min(result_img)}, max={np.max(result_img)})\n'
 
@@ -100,7 +100,9 @@ class MapProcessorRegression(MapProcessorWithModel):
         rlayers = []
 
         for output_id, _ in enumerate(self._get_indexes_of_model_output_channels_to_create()):
-            file_path = os.path.join(TMP_DIR_PATH, f'{self.model.get_channel_name(output_id, 0)}.tif')
+
+            random_id = str(uuid.uuid4()).replace('-', '')
+            file_path = os.path.join(TMP_DIR_PATH, f'{self.model.get_channel_name(output_id, 0)}__{random_id}.tif')
             self.save_result_img_as_tif(file_path=file_path, img=result_imgs[output_id])
 
             rlayer = self.load_rlayer_from_file(file_path)
