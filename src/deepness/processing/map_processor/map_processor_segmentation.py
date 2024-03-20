@@ -86,7 +86,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             number_of_pixels_in_processing_area = np.sum([counts_map[k] for k in counts_map.keys()])
             total_area = number_of_pixels_in_processing_area * self.params.resolution_m_per_px**2
             
-            for channel_id in range(1, layer_sizes + 1):
+            for channel_id in range(layer_sizes):
                 # See note in the class description why are we adding/subtracting 1 here
                 pixels_count = counts_map.get(channel_id, 0)
                 area = pixels_count * self.params.resolution_m_per_px**2
@@ -115,7 +115,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
 
         for output_id, layer_sizes in enumerate(self._get_indexes_of_model_output_channels_to_create()):
             output_vlayers = []
-            for channel_id in range(1, layer_sizes + 1):
+            for channel_id in range(layer_sizes):
                 # See note in the class description why are we adding/subtracting 1 here
                 local_mask_img = np.uint8(mask_img[output_id] == channel_id)
 
@@ -137,13 +137,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                 else:
                     pass  # just nothing, we already have an empty list of features
                 
-                # hardcode if someone add "background class" for sigmoid output, we need to skip it
-                if self._check_output_layer_is_sigmoid_and_has_more_than_one_name(output_id):
-                    channel_id_name = channel_id
-                else:
-                    channel_id_name = channel_id - 1
-                
-                layer_name = self.model.get_channel_name(output_id, channel_id_name)
+                layer_name = self.model.get_channel_name(output_id, channel_id)
                 vlayer = QgsVectorLayer("multipolygon", layer_name, "memory")
                 vlayer.setCrs(self.rlayer.crs())
                 prov = vlayer.dataProvider()

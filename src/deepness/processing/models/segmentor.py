@@ -24,6 +24,13 @@ class Segmentor(ModelBase):
         super(Segmentor, self).__init__(model_file_path)
         
         self.outputs_are_sigmoid = self.check_loaded_model_outputs()
+        
+        for idx in range(len(self.outputs_layers)):
+            if self.outputs_names is None:
+                continue
+            
+            if len(self.outputs_names[idx]) == 1 and self.outputs_are_sigmoid[idx]:
+                self.outputs_names[idx] = ['background', self.outputs_names[idx][0]]
 
     def postprocessing(self, model_output: List) -> np.ndarray:
         """ Postprocess the model output.
@@ -54,9 +61,13 @@ class Segmentor(ModelBase):
             ls = layer.shape
 
             if len(ls) == 3:
-                output_channels.append(1)
+                output_channels.append(2)
             elif len(ls) == 4:
-                output_channels.append(ls[-3])
+                chn = ls[-3]
+                if chn == 1:
+                    output_channels.append(2)
+                else:
+                    output_channels.append(chn)
 
         return output_channels
 

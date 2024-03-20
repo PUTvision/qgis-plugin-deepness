@@ -64,9 +64,12 @@ def test_dummy_model_segmentation_processing__1x1x512x512():
     
     channels = map_processor._get_indexes_of_model_output_channels_to_create()
     assert len(channels) == 1
-    assert channels[0] == 1
+    assert channels[0] == 2
     
     name = map_processor.model.get_channel_name(0, 0)
+    assert name == 'background'
+    
+    name = map_processor.model.get_channel_name(0, 1)
     assert name == 'Coffee'
 
 def test_dummy_model_segmentation_processing__1x512x512():
@@ -104,9 +107,12 @@ def test_dummy_model_segmentation_processing__1x512x512():
     
     channels = map_processor._get_indexes_of_model_output_channels_to_create()
     assert len(channels) == 1
-    assert channels[0] == 1
+    assert channels[0] == 2
     
     name = map_processor.model.get_channel_name(0, 0)
+    assert name == 'background'
+    
+    name = map_processor.model.get_channel_name(0, 1)
     assert name == 'Coffee'
 
 def test_dummy_model_segmentation_processing__1x2x512x512():
@@ -179,13 +185,19 @@ def test_dummy_model_segmentation_processing__two_outputs_1x1x512x512():
     
     channels = map_processor._get_indexes_of_model_output_channels_to_create()
     assert len(channels) == 2
-    assert channels[0] == 1
-    assert channels[1] == 1
+    assert channels[0] == 2
+    assert channels[1] == 2
     
     name = map_processor.model.get_channel_name(0, 0)
+    assert name == 'background'
+    
+    name = map_processor.model.get_channel_name(0, 1)
     assert name == 'Coffee'
     
     name = map_processor.model.get_channel_name(1, 0)
+    assert name == 'background'
+    
+    name = map_processor.model.get_channel_name(1, 1)
     assert name == 'Juice'
 
 def test_dummy_model_segmentation_processing__two_outputs_1x512x512():

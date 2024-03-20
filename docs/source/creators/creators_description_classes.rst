@@ -37,9 +37,9 @@ We support the following types of models:
  * multiple outputs (multiple heads) with each output head composed of the same shapes as single output.
 
  Metaparameter :code:`class_names` saved in the model file should be as follows in this example:
-    * for single output with binary classification (sigmoid): :code:`[{0: "class_name"}]` or :code:`{0: "class_name"}`
+    * for single output with binary classification (sigmoid): :code:`[{0: "background", 1: "class_name"}]`
     * for single output with multi-class classification (softmax): :code:`[{0: "class0", 1: "class1", 2: "class2"}]` or :code:`{0: "class0", 1: "class1", 2: "class2"}`
-    * for multiple outputs (multiple heads): :code:`[{0: "class0", 1: "class1", 2: "class2"}, {0: "class0"}]`
+    * for multiple outputs (multiple heads): :code:`[{0: "class0", 1: "class1", 2: "class2"}, {0: "background", 1: "class_name"}]`
 
 Output report contains information about percentage coverage of each class.
 
@@ -66,7 +66,7 @@ Regression models allow to solve problem of Regression Analysis, that is assigni
 Example application is determining the moisture content in soil, as percentage from 0.0 to 100.0 %, with an individual value assigned to each pixel.
 
 The segmentation model output is also an image, with same dimension as the input tile, with one or many output maps. Each output map contains the values for pixels.
-Therefore, the shape of model output is :code:`[BATCH_SIZE, NUMBER_OF_OUTPUT_MAPS, SIZE_PX, SIZE_PX)`.
+Therefore, the shape of model output is :code:`[BATCH_SIZE, NUMBER_OF_OUTPUT_MAPS, SIZE_PX, SIZE_PX]`.
 
 One output layer will be created for each output map (channel).
 For each output, a raster layer will be created, where each pixel has individual value assigned.
