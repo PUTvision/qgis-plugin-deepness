@@ -3,6 +3,7 @@
 import datetime
 import os
 
+import numpy as np
 from qgis.core import QgsProject
 
 from deepness.common.lazy_package_loader import LazyPackageLoader
@@ -47,8 +48,10 @@ class MapProcessorTrainingDataExport(MapProcessor):
                 vlayer_mask=vlayer_segmentation,
                 extended_extent=self.extended_extent,
                 rlayer_units_per_pixel=self.rlayer_units_per_pixel,
-                image_shape_yx=(1, self.img_size_y_pixels, self.img_size_x_pixels),
+                image_shape_yx=(self.img_size_y_pixels, self.img_size_x_pixels),
                 files_handler=self.file_handler)
+            
+            segmentation_mask_full = segmentation_mask_full[np.newaxis, ...]
 
         number_of_written_tiles = 0
         for tile_img, tile_params in self.tiles_generator():
