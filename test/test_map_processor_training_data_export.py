@@ -46,19 +46,18 @@ def test_export_dummy_fotomap():
 
     map_processor.run()
 
-    images_results = glob(os.path.join(map_processor.output_dir_path, '*_img_*.png'))
-    masks_results = glob(os.path.join(map_processor.output_dir_path, '*_mask_*.png'))
+    images_results = sorted(glob(os.path.join(map_processor.output_dir_path, '*_img_*.png')))
+    masks_results = sorted(glob(os.path.join(map_processor.output_dir_path, '*_mask_*.png')))
     
     assert len(images_results) == 4
     assert len(masks_results) == 4
-    
+        
     mask_values = [
-        (237225, 24919),
         (236341, 25803),
-        (140591, 121553),
-        (133202, 128942)
+        (133202, 128942),
+        (237225, 24919),
+        (140591, 121553)
     ]
-    
     
     for i, mask_file in enumerate(masks_results):
         mask = cv2.imread(mask_file, cv2.IMREAD_UNCHANGED)
@@ -71,6 +70,7 @@ def test_export_dummy_fotomap():
         
         assert np.isclose(np.sum(mask < 128), mask_values[i][0], atol=10)
         assert np.isclose(np.sum(mask >= 128), mask_values[i][1], atol=10)
+        # print(np.sum(mask < 128), np.sum(mask >= 128))
 
 
 if __name__ == '__main__':
