@@ -90,7 +90,9 @@ class MapProcessorDetection(MapProcessorWithModel):
         return bounding_boxes_restricted
 
     def _create_result_message(self, bounding_boxes: List[Detection]) -> str:
-        channels = self._get_indexes_of_model_output_channels_to_create()
+        # hack, allways one output
+        model_outputs = self._get_indexes_of_model_output_channels_to_create()
+        channels = range(model_outputs[0])
 
         counts_mapping = {}
         total_counts = 0
@@ -109,14 +111,18 @@ class MapProcessorDetection(MapProcessorWithModel):
             else:
                 counts_percentage = 0
 
-            txt += f' - {self.model.get_channel_name(channel_id)}: counts = {counts} ({counts_percentage:.2f} %)\n'
+            txt += f' - {self.model.get_channel_name(0, channel_id)}: counts = {counts} ({counts_percentage:.2f} %)\n'
 
         return txt
 
     def _create_vlayer_for_output_bounding_boxes(self, bounding_boxes: List[Detection]):
         vlayers = []
 
-        for channel_id in self._get_indexes_of_model_output_channels_to_create():
+        # hack, allways one output
+        model_outputs = self._get_indexes_of_model_output_channels_to_create()
+        channels = range(model_outputs[0])
+
+        for channel_id in channels:
             filtered_bounding_boxes = [det for det in bounding_boxes if det.clss == channel_id]
             print(f'Detections for class {channel_id}: {len(filtered_bounding_boxes)}')
 
@@ -166,7 +172,7 @@ class MapProcessorDetection(MapProcessorWithModel):
                         feature.setGeometry(geometry)
                         features.append(feature)
 
-            vlayer = QgsVectorLayer("multipolygon", self.model.get_channel_name(channel_id), "memory")
+            vlayer = QgsVectorLayer("multipolygon", self.model.get_channel_name(0, channel_id), "memory")
             vlayer.setCrs(self.rlayer.crs())
             prov = vlayer.dataProvider()
 

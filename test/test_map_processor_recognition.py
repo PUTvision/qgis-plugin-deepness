@@ -9,7 +9,7 @@ import numpy as np
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
 from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
-from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
+from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deepness.common.processing_parameters.recognition_parameters import RecognitionParameters
 from deepness.processing.map_processor.map_processor_recognition import MapProcessorRecognition
 from deepness.processing.models.recognition import Recognition
@@ -42,8 +42,6 @@ def test_dummy_model_processing__entire_file():
         input_layer_id=rlayer.id(),
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
         processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=0),
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
         model=model,
         query_image_path=IMAGE_FILE_PATH,
     )

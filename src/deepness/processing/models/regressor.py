@@ -34,12 +34,11 @@ class Regressor(ModelBase):
         Returns
         -------
         np.ndarray
-            Postprocessed batch of masks (N,H,W,C), 0-1 (one output channel)
-
+            Output from the (Regression) model
         """
-        return model_output[0]
+        return model_output
 
-    def get_number_of_output_channels(self) -> int:
+    def get_number_of_output_channels(self) -> List[int]:
         """ Returns number of channels in the output layer
 
         Returns
@@ -47,10 +46,18 @@ class Regressor(ModelBase):
         int
             Number of channels in the output layer
         """
-        if len(self.outputs_layers) == 1:
-            return self.outputs_layers[0].shape[-3]
-        else:
-            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
+        channels = []
+
+        for layer in self.outputs_layers:
+            if len(layer.shape) != 4 and len(layer.shape) != 3:
+                raise Exception(f'Output layer should have 3 or 4 dimensions: (Bs, H, W) or (Bs, Channels, H, W). Actually has: {layer.shape}')
+            
+            if len(layer.shape) == 3:
+                channels.append(1)
+            elif len(layer.shape) == 4:
+                channels.append(layer.shape[-3])
+
+        return channels
 
     @classmethod
     def get_class_display_name(cls) -> str:
@@ -67,20 +74,19 @@ class Regressor(ModelBase):
         """ Check if the model has correct output layers
 
         Correct means that:
-        - there is only one output layer
-        - output layer has 1 channel
-        - batch size is 1
+        - there is at least one output layer
+        - batch size is 1 or parameter
+        - each output layer regresses only one channel
         - output resolution is square
         """
-        if len(self.outputs_layers) == 1:
-            shape = self.outputs_layers[0].shape
-
-            if len(shape) != 4:
-                raise Exception(f'Regression model output should have 4 dimensions: (Batch_size, Channels, H, W). \n'
-                                f'Actually has: {shape}')
-
-            if shape[2] != shape[3]:
-                raise Exception(f'Regression model can handle only square outputs masks. Has: {shape}')
-
-        else:
-            raise NotImplementedError("Model with multiple output layers is not supported! Use only one output layer.")
+        for layer in self.outputs_layers:
+            if len(layer.shape) != 4 and len(layer.shape) != 3:
+                raise Exception(f'Output layer should have 3 or 4 dimensions: (Bs, H, W) or (Bs, Channels, H, W). Actually has: {layer.shape}')
+            
+            if len(layer.shape) == 4:
+                if layer.shape[2] != layer.shape[3]:
+                    raise Exception(f'Regression model can handle only square outputs masks. Has: {layer.shape}')
+                
+            elif len(layer.shape) == 3:
+                if layer.shape[1] != layer.shape[2]:
+                    raise Exception(f'Regression model can handle only square outputs masks. Has: {layer.shape}')

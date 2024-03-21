@@ -1,6 +1,5 @@
 """ Module including the class for the object detection task and related functions
 """
-import stat
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
 
@@ -138,9 +137,9 @@ class Detector(ModelBase):
         int
             Number of output channels
         """
-        class_names = self.get_class_names()
+        class_names = self.get_outputs_channel_names()[0]
         if class_names is not None:
-            return len(class_names)  # If class names are specified, we expect to have exactly this number of channels as specidied
+            return [len(class_names)]  # If class names are specified, we expect to have exactly this number of channels as specidied
 
         model_type_params = self.model_type.get_parameters()
 
@@ -148,10 +147,10 @@ class Detector(ModelBase):
 
         if len(self.outputs_layers) == 1:
             if model_type_params.skipped_objectness_probability:
-                return self.outputs_layers[0].shape[shape_index] - 4
-            return self.outputs_layers[0].shape[shape_index] - 4 - 1  # shape - 4 bboxes - 1 conf
+                return [self.outputs_layers[0].shape[shape_index] - 4]
+            return [self.outputs_layers[0].shape[shape_index] - 4 - 1]  # shape - 4 bboxes - 1 conf
         elif len(self.outputs_layers) == 2 and self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
-            return self.outputs_layers[0].shape[shape_index] - 4 - self.outputs_layers[1].shape[1]
+            return [self.outputs_layers[0].shape[shape_index] - 4 - self.outputs_layers[1].shape[1]]
         else:
             raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")
 
@@ -181,7 +180,12 @@ class Detector(ModelBase):
             )
 
         batch_detection = []
-        outputs_range = len(model_output[0])if self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION else len(model_output)
+        outputs_range = len(model_output)
+        
+        if self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
+            outputs_range = len(model_output[0])
+        elif self.model_type == DetectorType.YOLO_v9:
+            outputs_range = len(model_output[0])
 
         for i in range(outputs_range):
             masks = None
@@ -191,6 +195,8 @@ class Detector(ModelBase):
                 boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output[0][i])
             elif self.model_type == DetectorType.YOLO_v6:
                 boxes, conf, classes = self._postprocessing_YOLO_v6(model_output[0][i])
+            elif self.model_type == DetectorType.YOLO_v9:
+                boxes, conf, classes = self._postprocessing_YOLO_v9(model_output[0][i])
             elif self.model_type == DetectorType.YOLO_ULTRALYTICS:
                 boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output[0][i])
             elif self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
@@ -267,6 +273,33 @@ class Detector(ModelBase):
 
         return boxes, conf, classes
 
+    def _postprocessing_YOLO_v9(self, model_output):
+        model_output = np.transpose(model_output, (1, 0))
+
+        outputs_filtered = np.array(
+            list(filter(lambda x: np.max(x[4:]) >= self.confidence, model_output))
+        )
+
+        if len(outputs_filtered.shape) < 2:
+            return [], [], []
+
+        probabilities = np.max(outputs_filtered[:, 4:], axis=1)
+
+        outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
+
+        pick_indxs = self.non_max_suppression_fast(
+            outputs_x1y1x2y2,
+            probs=probabilities,
+            iou_threshold=self.iou_threshold)
+
+        outputs_nms = outputs_x1y1x2y2[pick_indxs]
+
+        boxes = np.array(outputs_nms[:, :4], dtype=int)
+        conf = np.max(outputs_nms[:, 4:], axis=1)
+        classes = np.argmax(outputs_nms[:, 4:], axis=1)
+
+        return boxes, conf, classes
+
     def _postprocessing_YOLO_ULTRALYTICS(self, model_output):
         model_output = np.transpose(model_output, (1, 0))
 
@@ -297,7 +330,7 @@ class Detector(ModelBase):
     def _postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(self, detections, protos):        
         detections = np.transpose(detections, (1, 0))
         
-        number_of_class = self.get_number_of_output_channels()
+        number_of_class = self.get_number_of_output_channels()[0]
         mask_start_index = 4 + number_of_class
         
         outputs_filtered = np.array(

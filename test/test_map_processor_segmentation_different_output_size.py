@@ -9,7 +9,7 @@ import numpy as np
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
 from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
-from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
+from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
 from deepness.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deepness.processing.models.segmentor import Segmentor
@@ -47,8 +47,6 @@ def test_dummy_model_processing_when_different_output_size():
         postprocessing_dilate_erode_size=5,
         processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=20),
         pixel_classification__probability_threshold=0.5,
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
         model=model,
     )
 
@@ -62,7 +60,7 @@ def test_dummy_model_processing_when_different_output_size():
     map_processor.run()
     result_img = map_processor.get_result_img()
 
-    assert result_img.shape == (561, 829)
+    assert result_img.shape == (1, 561, 829)
     # TODO - add detailed check for pixel values once we have output channels mapping with thresholding
 
 if __name__ == "__main__":

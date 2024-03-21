@@ -4,8 +4,8 @@ These parameters are saved in the model metadata (inside the model file) and can
 """
 
 import json
-import onnx
 
+import onnx
 
 model = onnx.load('/path/to/model')
 
@@ -13,6 +13,12 @@ class_names = {
     0: 'not_road',
     1: 'road',
 }
+
+# or as a list of dictionaries if your model has multiple outputs
+# class_names = [{
+#     0: 'not_road',
+#     1: 'road',
+# },]
 
 m = model.metadata_props.add()
 m.key = 'model_type'
