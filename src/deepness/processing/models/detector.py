@@ -180,7 +180,12 @@ class Detector(ModelBase):
             )
 
         batch_detection = []
-        outputs_range = len(model_output[0])if self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION else len(model_output)
+        outputs_range = len(model_output)
+        
+        if self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
+            outputs_range = len(model_output[0])
+        elif self.model_type == DetectorType.YOLO_v9:
+            outputs_range = len(model_output[0])
 
         for i in range(outputs_range):
             masks = None
@@ -190,6 +195,8 @@ class Detector(ModelBase):
                 boxes, conf, classes = self._postprocessing_YOLO_v5_v7_DEFAULT(model_output[0][i])
             elif self.model_type == DetectorType.YOLO_v6:
                 boxes, conf, classes = self._postprocessing_YOLO_v6(model_output[0][i])
+            elif self.model_type == DetectorType.YOLO_v9:
+                boxes, conf, classes = self._postprocessing_YOLO_v9(model_output[0][i])
             elif self.model_type == DetectorType.YOLO_ULTRALYTICS:
                 boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output[0][i])
             elif self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
@@ -263,6 +270,33 @@ class Detector(ModelBase):
         boxes = np.array(outputs_nms[:, :4], dtype=int)
         conf = np.max(outputs_nms[:, 5:], axis=1)
         classes = np.argmax(outputs_nms[:, 5:], axis=1)
+
+        return boxes, conf, classes
+
+    def _postprocessing_YOLO_v9(self, model_output):
+        model_output = np.transpose(model_output, (1, 0))
+
+        outputs_filtered = np.array(
+            list(filter(lambda x: np.max(x[4:]) >= self.confidence, model_output))
+        )
+
+        if len(outputs_filtered.shape) < 2:
+            return [], [], []
+
+        probabilities = np.max(outputs_filtered[:, 4:], axis=1)
+
+        outputs_x1y1x2y2 = self.xywh2xyxy(outputs_filtered)
+
+        pick_indxs = self.non_max_suppression_fast(
+            outputs_x1y1x2y2,
+            probs=probabilities,
+            iou_threshold=self.iou_threshold)
+
+        outputs_nms = outputs_x1y1x2y2[pick_indxs]
+
+        boxes = np.array(outputs_nms[:, :4], dtype=int)
+        conf = np.max(outputs_nms[:, 4:], axis=1)
+        classes = np.argmax(outputs_nms[:, 4:], axis=1)
 
         return boxes, conf, classes
 
