@@ -52,7 +52,7 @@ Detection models allow to solve problem of objects detection, that is finding an
 Example application is detection of oil and water tanks on satellite images.
 
 The detection model output is list of bounding boxes, with assigned class and confidence value. This information is not really standardized between different model architectures.
-Currently plugin supports :code:`YOLOv5`, :code:`YOLOv7` and :code:`ULTRALYTICS` output types. Detection model also supports the instance segmentation output type from :code:`ULTRALYTICS`.
+Currently plugin supports :code:`YOLOv5`, :code:`YOLOv6`, :code:`YOLOv7`, :code:`YOLOv9` and :code:`ULTRALYTICS` output types. Detection model also supports the instance segmentation output type from :code:`ULTRALYTICS`.
 
 For each object class, a separate vector layer can be created, with information saved as rectangle polygons (so the output can be potentially easily exported to a text).
 

@@ -11,7 +11,7 @@ List of parameters parsed by plugin
 +-----------------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | Parameter                   |  Type |            Example                    | Description                                                 |
 +======================+=======+=======================================+=============================================================+
-| model_type                  |  str  |   :code:`'Segmentor'`                 | Types of models available: Segmentor, Regressor, Detector.  |
+| model_type                  |  str  |   :code:`'Segmentor'`                 | Types of models.  |
 +-----------------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | class_names                 |  dict | :code:`{0: 'name1', 1: 'name2'}`      | A dictionary that maps a class id to its name.              |
 +-----------------------------+-------+---------------------------------------+-------------------------------------------------------------+
@@ -39,6 +39,20 @@ List of parameters parsed by plugin
 +-----------------------------+-------+---------------------------------------+-------------------------------------------------------------+
 | det_type                    | str   |       :code:`YOLO_v5_or_v7_default`   | Detector: type of the detector model format                 |
 +-----------------------------+-------+---------------------------------------+-------------------------------------------------------------+
+
+Available model types:
+- :code:`Segmentor`
+- :code:`Detector`
+- :code:`Regressor`
+- :code:`Recognition`
+- :code:`Superresolution`
+
+Availeble detector types:
+- :code:`YOLO_v5_or_v7_default`
+- :code:`YOLO_v6`
+- :code:`YOLO_v9`
+- :code:`YOLO_Ultralytics`
+- :code:`YOLO_Ultralytics_segmentation`
 
 =======
 Example
