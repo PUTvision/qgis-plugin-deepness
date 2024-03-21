@@ -22,7 +22,7 @@ print(RASTER_FILE_PATH)
 INPUT_CHANNELS_MAPPING = create_default_input_channels_mapping_for_rgb_bands()
 
 
-def test_map_processor_detection_yolov6():
+def test_map_processor_detection_yolov9():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
@@ -57,5 +57,5 @@ def test_map_processor_detection_yolov6():
 
 
 if __name__ == '__main__':
-    test_map_processor_detection_yolov6()
+    test_map_processor_detection_yolov9()
     print('Done')
