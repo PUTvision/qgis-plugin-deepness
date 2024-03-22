@@ -82,8 +82,6 @@ These options may be a fixed value for some models.
 
 **IoU threshold** - Parameter used in Non-Maximum Suppression in post-processing. Defines the threshold of overlap between neighboring detections, to consider them as the same object.
 
-**Remove overlapping detections** - If checked then the overlapping detections (which may be an artifact of overlapped processing) will be removed.
-
 ------------
 Tiles export
 ------------

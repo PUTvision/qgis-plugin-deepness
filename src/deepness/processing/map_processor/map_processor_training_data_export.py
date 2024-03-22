@@ -3,6 +3,7 @@
 import datetime
 import os
 
+import numpy as np
 from qgis.core import QgsProject
 
 from deepness.common.lazy_package_loader import LazyPackageLoader
@@ -49,6 +50,8 @@ class MapProcessorTrainingDataExport(MapProcessor):
                 rlayer_units_per_pixel=self.rlayer_units_per_pixel,
                 image_shape_yx=(self.img_size_y_pixels, self.img_size_x_pixels),
                 files_handler=self.file_handler)
+            
+            segmentation_mask_full = segmentation_mask_full[np.newaxis, ...]
 
         number_of_written_tiles = 0
         for tile_img, tile_params in self.tiles_generator():
@@ -69,10 +72,12 @@ class MapProcessorTrainingDataExport(MapProcessor):
                 number_of_written_tiles += 1
 
             if export_segmentation_mask:
+                segmentation_mask_for_tile = tile_params.get_entire_tile_from_full_img(segmentation_mask_full)
+                
                 file_name = f'tile_mask_{tile_params.x_bin_number}_{tile_params.y_bin_number}.png'
                 file_path = os.path.join(self.output_dir_path, file_name)
-                segmentation_mask_for_tile = tile_params.get_entire_tile_from_full_img(segmentation_mask_full)
-                cv2.imwrite(file_path, segmentation_mask_for_tile)
+                
+                cv2.imwrite(file_path, segmentation_mask_for_tile[0])
 
         result_message = self._create_result_message(number_of_written_tiles)
         return MapProcessingResultSuccess(result_message)

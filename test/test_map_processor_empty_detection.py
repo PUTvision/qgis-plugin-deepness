@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters
-from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
+from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deepness.processing.map_processor.map_processor_detection import MapProcessorDetection
 from deepness.processing.models.detector import Detector
 
@@ -38,8 +38,6 @@ def test_map_processor_empty_detection():
         model=model_wrapper,
         confidence=0.99,
         iou_threshold=0.99,
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
     )
 
     map_processor = MapProcessorDetection(

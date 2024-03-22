@@ -8,7 +8,7 @@ import numpy as np
 
 from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters
-from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
+from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deepness.processing.map_processor.map_processor_detection import MapProcessorDetection
 from deepness.processing.models.detector import Detector
 
@@ -40,8 +40,6 @@ def test_map_processor_detection_oil_example():
         model=model_wrapper,
         confidence=0.5,
         iou_threshold=0.1,
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
     )
 
     map_processor = MapProcessorDetection(
@@ -52,6 +50,7 @@ def test_map_processor_detection_oil_example():
     )
 
     map_processor.run()
+
 
 def test_map_processor_detection_oil_example_using_cache():
     qgs = init_qgis()
@@ -72,8 +71,6 @@ def test_map_processor_detection_oil_example_using_cache():
         model=model_wrapper,
         confidence=0.5,
         iou_threshold=0.1,
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
     )
 
     map_processor = MapProcessorDetection(
@@ -84,6 +81,7 @@ def test_map_processor_detection_oil_example_using_cache():
     )
 
     map_processor.run()
+
 
 def test_map_processor_detection_oil_example_with_remove_small():
     qgs = init_qgis()
@@ -104,8 +102,6 @@ def test_map_processor_detection_oil_example_with_remove_small():
         model=model_wrapper,
         confidence=0.5,
         iou_threshold=0.3,
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
     )
 
     map_processor = MapProcessorDetection(

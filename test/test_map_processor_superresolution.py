@@ -7,10 +7,8 @@ import numpy as np
 from qgis.core import QgsCoordinateReferenceSystem, QgsRectangle
 
 from deepness.common.processing_overlap import ProcessingOverlap, ProcessingOverlapOptions
-from deepness.common.processing_parameters.map_processing_parameters import ModelOutputFormat, ProcessedAreaType
-from deepness.common.processing_parameters.segmentation_parameters import SegmentationParameters
+from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType
 from deepness.common.processing_parameters.superresolution_parameters import SuperresolutionParameters
-from deepness.processing.map_processor.map_processor_segmentation import MapProcessorSegmentation
 from deepness.processing.map_processor.map_processor_superresolution import MapProcessorSuperresolution
 from deepness.processing.models.segmentor import Segmentor
 from deepness.processing.models.superresolution import Superresolution
@@ -46,8 +44,6 @@ def test_dummy_model_processing__entire_file():
         output_scaling=1.0,
         scale_factor=2.0,
         processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=0),
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
         model=model,
     )
 
@@ -83,8 +79,6 @@ def test_dummy_model_processing__entire_file_cached():
         output_scaling=1.0,
         scale_factor=2.0,
         processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=0),
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
         model=model,
     )
 
@@ -119,8 +113,6 @@ def test_dummy_model_processing__entire_file_batched():
         output_scaling=1.0,
         scale_factor=2.0,
         processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=0),
-        model_output_format=ModelOutputFormat.ALL_CLASSES_AS_SEPARATE_LAYERS,
-        model_output_format__single_class_number=-1,
         model=model,
     )
 

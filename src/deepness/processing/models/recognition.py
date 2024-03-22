@@ -56,10 +56,9 @@ class Recognition(ModelBase):
         """
         logging.warning(f"outputs_layers: {self.outputs_layers}")
         logging.info(f"outputs_layers: {self.outputs_layers}")
-        print(f"outputs_layers: {self.outputs_layers}")
 
         if len(self.outputs_layers) == 1:
-            return self.outputs_layers[0].shape[1]
+            return [self.outputs_layers[0].shape[1]]
         else:
             raise NotImplementedError(
                 "Model with multiple output layers is not supported! Use only one output layer."

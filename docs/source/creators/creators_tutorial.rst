@@ -6,7 +6,7 @@ Model creation tutorial (Python)
 Detection
 =========
 
-For one of models in our zoo - specifically for cars detection on aerial images - a complete tutorial is provided in a jupyter notebook:
+For one of models in our zoo - specifically for cars detection on aerial images - a complete tutorial is `provided in a jupyter notebook <https://github.com/PUTvision/qgis-plugin-deepness/blob/master/tutorials/detection/cars_yolov7/car_detection__prepare_and_train.ipynb>'_:
 
   .. code-block::
 

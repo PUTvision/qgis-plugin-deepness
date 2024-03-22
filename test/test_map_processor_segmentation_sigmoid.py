@@ -1,7 +1,6 @@
 from test.test_utils import (create_default_input_channels_mapping_for_rgba_bands, create_rlayer_from_file,
                              create_vlayer_from_file, get_dummy_fotomap_area_crs3857_path, get_dummy_fotomap_area_path,
-                             get_dummy_fotomap_small_path, get_dummy_segmentation_model_different_output_size_path,
-                             init_qgis)
+                             get_dummy_fotomap_small_path, get_dummy_segmentation_model_path, get_dummy_sigmoid_model_path, init_qgis)
 from unittest.mock import MagicMock
 
 import matplotlib.pyplot as plt
@@ -20,16 +19,12 @@ VLAYER_MASK_FILE_PATH = get_dummy_fotomap_area_path()
 
 VLAYER_MASK_CRS3857_FILE_PATH = get_dummy_fotomap_area_crs3857_path()
 
-MODEL_FILE_PATH = get_dummy_segmentation_model_different_output_size_path()
+MODEL_FILE_PATH = get_dummy_sigmoid_model_path()
 
 INPUT_CHANNELS_MAPPING = create_default_input_channels_mapping_for_rgba_bands()
 
-PROCESSED_EXTENT_1 = QgsRectangle(  # big part of the fotomap
-    638840.370, 5802593.197,
-    638857.695, 5802601.792)
 
-
-def test_dummy_model_processing_when_different_output_size():
+def test_sigmoid_model_processing__entire_file():
     qgs = init_qgis()
 
     rlayer = create_rlayer_from_file(RASTER_FILE_PATH)
@@ -46,7 +41,7 @@ def test_dummy_model_processing_when_different_output_size():
         input_channels_mapping=INPUT_CHANNELS_MAPPING,
         postprocessing_dilate_erode_size=5,
         processing_overlap=ProcessingOverlap(ProcessingOverlapOptions.OVERLAP_IN_PERCENT, percentage=20),
-        pixel_classification__probability_threshold=0.5,
+        pixel_classification__probability_threshold=0.6,
         model=model,
     )
 
@@ -61,7 +56,17 @@ def test_dummy_model_processing_when_different_output_size():
     result_img = map_processor.get_result_img()
 
     assert result_img.shape == (1, 561, 829)
+    non_zero_pixels = np.count_nonzero(result_img)
+    assert abs(non_zero_pixels - 25002) < 50  # number of RED pixels in the image
+
+    # you should see only the part of RASTER_FILE_PATH that is pure red pixels. Use snippet below for debugging
+    # from matplotlib import pyplot as plt
+    # plt.imshow(result_img[0])
+    # plt.show()
+
     # TODO - add detailed check for pixel values once we have output channels mapping with thresholding
 
-if __name__ == "__main__":
-    test_dummy_model_processing_when_different_output_size()
+
+if __name__ == '__main__':
+    test_sigmoid_model_processing__entire_file()
+    print('Done')
