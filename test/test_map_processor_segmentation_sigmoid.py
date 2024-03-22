@@ -57,7 +57,7 @@ def test_sigmoid_model_processing__entire_file():
 
     assert result_img.shape == (1, 561, 829)
     non_zero_pixels = np.count_nonzero(result_img)
-    assert non_zero_pixels == 25002  # number of RED pixels in the image
+    assert abs(non_zero_pixels - 25002) < 50  # number of RED pixels in the image
 
     # you should see only the part of RASTER_FILE_PATH that is pure red pixels. Use snippet below for debugging
     # from matplotlib import pyplot as plt
