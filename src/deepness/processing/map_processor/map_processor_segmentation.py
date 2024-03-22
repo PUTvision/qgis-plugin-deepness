@@ -47,10 +47,10 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                     full_result_img=full_result_img)
 
         blur_size = int(self.segmentation_parameters.postprocessing_dilate_erode_size // 2) * 2 + 1  # needs to be odd
-        
+
         for i in range(full_result_img.shape[0]):
             full_result_img[i] = cv2.medianBlur(full_result_img[i], blur_size)
-        
+
         full_result_img = self.limit_extended_extent_image_to_base_extent_with_mask(full_img=full_result_img)
 
         self.set_results_img(full_result_img)
@@ -62,48 +62,42 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             message=result_message,
             gui_delegate=gui_delegate,
         )
-        
+
     def _check_output_layer_is_sigmoid_and_has_more_than_one_name(self, output_id: int) -> bool:
         if self.model.outputs_names is None or self.model.outputs_are_sigmoid is None:
             return False
-        
+
         return len(self.model.outputs_names[output_id]) > 1 and self.model.outputs_are_sigmoid[output_id]
 
     def _create_result_message(self, result_img: np.ndarray) -> str:
-        
+
         txt = f'Segmentation done, with the following statistics:\n'
-        
+
         for output_id, layer_sizes in enumerate(self._get_indexes_of_model_output_channels_to_create()):
-            
+
             txt += f'Channels for output {output_id}:\n'
-            
+
             unique, counts = np.unique(result_img[output_id], return_counts=True)
             counts_map = {}
             for i in range(len(unique)):
                 counts_map[unique[i]] = counts[i]
-                
+
             # # we cannot simply take image dimensions, because we may have irregular processing area from polygon
             number_of_pixels_in_processing_area = np.sum([counts_map[k] for k in counts_map.keys()])
             total_area = number_of_pixels_in_processing_area * self.params.resolution_m_per_px**2
-            
+
             for channel_id in range(layer_sizes):
                 # See note in the class description why are we adding/subtracting 1 here
                 pixels_count = counts_map.get(channel_id, 0)
                 area = pixels_count * self.params.resolution_m_per_px**2
-                
+
                 if total_area > 0 and not np.isnan(total_area) and not np.isinf(total_area):
                     area_percentage = area / total_area * 100
                 else:
                     area_percentage = 0.0
                     # TODO
-                
-                # hardcode if someone add "background class" for sigmoid output, we need to skip it
-                if self._check_output_layer_is_sigmoid_and_has_more_than_one_name(output_id):
-                    channel_id_name = channel_id
-                else:
-                    channel_id_name = channel_id - 1
-                
-                txt += f'\t- {self.model.get_channel_name(output_id, channel_id_name)}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
+
+                txt += f'\t- {self.model.get_channel_name(output_id, channel_id)}: area = {area:.2f} m^2 ({area_percentage:.2f} %)\n'
 
         return txt
 
@@ -136,7 +130,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                         current_contour_index=0)
                 else:
                     pass  # just nothing, we already have an empty list of features
-                
+
                 layer_name = self.model.get_channel_name(output_id, channel_id)
                 vlayer = QgsVectorLayer("multipolygon", layer_name, "memory")
                 vlayer.setCrs(self.rlayer.crs())
@@ -152,13 +146,13 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                 vlayer.updateExtents()
 
                 output_vlayers.append(vlayer)
-                
+
             vlayers.append(output_vlayers)
 
         # accessing GUI from non-GUI thread is not safe, so we need to delegate it to the GUI thread
         def add_to_gui():
             group = QgsProject.instance().layerTreeRoot().insertGroup(0, 'model_output')
-            
+
             if len(vlayers) == 1:
                 for vlayer in vlayers[0]:
                     QgsProject.instance().addMapLayer(vlayer, False)
@@ -194,5 +188,5 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             many_outputs.append(result[:, 0])
 
         many_outputs = np.array(many_outputs).transpose((1, 0, 2, 3))
-        
+
         return many_outputs

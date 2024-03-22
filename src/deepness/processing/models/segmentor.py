@@ -22,13 +22,13 @@ class Segmentor(ModelBase):
             Path to the model file
         """
         super(Segmentor, self).__init__(model_file_path)
-        
+
         self.outputs_are_sigmoid = self.check_loaded_model_outputs()
-        
+
         for idx in range(len(self.outputs_layers)):
             if self.outputs_names is None:
                 continue
-            
+
             if len(self.outputs_names[idx]) == 1 and self.outputs_are_sigmoid[idx]:
                 self.outputs_names[idx] = ['background', self.outputs_names[idx][0]]
 
@@ -82,41 +82,23 @@ class Segmentor(ModelBase):
         """
         return cls.__name__
 
-    def check_loaded_model_outputs(self):
-        """ Checks if the model outputs are valid
-
-        Valid means that:
-        - the model has at least one output
-        - the output is 4D (N,C,H,W) or 3D (N,H,W)
-        - the batch size is 1 or dynamic
-        - model resolution is equal to TILE_SIZE (is square)
-
-        """
-        if len(self.outputs_layers) == 0:
-            raise Exception('Model has no output layers')
-
-        for layer in self.outputs_layers:
-            if len(layer.shape) != 4 and len(layer.shape) != 3:
-                raise Exception(f'Segmentation model output should have 4 dimensions: (B,C,H,W) or 3 dimensions: (B,H,W). Has {layer.shape}')
-
-
     def check_loaded_model_outputs(self) -> List[bool]:
         """ Check if the model outputs are sigmoid (for segmentation)
-        
+
         Parameters
         ----------
-        
+
         Returns
         -------
         List[bool]
             List of booleans indicating if the model outputs are sigmoid
         """
         outputs = []
-        
+
         for output in self.outputs_layers:
             if len(output.shape) == 3:
                 outputs.append(True)
             else:
                 outputs.append(output.shape[-3] == 1)
-                
+
         return outputs
