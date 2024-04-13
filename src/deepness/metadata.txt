@@ -6,7 +6,7 @@
 name=Deepness: Deep Neural Remote Sensing
 qgisMinimumVersion=3.22
 description=Inference of deep neural network models (ONNX) for segmentation, detection and regression
-version=0.6.2
+version=0.6.3
 author=PUT Vision
 email=przemyslaw.aszkowski@gmail.com
 
