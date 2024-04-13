@@ -87,8 +87,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
             total_area = number_of_pixels_in_processing_area * self.params.resolution_m_per_px**2
 
             for channel_id in range(layer_sizes):
-                # See note in the class description why are we adding/subtracting 1 here
-                pixels_count = counts_map.get(channel_id, 0)
+                pixels_count = counts_map.get(channel_id + 1, 0) # we add 1 to avoid 0 values, find the MADD1 code for explanation
                 area = pixels_count * self.params.resolution_m_per_px**2
 
                 if total_area > 0 and not np.isnan(total_area) and not np.isinf(total_area):
@@ -110,8 +109,7 @@ class MapProcessorSegmentation(MapProcessorWithModel):
         for output_id, layer_sizes in enumerate(self._get_indexes_of_model_output_channels_to_create()):
             output_vlayers = []
             for channel_id in range(layer_sizes):
-                # See note in the class description why are we adding/subtracting 1 here
-                local_mask_img = np.uint8(mask_img[output_id] == channel_id)
+                local_mask_img = np.uint8(mask_img[output_id] == (channel_id + 1)) # we add 1 to avoid 0 values, find the MADD1 code for explanation
 
                 contours, hierarchy = cv2.findContours(local_mask_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
                 contours = processing_utils.transform_contours_yx_pixels_to_target_crs(
@@ -177,10 +175,10 @@ class MapProcessorSegmentation(MapProcessorWithModel):
                 result = np.expand_dims(result, axis=1)
 
             if (result.shape[1] == 1):
-                result = (result != 0).astype(int)
+                result = (result != 0).astype(int) + 1 # we add 1 to avoid 0 values, find the MADD1 code for explanation
             else:
                 shape = result.shape
-                result = np.argmax(result, axis=1).reshape(shape[0], 1, shape[2], shape[3]) + 1
+                result = np.argmax(result, axis=1).reshape(shape[0], 1, shape[2], shape[3]) + 1 # we add 1 to avoid 0 values, find the MADD1 code for explanation
 
             assert len(result.shape) == 4
             assert result.shape[1] == 1
