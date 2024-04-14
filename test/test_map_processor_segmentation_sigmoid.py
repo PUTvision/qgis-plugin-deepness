@@ -1,6 +1,7 @@
 from test.test_utils import (create_default_input_channels_mapping_for_rgba_bands, create_rlayer_from_file,
                              create_vlayer_from_file, get_dummy_fotomap_area_crs3857_path, get_dummy_fotomap_area_path,
-                             get_dummy_fotomap_small_path, get_dummy_segmentation_model_path, get_dummy_sigmoid_model_path, init_qgis)
+                             get_dummy_fotomap_small_path, get_dummy_segmentation_model_path,
+                             get_dummy_sigmoid_model_path, init_qgis)
 from unittest.mock import MagicMock
 
 import matplotlib.pyplot as plt
@@ -56,8 +57,8 @@ def test_sigmoid_model_processing__entire_file():
     result_img = map_processor.get_result_img()
 
     assert result_img.shape == (1, 561, 829)
-    non_zero_pixels = np.count_nonzero(result_img)
-    assert abs(non_zero_pixels - 25002) < 50  # number of RED pixels in the image
+    pixels = np.unique(result_img, return_counts=True)
+    assert abs(pixels[1][1] - 25002) < 50  # number of RED pixels in the image
 
     # you should see only the part of RASTER_FILE_PATH that is pure red pixels. Use snippet below for debugging
     # from matplotlib import pyplot as plt
