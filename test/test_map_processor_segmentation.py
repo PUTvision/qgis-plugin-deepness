@@ -144,10 +144,10 @@ def test_generic_processing_test__specified_extent_from_vlayer_one_channel():
 
     # just check a few pixels
     assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
-               np.asarray([0, 1, 1, 1, 1, 0, 0, 1, 0]))
+               np.asarray([0, 2, 2, 2, 2, 0, 0, 2, 0]))
     
     # and counts of different values
-    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([178063, 206029]), atol=3)
+    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([166903,  11159, 206030]), atol=3)
 
 def test_generic_processing_test__specified_extent_from_vlayer_two_channels():
     qgs = init_qgis()
@@ -188,10 +188,10 @@ def test_generic_processing_test__specified_extent_from_vlayer_two_channels():
 
     # just check a few pixels
     assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
-               np.asarray([0, 1, 1, 1, 1, 0, 0, 1, 0]))
+               np.asarray([0, 2, 2, 2, 2, 0, 0, 2, 0]))
     
     # and counts of different values
-    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([356126, 412058]), atol=3)
+    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([333806,  22318, 412060]), atol=3)
 
 
 def test_generic_processing_test__specified_extent_from_vlayer_crs3857_one_channel():
@@ -233,9 +233,9 @@ def test_generic_processing_test__specified_extent_from_vlayer_crs3857_one_chann
 
     # just check a few pixels
     assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
-               np.asarray([0, 0, 1, 1, 1, 0, 0, 1, 0]))
+               np.asarray([0, 0, 2, 2, 2, 0, 0, 2, 0]))
     # and counts of different values
-    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([193853, 203797]), atol=3)
+    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([182693,  11159, 203798]), atol=3)
 
 def test_generic_processing_test__specified_extent_from_vlayer_crs3857_two_channels():
     qgs = init_qgis()
@@ -279,9 +279,9 @@ def test_generic_processing_test__specified_extent_from_vlayer_crs3857_two_chann
 
     # just check a few pixels
     assert all(result_img.ravel()[[365, 41234, 59876, 234353, 111222, 134534, 223423, 65463, 156451]] ==
-               np.asarray([0, 0, 1, 1, 1, 0, 0, 1, 0]))
+               np.asarray([0, 0, 2, 2, 2, 0, 0, 2, 0]))
     
-    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([387706, 407594]), atol=3)
+    np.testing.assert_allclose(np.unique(result_img, return_counts=True)[1], np.array([365386,  22318, 407596]), atol=3)
 
 
 def test_generic_processing_test__specified_extent_from_active_map_extent_one_channel():
