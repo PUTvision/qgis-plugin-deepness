@@ -8,13 +8,13 @@ Pytorch
 
 Steps based on `EXPORTING A MODEL FROM PYTORCH TO ONNX AND RUNNING IT USING ONNX RUNTIME <https://pytorch.org/tutorials/advanced/super_resolution_with_onnxruntime.html>`_.
 
-* Step 0. Requirements:
+Step 0. Requirements:
   
   - Pytorch
   
   - ONNX 
 
-* Step 1. Load PyTorch model
+Step 1. Load PyTorch model
   .. code-block::
 
     from torch import nn
@@ -25,13 +25,13 @@ Steps based on `EXPORTING A MODEL FROM PYTORCH TO ONNX AND RUNNING IT USING ONNX
     model.load_state_dict(torch.load(YOUR_MODEL_CHECKPOINT_PATH, map_location='cpu')['state_dict'])
     model.eval()
 
-* Step 2. Create data sample with :code:`batch_size=1` and call forward step of your model:
+Step 2. Create data sample with :code:`batch_size=1` and call forward step of your model:
   .. code-block:: 
 
     x = torch.rand(1, INP_CHANNEL, INP_HEIGHT, INP_WIDTH) # eg. torch.rand([1, 3, 256, 256])
     _ = model(x)
 
-* Step 3a. Call export function with static batch_size=1:
+Step 3a. Call export function with static batch_size=1:
 
   .. code-block:: 
 
@@ -44,7 +44,7 @@ Steps based on `EXPORTING A MODEL FROM PYTORCH TO ONNX AND RUNNING IT USING ONNX
                     output_names=['output'],
                     do_constant_folding=False)
 
-* Step 3b. Call export function with dynamic batch_size:
+Step 3b. Call export function with dynamic batch_size:
 
   .. code-block:: 
 
@@ -64,7 +64,7 @@ Tensorflow/Keras
 
 Steps based on the `tensorflow-onnx <https://github.com/onnx/tensorflow-onnx>`_ repository. The instruction is valid for :code:`saved model` format. For other types follow :code:`tensorflow-onnx` instructions.
 
-* Requirements:
+Requirements:
   
   - tensorflow
   
@@ -72,7 +72,7 @@ Steps based on the `tensorflow-onnx <https://github.com/onnx/tensorflow-onnx>`_ 
   
   - tf2onnx
 
-* And simply call converter script:
+And simply call converter script:
 
   .. code-block:: 
 
