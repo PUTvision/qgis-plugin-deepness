@@ -17,7 +17,7 @@ The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection 
 | [Agriculture segmentation RGB+NIR](https://chmura.put.poznan.pl/s/wf5Ml1ZDyiVdNiy)   | 256        | 30    | Trained on the [Agriculture Vision 2021 dataset](https://www.agriculture-vision.com/agriculture-vision-2021/dataset-2021). 4 channels input (RGB + NIR). 9 output classes within agricultural field (weed_cluster, waterway, ...). Uses X-UNet.                                                                                                                                                                                                                                                              | [Image](https://chmura.put.poznan.pl/s/35A5ISUxLxcK7kL) |
 | [Fire risk assesment](https://chmura.put.poznan.pl/s/NxKLdfdr9s9jsVA)                | 384        | 100   | Trained on the FireRisk dataset (RGB data). Classifies risk of fires (ver_high, high, low, ...). Uses ConvNeXt XXL. Val F1-score 	65.5.                                                                                                                                                                                                                                                                                                                                                                      | [Image](https://chmura.put.poznan.pl/s/Ijn3VgG76NvYtDY) |
 | [Roads Segmentation](https://chmura.put.poznan.pl/s/y6S3CmodPy1fYYz)                 | 512        | 21    | The model segments the Google Earth satellite images into 'road' and 'not-road' classes. Model works best on wide car roads, crossroads and roundabouts.                                                                                                                                                                                                                                                                                                                                                     | [Image](https://chmura.put.poznan.pl/s/rln6mpbjpsXWpKg) |
-| [Solar PV Segmentation](https://owncloud.fraunhofer.de/index.php/s/Ph9TC6BTxPi5oZZ)                 | 512        | 3    | Model trained by M Kleebauer et al. in "[Multi-resolution segmentation of solar photovoltaic systems using deep learning](https://www.mdpi.com/2596164) on a diverse range of image data, spanning UAV, aerial, and satellite imagery at both native and aggregated resolutions of 0.1 m, 0.2 m, 0.3 m, 0.8 m, 1.6 m, and 3.2 m.                                                                                                                                                                                                                                                                                                                                                      | [Image](https://github.com/Kleebaue/multi-resolution-pv-system-segmentation/blob/main/figures/prediction_multi_res.png) |
+| [Solar PV Segmentation](https://owncloud.fraunhofer.de/index.php/s/Ph9TC6BTxPi5oZZ)                 | 512        | 20    | Model trained by M Kleebauer et al. in "[Multi-resolution segmentation of solar photovoltaic systems using deep learning](https://www.mdpi.com/2596164) on a diverse range of image data, spanning UAV, aerial, and satellite imagery at both native and aggregated resolutions of 0.1 m, 0.2 m, 0.3 m, 0.8 m, 1.6 m, and 3.2 m.                                                                                                                                                                                                                                                                                                                                                      | [Image](https://github.com/Kleebaue/multi-resolution-pv-system-segmentation/blob/main/figures/prediction_multi_res.png) |
 
 ## Regression models
 
@@ -52,12 +52,12 @@ The [Model ZOO](https://chmura.put.poznan.pl/s/2pJk4izRurzQwu3) is a collection 
 
 PRs with models are welcome!
 
-* Please follow the [general model information](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_description_classes.html).
+- Please follow the [general model information](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_description_classes.html).
 
-* Use `MODEL_ZOO` tag in your PRs to make it easier to find them.
+- Use `MODEL_ZOO` tag in your PRs to make it easier to find them.
 
-* If you need, you can check [how to export the model to ONNX](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_example_onnx_model.html).
+- If you need, you can check [how to export the model to ONNX](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_example_onnx_model.html).
 
-* And do not forget to [add metadata to the ONNX model](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_add_metadata_to_model.html).
+- And do not forget to [add metadata to the ONNX model](https://qgis-plugin-deepness.readthedocs.io/en/latest/creators/creators_add_metadata_to_model.html).
 
-* You can host your model yourself or ask us to do it.
+- You can host your model yourself or ask us to do it.
