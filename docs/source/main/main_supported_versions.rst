@@ -30,3 +30,4 @@ The plug-in was tested in the environment:
   - Ubuntu 22.04.1 LTS and QGIS 3.22.4
   - Ubuntu 20.04 LTS and QGIS 3.28
   - Windows 10.0.19043 and QGIS 3.26.3
+  - Windows 10.0.19045 and QGIS 3.34.3

@@ -66,7 +66,7 @@ Ubuntu
 
 Windows
   
-  - Go to QGIS installation path (for example :code:`C:\Program Files\QGIS 3.26.3\`)
+  - Go to QGIS installation path (for example :code:`C:\\Program Files\\QGIS 3.26.3\\`)
   
   - Run :code:`OSGeo4W.bat` and type installation command:
   
