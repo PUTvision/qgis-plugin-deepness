@@ -5,19 +5,19 @@ Model classes and requirements
 Supported model classes
 =======================
 The plugin supports the following model classes:
- * Segmentation Model (aka. :code:`Segmentor`)
- * Detection Model (aka. :code:`Detector`)
- * Regression Model (aka. :code:`Regressor`)
+ - Segmentation Model (aka. :code:`Segmentor`)
+ - Detection Model (aka. :code:`Detector`)
+ - Regression Model (aka. :code:`Regressor`)
 
 Once the processing of ortophoto is finished, a report with model-specific information will be presented.
 
 Common rules for models and processing:
- * Model needs to be in ONNX format, which contains both the network architecture and weights.
- * All model classes process the data in chunks called 'tiles', that is a small part of the entire ortophoto - tiles size and overlap is configurable.
- * Every model should have one input of size :code:`[BATCH_SIZE, CHANNELS, SIZE_PX, SIZE_PX]`. :code:`BATCH_SIZE` can be 1 or dynamic.
- * Size of processed tiles (in pixels) is model defined, but needs to be equal in x and y axes, so that the tiles can be square.
- * If the processed tile needs to be padded (e.g. on otophoto borders) it will be padded with 0 values.
- * Input image data - only uint8_t value for each pixel channel is supported
+ - Model needs to be in ONNX format, which contains both the network architecture and weights.
+ - All model classes process the data in chunks called 'tiles', that is a small part of the entire ortophoto - tiles size and overlap is configurable.
+ - Every model should have one input of size :code:`[BATCH_SIZE, CHANNELS, SIZE_PX, SIZE_PX]`. :code:`BATCH_SIZE` can be 1 or dynamic.
+ - Size of processed tiles (in pixels) is model defined, but needs to be equal in x and y axes, so that the tiles can be square.
+ - If the processed tile needs to be padded (e.g. on otophoto borders) it will be padded with 0 values.
+ - Input image data - only uint8_t value for each pixel channel is supported
 
 
 ==================
@@ -31,15 +31,15 @@ The segmentation model output is also an image, with same dimension as the input
 Therefore, the shape of model output is :code:`[BATCH_SIZE, NUM_CLASSES, SIZE_PX, SIZE_PX]`.
 
 We support the following types of models:
- * single output (one head) with the following output shapes:
-    * :code:`[BATCH_SIZE, 1, SIZE_PX, SIZE_PX]` - one class with sigmoid activation function (binary classification)
-    * :code:`[BATCH_SIZE, NUM_CLASSES, SIZE_PX, SIZE_PX]` - multiple classes with softmax activation function (multi-class classification) - outputs sum to 1.0
- * multiple outputs (multiple heads) with each output head composed of the same shapes as single output.
+ - single output (one head) with the following output shapes:
+    - :code:`[BATCH_SIZE, 1, SIZE_PX, SIZE_PX]` - one class with sigmoid activation function (binary classification)
+    - :code:`[BATCH_SIZE, NUM_CLASSES, SIZE_PX, SIZE_PX]` - multiple classes with softmax activation function (multi-class classification) - outputs sum to 1.0
+ - multiple outputs (multiple heads) with each output head composed of the same shapes as single output.
 
  Metaparameter :code:`class_names` saved in the model file should be as follows in this example:
-    * for single output with binary classification (sigmoid): :code:`[{0: "background", 1: "class_name"}]`
-    * for single output with multi-class classification (softmax): :code:`[{0: "class0", 1: "class1", 2: "class2"}]` or :code:`{0: "class0", 1: "class1", 2: "class2"}`
-    * for multiple outputs (multiple heads): :code:`[{0: "class0", 1: "class1", 2: "class2"}, {0: "background", 1: "class_name"}]`
+    - for single output with binary classification (sigmoid): :code:`[{0: "background", 1: "class_name"}]`
+    - for single output with multi-class classification (softmax): :code:`[{0: "class0", 1: "class1", 2: "class2"}]` or :code:`{0: "class0", 1: "class1", 2: "class2"}`
+    - for multiple outputs (multiple heads): :code:`[{0: "class0", 1: "class1", 2: "class2"}, {0: "background", 1: "class_name"}]`
 
 Output report contains information about percentage coverage of each class.
 
