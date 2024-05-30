@@ -20,8 +20,9 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
-**Screenshots**
+**Screenshots (including Deepness options selected)**
 If applicable, add screenshots to help explain your problem.
+Please also include screenshot of Deepness UI settings.
 
 **Desktop (please complete the following information):**
  - OS: [e.g. Windows 10, Ubuntu 22.04]
