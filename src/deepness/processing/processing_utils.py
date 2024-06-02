@@ -38,14 +38,17 @@ def get_numpy_data_type_for_qgis_type(data_type_qgis: Qgis.DataType):
         return np.uint8
     if data_type_qgis == Qgis.DataType.UInt16:
         return np.uint16
+    if data_type_qgis == Qgis.DataType.UInt32:
+        return np.uint32
     if data_type_qgis == Qgis.DataType.Int16:
         return np.int16
-    if data_type_qgis in Qgis.DataType.Float32:
+    if data_type_qgis == Qgis.DataType.Int32:
+        return np.int32
+    if data_type_qgis == Qgis.DataType.Float32:
         return np.float32
-    if data_type_qgis in Qgis.DataType.Float64:
+    if data_type_qgis == Qgis.DataType.Float64:
         return np.float64
-    # TODO - maybe add support for more data types (change also the numpy type below then)
-    raise Exception("Invalid input layer data type!")
+    raise Exception(f"Invalid input layer data type ({data_type_qgis})!")
 
 
 def get_tile_image(
