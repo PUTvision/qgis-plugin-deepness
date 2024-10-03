@@ -2,6 +2,7 @@
 """
 from dataclasses import dataclass
 from typing import List, Optional, Tuple
+from qgis.core import Qgis, QgsGeometry, QgsRectangle, QgsPointXY
 
 import cv2
 import numpy as np
@@ -34,6 +35,7 @@ class Detection:
     mask: Optional[np.ndarray] = None
     """np.ndarray: mask of the detected object"""
     mask_offsets: Optional[Tuple[int, int]] = None
+    """Tuple[int, int]: offsets of the mask"""
 
     def convert_to_global(self, offset_x: int, offset_y: int):
         """Apply (x,y) offset to bounding box coordinates
@@ -59,6 +61,16 @@ class Detection:
             Array in (x1, y1, x2, y2) format
         """
         return self.bbox.get_xyxy()
+    
+    def get_bbox_xyxy_rot(self) -> np.ndarray:
+        """Convert stored bounding box into x1y1x2y2r format
+
+        Returns
+        -------
+        np.ndarray
+            Array in (x1, y1, x2, y2, r) format
+        """
+        return self.bbox.get_xyxy_rot()
 
     def get_bbox_center(self) -> Tuple[int, int]:
         """Get center of the bounding box
@@ -146,11 +158,19 @@ class Detector(ModelBase):
         shape_index = -2 if model_type_params.has_inverted_output_shape else -1
 
         if len(self.outputs_layers) == 1:
-            if model_type_params.skipped_objectness_probability:
+            # YOLO_ULTRALYTICS_OBB
+            if self.model_type == DetectorType.YOLO_ULTRALYTICS_OBB:
+                return [self.outputs_layers[0].shape[shape_index] - 4 - 1]
+            
+            elif model_type_params.skipped_objectness_probability:
                 return [self.outputs_layers[0].shape[shape_index] - 4]
+            
             return [self.outputs_layers[0].shape[shape_index] - 4 - 1]  # shape - 4 bboxes - 1 conf
+        
+        # YOLO_ULTRALYTICS_SEGMENTATION
         elif len(self.outputs_layers) == 2 and self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
             return [self.outputs_layers[0].shape[shape_index] - 4 - self.outputs_layers[1].shape[1]]
+        
         else:
             raise NotImplementedError("Model with multiple output layer is not supported! Use only one output layer.")
 
@@ -182,13 +202,12 @@ class Detector(ModelBase):
         batch_detection = []
         outputs_range = len(model_output)
         
-        if self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
-            outputs_range = len(model_output[0])
-        elif self.model_type == DetectorType.YOLO_v9:
+        if self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION or self.model_type == DetectorType.YOLO_v9:
             outputs_range = len(model_output[0])
 
         for i in range(outputs_range):
             masks = None
+            rots = None
             detections = []
 
             if self.model_type == DetectorType.YOLO_v5_v7_DEFAULT:
@@ -201,18 +220,22 @@ class Detector(ModelBase):
                 boxes, conf, classes = self._postprocessing_YOLO_ULTRALYTICS(model_output[0][i])
             elif self.model_type == DetectorType.YOLO_ULTRALYTICS_SEGMENTATION:
                 boxes, conf, classes, masks = self._postprocessing_YOLO_ULTRALYTICS_SEGMENTATION(model_output[0][i], model_output[1][i])
+            elif self.model_type == DetectorType.YOLO_ULTRALYTICS_OBB:
+                boxes, conf, classes, rots = self._postprocessing_YOLO_ULTRALYTICS_OBB(model_output[0][i])
             else:
                 raise NotImplementedError(f"Model type not implemented! ('{self.model_type}')")
 
             masks = masks if masks is not None else [None] * len(boxes)
+            rots = rots if rots is not None else [0.0] * len(boxes)
 
-            for b, c, cl, m in zip(boxes, conf, classes, masks):
+            for b, c, cl, m, r in zip(boxes, conf, classes, masks, rots):
                 det = Detection(
                     bbox=BoundingBox(
                         x_min=b[0],
                         x_max=b[2],
                         y_min=b[1],
-                        y_max=b[3]),
+                        y_max=b[3],
+                        rot=r),
                     conf=c,
                     clss=cl,
                     mask=m,
@@ -360,6 +383,36 @@ class Detector(ModelBase):
 
         return boxes, conf, classes, masks
     
+    def _postprocessing_YOLO_ULTRALYTICS_OBB(self, model_output):
+        model_output = np.transpose(model_output, (1, 0))
+
+        outputs_filtered = np.array(
+            list(filter(lambda x: np.max(x[4:-1]) >= self.confidence, model_output))
+        )
+
+        if len(outputs_filtered.shape) < 2:
+            return [], [], [], []
+
+        probabilities = np.max(outputs_filtered[:, 4:-1], axis=1)
+        rotations = outputs_filtered[:, -1]
+
+        outputs_x1y1x2y2_rot = self.xywhr2xyxyr(outputs_filtered, rotations)
+
+        pick_indxs = self.non_max_suppression_fast(
+            outputs_x1y1x2y2_rot,
+            probs=probabilities,
+            iou_threshold=self.iou_threshold,
+            with_rot=True)
+        
+        outputs_nms = outputs_x1y1x2y2_rot[pick_indxs]
+
+        boxes = np.array(outputs_nms[:, :4], dtype=int)
+        conf = np.max(outputs_nms[:, 4:-1], axis=1)
+        classes = np.argmax(outputs_nms[:, 4:-1], axis=1)
+        rots = outputs_nms[:, -1]
+
+        return boxes, conf, classes, rots
+
     # based on https://github.com/ultralytics/ultralytics/blob/main/ultralytics/utils/ops.py#L638C1-L638C67
     def process_mask(self, protos, masks_in, bboxes):
         c, mh, mw = protos.shape  # CHW
@@ -404,7 +457,7 @@ class Detector(ModelBase):
         Parameters
         ----------
         x : np.ndarray
-            Bounding box in (x,y,w,h) format
+            Bounding box in (x,y,w,h) format with classes' probabilities
 
         Returns
         -------
@@ -419,7 +472,33 @@ class Detector(ModelBase):
         return y
 
     @staticmethod
-    def non_max_suppression_fast(boxes: np.ndarray, probs: np.ndarray, iou_threshold: float) -> List:
+    def xywhr2xyxyr(bbox: np.ndarray, rot: np.ndarray) -> np.ndarray:
+        """Convert bounding box from (x,y,w,h,r) to (x1,y1,x2,y2,r) format, keeping rotated boxes in range [0, pi/2]
+
+        Parameters
+        ----------
+        bbox : np.ndarray
+            Bounding box in (x,y,w,h) format with classes' probabilities and rotations
+
+        Returns
+        -------
+        np.ndarray
+            Bounding box in (x1,y1,x2,y2,r) format, keep classes' probabilities
+        """
+        x, y, w, h = bbox[:, 0], bbox[:, 1], bbox[:, 2], bbox[:, 3]
+
+        w_ = np.where(w > h, w, h)
+        h_ = np.where(w > h, h, w)
+        r_ = np.where(w > h, rot, rot + np.pi / 2) % np.pi
+
+        new_bbox_xywh = np.stack([x, y, w_, h_], axis=1)
+        new_bbox_xyxy = Detector.xywh2xyxy(new_bbox_xywh)
+
+        return np.concatenate([new_bbox_xyxy, bbox[:, 4:-1], r_[:, None]], axis=1)
+
+
+    @staticmethod
+    def non_max_suppression_fast(boxes: np.ndarray, probs: np.ndarray, iou_threshold: float, with_rot: bool = False) -> List:
         """Apply non-maximum suppression to bounding boxes
 
         Based on:
@@ -428,18 +507,19 @@ class Detector(ModelBase):
         Parameters
         ----------
         boxes : np.ndarray
-            Bounding boxes in (x1,y1,x2,y2) format
+            Bounding boxes in (x1,y1,x2,y2) format or (x1,y1,x2,y2,r) format if with_rot is True
         probs : np.ndarray
             Confidence scores
         iou_threshold : float
             IoU threshold
+        with_rot: bool
+            If True, use rotated IoU
 
         Returns
         -------
         List
             List of indexes of bounding boxes to keep
         """
-
         # If no bounding boxes, return empty list
         if len(boxes) == 0:
             return []
@@ -452,6 +532,10 @@ class Detector(ModelBase):
         start_y = boxes[:, 1]
         end_x = boxes[:, 2]
         end_y = boxes[:, 3]
+
+        if with_rot:
+            # Rotations of bounding boxes
+            rotations = boxes[:, 4]
 
         # Confidence scores of bounding boxes
         score = np.array(probs)
@@ -473,24 +557,136 @@ class Detector(ModelBase):
             # Pick the bounding box with largest confidence score
             picked_boxes.append(index)
 
-            # Compute ordinates of intersection-over-union(IOU)
-            x1 = np.maximum(start_x[index], start_x[order[:-1]])
-            x2 = np.minimum(end_x[index], end_x[order[:-1]])
-            y1 = np.maximum(start_y[index], start_y[order[:-1]])
-            y2 = np.minimum(end_y[index], end_y[order[:-1]])
-
-            # Compute areas of intersection-over-union
-            w = np.maximum(0.0, x2 - x1 + 1)
-            h = np.maximum(0.0, y2 - y1 + 1)
-            intersection = w * h
-
-            # Compute the ratio between intersection and union
-            ratio = intersection / (areas[index] + areas[order[:-1]] - intersection)
+            if not with_rot:
+                ratio = Detector.compute_iou(index, order, start_x, start_y, end_x, end_y, areas)
+            else:
+                ratio = Detector.compute_rotated_iou(index, order, start_x, start_y, end_x, end_y, rotations, areas)
 
             left = np.where(ratio < iou_threshold)
             order = order[left]
 
         return picked_boxes
+
+    @staticmethod
+    def compute_iou(index: int, order: np.ndarray, start_x: np.ndarray, start_y: np.ndarray, end_x: np.ndarray, end_y: np.ndarray, areas: np.ndarray) -> np.ndarray:
+        """Compute IoU for bounding boxes
+        
+        Parameters
+        ----------
+        index : int
+            Index of the bounding box
+        order : np.ndarray
+            Order of bounding boxes
+        start_x : np.ndarray
+            Start x coordinate of bounding boxes
+        start_y : np.ndarray
+            Start y coordinate of bounding boxes
+        end_x : np.ndarray
+            End x coordinate of bounding boxes
+        end_y : np.ndarray
+            End y coordinate of bounding boxes
+        areas : np.ndarray
+            Areas of bounding boxes
+
+        Returns
+        -------
+        np.ndarray
+            IoU values
+        """
+        
+        # Compute ordinates of intersection-over-union(IOU)
+        x1 = np.maximum(start_x[index], start_x[order[:-1]])
+        x2 = np.minimum(end_x[index], end_x[order[:-1]])
+        y1 = np.maximum(start_y[index], start_y[order[:-1]])
+        y2 = np.minimum(end_y[index], end_y[order[:-1]])
+
+        # Compute areas of intersection-over-union
+        w = np.maximum(0.0, x2 - x1 + 1)
+        h = np.maximum(0.0, y2 - y1 + 1)
+        intersection = w * h
+
+        # Compute the ratio between intersection and union
+        return intersection / (areas[index] + areas[order[:-1]] - intersection)
+    
+
+    @staticmethod
+    def compute_rotated_iou(index: int, order: np.ndarray, start_x: np.ndarray, start_y: np.ndarray, end_x: np.ndarray, end_y: np.ndarray, rotations: np.ndarray, areas: np.ndarray) -> np.ndarray:
+        """Compute IoU for rotated bounding boxes
+        
+        Parameters
+        ----------
+        index : int
+            Index of the bounding box
+        order : np.ndarray
+            Order of bounding boxes
+        start_x : np.ndarray
+            Start x coordinate of bounding boxes
+        start_y : np.ndarray
+            Start y coordinate of bounding boxes
+        end_x : np.ndarray
+            End x coordinate of bounding boxes
+        end_y : np.ndarray
+            End y coordinate of bounding boxes
+        rotations : np.ndarray
+            Rotations of bounding boxes (in radians, around the center)
+        areas : np.ndarray
+            Areas of bounding boxes
+
+        Returns
+        -------
+        np.ndarray
+            IoU values
+        """
+
+        def create_rotated_geom(x1, y1, x2, y2, rotation):
+            """Helper function to create a rotated QgsGeometry rectangle"""
+            # Define the corners of the box before rotation
+            center_x = (x1 + x2) / 2
+            center_y = (y1 + y2) / 2
+
+            # Create a rectangle using QgsRectangle
+            rect = QgsRectangle(QgsPointXY(x1, y1), QgsPointXY(x2, y2))
+            
+            # Convert to QgsGeometry
+            geom = QgsGeometry.fromRect(rect)
+            
+            # Rotate the geometry around its center
+            result = geom.rotate(np.degrees(rotation), QgsPointXY(center_x, center_y))
+
+            if result == Qgis.GeometryOperationResult.Success:
+                return geom
+            else:
+                return QgsGeometry()
+
+        # Create the rotated geometry for the current bounding box
+        geom1 = create_rotated_geom(start_x[index], start_y[index], end_x[index], end_y[index], rotations[index])
+        
+        iou_values = []
+        
+        # Iterate over the rest of the boxes in order and calculate IoU
+        for i in range(len(order) - 1):
+            # Create the rotated geometry for the other boxes in the order
+            geom2 = create_rotated_geom(start_x[order[i]], start_y[order[i]], end_x[order[i]], end_y[order[i]], rotations[order[i]])
+            
+            # Compute the intersection geometry
+            intersection_geom = geom1.intersection(geom2)
+
+            # Check if intersection is empty
+            if intersection_geom.isEmpty():
+                intersection_area = 0.0
+            else:
+                # Compute the intersection area
+                intersection_area = intersection_geom.area()
+            
+            # Compute the union area
+            union_area = areas[index] + areas[order[i]] - intersection_area
+            
+            # Compute IoU
+            iou = intersection_area / union_area if union_area > 0 else 0.0
+            iou_values.append(iou)
+        
+        return np.array(iou_values)
+
 
     def check_loaded_model_outputs(self):
         """Check if model outputs are valid.
