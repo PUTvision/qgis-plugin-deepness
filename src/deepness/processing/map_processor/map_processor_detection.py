@@ -13,6 +13,7 @@ from deepness.processing.map_processor.map_processor_with_model import MapProces
 from deepness.processing.map_processor.utils.ckdtree import cKDTree
 from deepness.processing.models.detector import Detection, Detector
 from deepness.processing.tile_params import TileParams
+from deepness.processing.models.detector import DetectorType
 
 
 class MapProcessorDetection(MapProcessorWithModel):
@@ -49,8 +50,10 @@ class MapProcessorDetection(MapProcessorWithModel):
             bounding_boxes_in_tile_batched = self._process_tile(tile_img_batched, tile_params_batched)
             all_bounding_boxes += [d for det in bounding_boxes_in_tile_batched for d in det]
 
+        with_rot = self.detection_parameters.detector_type == DetectorType.YOLO_ULTRALYTICS_OBB
+
         if len(all_bounding_boxes) > 0:
-            all_bounding_boxes_nms = self.remove_overlaping_detections(all_bounding_boxes, iou_threshold=self.detection_parameters.iou_threshold)
+            all_bounding_boxes_nms = self.remove_overlaping_detections(all_bounding_boxes, iou_threshold=self.detection_parameters.iou_threshold, with_rot=with_rot)
             all_bounding_boxes_restricted = self.limit_bounding_boxes_to_processed_area(all_bounding_boxes_nms)
         else:
             all_bounding_boxes_restricted = []
@@ -197,17 +200,20 @@ class MapProcessorDetection(MapProcessorWithModel):
         return add_to_gui
 
     @staticmethod
-    def remove_overlaping_detections(bounding_boxes: List[Detection], iou_threshold: float) -> List[Detection]:
+    def remove_overlaping_detections(bounding_boxes: List[Detection], iou_threshold: float, with_rot: bool = False) -> List[Detection]:
         bboxes = []
         probs = []
         for det in bounding_boxes:
-            bboxes.append(det.get_bbox_xyxy())
+            if with_rot:
+                bboxes.append(det.get_bbox_xyxy_rot())
+            else:
+                bboxes.append(det.get_bbox_xyxy())
             probs.append(det.conf)
 
         bboxes = np.array(bboxes)
         probs = np.array(probs)
 
-        pick_ids = Detector.non_max_suppression_fast(bboxes, probs, iou_threshold)
+        pick_ids = Detector.non_max_suppression_fast(boxes=bboxes, probs=probs, iou_threshold=iou_threshold, with_rot=with_rot)
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
         filtered_bounding_boxes = sorted(filtered_bounding_boxes, reverse=True)
