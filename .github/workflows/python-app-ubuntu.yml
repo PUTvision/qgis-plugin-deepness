@@ -23,6 +23,7 @@ jobs:
       run: |
         mkdir -p out/deepness
         cp -r src/deepness/ out/deepness/deepness
+        cp ./LICENSE out/deepness/deepness/
     - name: Update
       run: |
         sudo apt update
