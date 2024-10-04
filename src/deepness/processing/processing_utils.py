@@ -38,14 +38,17 @@ def get_numpy_data_type_for_qgis_type(data_type_qgis: Qgis.DataType):
         return np.uint8
     if data_type_qgis == Qgis.DataType.UInt16:
         return np.uint16
+    if data_type_qgis == Qgis.DataType.UInt32:
+        return np.uint32
     if data_type_qgis == Qgis.DataType.Int16:
         return np.int16
-    if data_type_qgis in Qgis.DataType.Float32:
+    if data_type_qgis == Qgis.DataType.Int32:
+        return np.int32
+    if data_type_qgis == Qgis.DataType.Float32:
         return np.float32
-    if data_type_qgis in Qgis.DataType.Float64:
+    if data_type_qgis == Qgis.DataType.Float64:
         return np.float64
-    # TODO - maybe add support for more data types (change also the numpy type below then)
-    raise Exception("Invalid input layer data type!")
+    raise Exception(f"Invalid input layer data type ({data_type_qgis})!")
 
 
 def get_tile_image(
@@ -258,6 +261,7 @@ class BoundingBox:
     x_max: int
     y_min: int
     y_max: int
+    rot: float = 0.0
 
     def get_shape(self) -> Tuple[int, int]:
         """ Returns the shape of the bounding box as a tuple (height, width)
@@ -285,6 +289,22 @@ class BoundingBox:
             self.y_min,
             self.x_max,
             self.y_max
+        ]
+    
+    def get_xyxy_rot(self) -> Tuple[int, int, int, int, float]:
+        """ Returns the bounding box as a tuple (x_min, y_min, x_max, y_max, rotation)
+
+        Returns
+        -------
+        Tuple[int, int, int, int, float]
+            (x_min, y_min, x_max, y_max, rotation)
+        """
+        return [
+            self.x_min,
+            self.y_min,
+            self.x_max,
+            self.y_max,
+            self.rot
         ]
 
     def get_xywh(self) -> Tuple[int, int, int, int]:
@@ -404,12 +424,28 @@ class BoundingBox:
         List[Tuple]
             List of 4 rectangle corners in (x, y) format
         """
-        return [
-            (self.x_min, self.y_min),
-            (self.x_min, self.y_max),
-            (self.x_max, self.y_max),
-            (self.x_max, self.y_min),
-        ]
+        if np.isclose(self.rot, 0.0):
+            return [
+                (self.x_min, self.y_min),
+                (self.x_min, self.y_max),
+                (self.x_max, self.y_max),
+                (self.x_max, self.y_min),
+            ]
+        else:
+            x_center = (self.x_min + self.x_max) / 2
+            y_center = (self.y_min + self.y_max) / 2
+            
+            corners = np.array([
+                [self.x_min, self.y_min],
+                [self.x_min, self.y_max],
+                [self.x_max, self.y_max],
+                [self.x_max, self.y_min],
+            ])
+
+            xys = x_center + np.cos(self.rot) * (corners[:, 0] - x_center) - np.sin(self.rot) * (corners[:, 1] - y_center)
+            yys = y_center + np.sin(self.rot) * (corners[:, 0] - x_center) + np.cos(self.rot) * (corners[:, 1] - y_center)
+
+            return [(int(x), int(y)) for x, y in zip(xys, yys)]
 
 
 def transform_polygon_with_rings_epsg_to_extended_xy_pixels(

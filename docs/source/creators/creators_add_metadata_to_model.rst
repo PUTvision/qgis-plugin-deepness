@@ -53,6 +53,7 @@ Availeble detector types:
 - :code:`YOLO_v9`
 - :code:`YOLO_Ultralytics`
 - :code:`YOLO_Ultralytics_segmentation`
+- :code:`YOLO_Ultralytics_obb`
 
 =======
 Example

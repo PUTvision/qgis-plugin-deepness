@@ -63,6 +63,11 @@ class MapProcessorTrainingDataExport(MapProcessor):
             if self.params.export_image_tiles:
                 file_name = f'tile_img_{tile_params.x_bin_number}_{tile_params.y_bin_number}.png'
                 file_path = os.path.join(self.output_dir_path, file_name)
+
+                if tile_img.dtype in [np.uint32, np.int32]:
+                    print(f'Exporting image with data type {tile_img.dtype} is not supported. Trimming to uint16. Consider changing the data type in the source image.')
+                    tile_img = tile_img.astype(np.uint16)
+
                 if tile_img.shape[-1] == 4:
                     tile_img = cv2.cvtColor(tile_img, cv2.COLOR_RGBA2BGRA)
                 elif tile_img.shape[-1] == 3:
