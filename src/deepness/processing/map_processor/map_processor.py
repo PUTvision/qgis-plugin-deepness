@@ -66,6 +66,7 @@ class MapProcessor(QgsTask):
 
         self.file_handler = TempFilesHandler() if self.params.local_cache else None
 
+        print(f'self.rlayer_units_per_pixel: {self.rlayer_units_per_pixel}')
         # extent in which the actual required area is contained, without additional extensions, rounded to rlayer grid
         self.base_extent = extent_utils.calculate_base_processing_extent_in_rlayer_crs(
             map_canvas=map_canvas,
@@ -96,6 +97,12 @@ class MapProcessor(QgsTask):
         # As we are using "extended_extent" this should divide without any rest
         self.x_bins_number = round((self.img_size_x_pixels - self.params.tile_size_px) / self.stride_px) + 1
         self.y_bins_number = round((self.img_size_y_pixels - self.params.tile_size_px) / self.stride_px) + 1
+
+        print(f"Processing extent: {self.extended_extent}")
+        print(f"Base extent: {self.base_extent}")
+        print(f"Image size: {self.img_size_x_pixels} x {self.img_size_y_pixels}")
+        print(f"Base extent bbox in full image: {self.base_extent_bbox_in_full_image}")
+        print(f"Number of tiles: {self.x_bins_number} x {self.y_bins_number}")
 
         # Mask determining area to process (within extended_extent coordinates)
         self.area_mask_img = processing_utils.create_area_mask_image(
@@ -170,7 +177,7 @@ class MapProcessor(QgsTask):
         """
         # TODO look for some inplace operation to save memory
         # cv2.copyTo(src=full_img, mask=area_mask_img, dst=full_img)  # this doesn't work due to implementation details
-        
+
         for i in range(full_img.shape[0]):
             full_img[i] = cv2.copyTo(src=full_img[i], mask=self.area_mask_img)
 
@@ -211,7 +218,7 @@ class MapProcessor(QgsTask):
 
                 if not tile_params.is_tile_within_mask(self.area_mask_img):
                     continue  # tile outside of mask - to be skipped
-                
+
                 tile_img = processing_utils.get_tile_image(
                     rlayer=self.rlayer, extent=tile_params.extent, params=self.params)
 

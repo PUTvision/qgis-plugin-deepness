@@ -19,14 +19,25 @@ from deepness.common.temp_files_handler import TempFilesHandler
 cv2 = LazyPackageLoader('cv2')
 
 
-def convert_meters_to_rlayer_units(rlayer, distance_m) -> float:
-    """ How many map units are there in one meter """
+def convert_meters_to_rlayer_units(rlayer: QgsRasterLayer, distance_m: float) -> float:
+    """ How many map units are there in one meter. 
+    :param rlayer: raster layer for which we want to convert meters to its units
+    :param distance_m: distance in meters
+    """
     # TODO - potentially implement conversions from other units
-    if rlayer.crs().mapUnits() != QgsUnitTypes.DistanceUnit.DistanceMeters:
-        # TODO - add support for more unit types
-        raise Exception("Unsupported layer units")
-    assert distance_m != 0
-    return distance_m
+    # if rlayer.crs().mapUnits() != QgsUnitTypes.DistanceUnit.DistanceMeters:
+    #     # TODO - add support for more unit types
+    #     msg = f"Unsupported map units: {rlayer.crs().mapUnits()}"
+    #     raise Exception(msg)
+
+    # Now we support all units, but we need to convert them to meters
+    # to have a consistent unit for the distance
+    scaling_factor = QgsUnitTypes.fromUnitToUnitFactor(QgsUnitTypes.DistanceMeters, rlayer.crs().mapUnits())
+    distance = distance_m * scaling_factor
+    # logging.warning(f"rlayer.crs().mapUnits(): {rlayer.crs().mapUnits()}")
+    # logging.warning(f"Scaling factor: {scaling_factor}, distance: {distance}")
+    assert distance != 0
+    return distance
 
 
 def get_numpy_data_type_for_qgis_type(data_type_qgis: Qgis.DataType):
@@ -290,7 +301,7 @@ class BoundingBox:
             self.x_max,
             self.y_max
         ]
-    
+
     def get_xyxy_rot(self) -> Tuple[int, int, int, int, float]:
         """ Returns the bounding box as a tuple (x_min, y_min, x_max, y_max, rotation)
 
@@ -321,7 +332,7 @@ class BoundingBox:
             self.x_max - self.x_min,
             self.y_max - self.y_min
         ]
-        
+
     def get_center(self) -> Tuple[int, int]:
         """ Returns the center of the bounding box as a tuple (x, y)
 
@@ -434,7 +445,7 @@ class BoundingBox:
         else:
             x_center = (self.x_min + self.x_max) / 2
             y_center = (self.y_min + self.y_max) / 2
-            
+
             corners = np.array([
                 [self.x_min, self.y_min],
                 [self.x_min, self.y_max],
@@ -497,7 +508,7 @@ def create_area_mask_image(vlayer_mask,
 
     if vlayer_mask is None:
         return None
-    
+
     if files_handler is None:
         img = np.zeros(shape=image_shape_yx, dtype=np.uint8)
     else:

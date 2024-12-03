@@ -2,15 +2,13 @@
 This file contains utilities related to Extent processing
 """
 
-from qgis.core import QgsCoordinateTransform
-from qgis.core import QgsRasterLayer
-from qgis.core import QgsRectangle
-from qgis.core import QgsVectorLayer
+import logging
+
+from qgis.core import QgsCoordinateTransform, QgsRasterLayer, QgsRectangle, QgsVectorLayer
 from qgis.gui import QgsMapCanvas
 
 from deepness.common.errors import OperationFailedException
-from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
-    MapProcessingParameters
+from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deepness.processing.processing_utils import BoundingBox, convert_meters_to_rlayer_units
 
 
@@ -23,8 +21,20 @@ def round_extent_to_rlayer_grid(extent: QgsRectangle, rlayer: QgsRasterLayer) ->
     :param extent: Extent to round, needs to be in rlayer CRS units
     :param rlayer: layer detemining the grid
     """
+    # For some ortophotos grid spacing is close to (1.0, 1.0), while it shouldn't be.
+    # Seems like it is some bug or special "feature" that I do not understand.
+    # In that case, just return the extent as it is
+    print(f'###########')
     grid_spacing = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
+    print(f'grid_spacing: {grid_spacing}')
+    print(f'extent: {extent}')
+    if abs(grid_spacing[0] - 1.0) < 0.0001 and abs(grid_spacing[1] - 1.0) < 0.0001:
+        logging.warning('Grid spacing is close to 1.0, which is suspicious, returning extent as it is. It shouldn not be a problem for most cases.')
+        return extent
+
+    print(f'grid_spacing: {grid_spacing}')
     grid_start = rlayer.extent().xMinimum(), rlayer.extent().yMinimum()
+    print(f'grid_start: {grid_start}')
 
     x_min = grid_start[0] + int((extent.xMinimum() - grid_start[0]) / grid_spacing[0]) * grid_spacing[0]
     x_max = grid_start[0] + int((extent.xMaximum() - grid_start[0]) / grid_spacing[0]) * grid_spacing[0]
@@ -32,6 +42,9 @@ def round_extent_to_rlayer_grid(extent: QgsRectangle, rlayer: QgsRasterLayer) ->
     y_max = grid_start[1] + int((extent.yMaximum() - grid_start[1]) / grid_spacing[1]) * grid_spacing[1]
 
     new_extent = QgsRectangle(x_min, y_min, x_max, y_max)
+    print(f'new_extent: {new_extent}')
+    print(f'grid_start: {grid_start}')
+    print(f'###########')
     return new_extent
 
 
@@ -140,6 +153,7 @@ def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
     """
 
     rlayer_extent = rlayer.extent()
+    print(f'rlayer_extent: {rlayer_extent}')
     processed_area_type = params.processed_area_type
     rlayer_extent_infinite = is_extent_infinite_or_too_big(rlayer)
 
@@ -161,15 +175,18 @@ def calculate_base_processing_extent_in_rlayer_crs(map_canvas: QgsMapCanvas,
     elif processed_area_type == ProcessedAreaType.VISIBLE_PART:
         # transform visible extent from mapCanvas CRS to layer CRS
         active_extent_in_canvas_crs = map_canvas.extent()
+        print(f'active_extent_in_canvas_crs: {active_extent_in_canvas_crs}')
         canvas_crs = map_canvas.mapSettings().destinationCrs()
         t = QgsCoordinateTransform()
         t.setSourceCrs(canvas_crs)
         t.setDestinationCrs(rlayer.crs())
         expected_extent = t.transform(active_extent_in_canvas_crs)
+        print(f'expected_extent: {expected_extent}')
     else:
         raise Exception("Invalid processed are type!")
 
     expected_extent = round_extent_to_rlayer_grid(extent=expected_extent, rlayer=rlayer)
+    print(f'expected_extent rounded: {expected_extent}')
 
     if rlayer_extent_infinite:
         base_extent = expected_extent
