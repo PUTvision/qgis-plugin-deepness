@@ -24,18 +24,13 @@ def convert_meters_to_rlayer_units(rlayer: QgsRasterLayer, distance_m: float) ->
     :param rlayer: raster layer for which we want to convert meters to its units
     :param distance_m: distance in meters
     """
-    # TODO - potentially implement conversions from other units
-    # if rlayer.crs().mapUnits() != QgsUnitTypes.DistanceUnit.DistanceMeters:
-    #     # TODO - add support for more unit types
-    #     msg = f"Unsupported map units: {rlayer.crs().mapUnits()}"
-    #     raise Exception(msg)
+    if rlayer.crs().mapUnits() != QgsUnitTypes.DistanceUnit.DistanceMeters:
+        logging.warning(f"Map units are not meters but '{rlayer.crs().mapUnits()}'. It should be fine for most cases, but be aware.")
 
     # Now we support all units, but we need to convert them to meters
     # to have a consistent unit for the distance
     scaling_factor = QgsUnitTypes.fromUnitToUnitFactor(QgsUnitTypes.DistanceMeters, rlayer.crs().mapUnits())
     distance = distance_m * scaling_factor
-    # logging.warning(f"rlayer.crs().mapUnits(): {rlayer.crs().mapUnits()}")
-    # logging.warning(f"Scaling factor: {scaling_factor}, distance: {distance}")
     assert distance != 0
     return distance
 
