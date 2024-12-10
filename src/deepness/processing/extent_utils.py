@@ -2,15 +2,13 @@
 This file contains utilities related to Extent processing
 """
 
-from qgis.core import QgsCoordinateTransform
-from qgis.core import QgsRasterLayer
-from qgis.core import QgsRectangle
-from qgis.core import QgsVectorLayer
+import logging
+
+from qgis.core import QgsCoordinateTransform, QgsRasterLayer, QgsRectangle, QgsVectorLayer
 from qgis.gui import QgsMapCanvas
 
 from deepness.common.errors import OperationFailedException
-from deepness.common.processing_parameters.map_processing_parameters import ProcessedAreaType, \
-    MapProcessingParameters
+from deepness.common.processing_parameters.map_processing_parameters import MapProcessingParameters, ProcessedAreaType
 from deepness.processing.processing_utils import BoundingBox, convert_meters_to_rlayer_units
 
 
@@ -23,7 +21,14 @@ def round_extent_to_rlayer_grid(extent: QgsRectangle, rlayer: QgsRasterLayer) ->
     :param extent: Extent to round, needs to be in rlayer CRS units
     :param rlayer: layer detemining the grid
     """
+    # For some ortophotos grid spacing is close to (1.0, 1.0), while it shouldn't be.
+    # Seems like it is some bug or special "feature" that I do not understand.
+    # In that case, just return the extent as it is
     grid_spacing = rlayer.rasterUnitsPerPixelX(), rlayer.rasterUnitsPerPixelY()
+    if abs(grid_spacing[0] - 1.0) < 0.0001 and abs(grid_spacing[1] - 1.0) < 0.0001:
+        logging.warning('Grid spacing is close to 1.0, which is suspicious, returning extent as it is. It shouldn not be a problem for most cases.')
+        return extent
+
     grid_start = rlayer.extent().xMinimum(), rlayer.extent().yMinimum()
 
     x_min = grid_start[0] + int((extent.xMinimum() - grid_start[0]) / grid_spacing[0]) * grid_spacing[0]

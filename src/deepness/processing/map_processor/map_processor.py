@@ -170,7 +170,7 @@ class MapProcessor(QgsTask):
         """
         # TODO look for some inplace operation to save memory
         # cv2.copyTo(src=full_img, mask=area_mask_img, dst=full_img)  # this doesn't work due to implementation details
-        
+
         for i in range(full_img.shape[0]):
             full_img[i] = cv2.copyTo(src=full_img[i], mask=self.area_mask_img)
 
@@ -211,7 +211,7 @@ class MapProcessor(QgsTask):
 
                 if not tile_params.is_tile_within_mask(self.area_mask_img):
                     continue  # tile outside of mask - to be skipped
-                
+
                 tile_img = processing_utils.get_tile_image(
                     rlayer=self.rlayer, extent=tile_params.extent, params=self.params)
 
