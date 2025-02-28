@@ -3,7 +3,8 @@ from typing import List
 
 import cv2
 import numpy as np
-from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer
+from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer, QgsFields, QgsField
+from qgis.PyQt.QtCore import QVariant
 
 from deepness.common.processing_parameters.detection_parameters import DetectionParameters
 from deepness.processing import processing_utils
@@ -131,6 +132,12 @@ class MapProcessorDetection(MapProcessorWithModel):
 
             features = []
             for det in filtered_bounding_boxes:
+                fields = QgsFields()
+                fields.append(QgsField('confidence1', QVariant.Int))
+                fields.append(QgsField('confidence2', QVariant.Int))
+                feature = QgsFeature(fields)
+                feature.setAttributes([det.conf, det.conf])
+
                 if det.mask is None:
                     bbox_corners_pixels = det.bbox.get_4_corners()
                     bbox_corners_crs = processing_utils.transform_points_list_xy_to_target_crs(
@@ -138,7 +145,6 @@ class MapProcessorDetection(MapProcessorWithModel):
                         extent=self.extended_extent,
                         rlayer_units_per_pixel=self.rlayer_units_per_pixel,
                     )
-                    feature = QgsFeature()
                     polygon_xy_vec_vec = [
                         bbox_corners_crs
                     ]
@@ -167,7 +173,6 @@ class MapProcessorDetection(MapProcessorWithModel):
                             rlayer_units_per_pixel=self.rlayer_units_per_pixel,
                         )
 
-                        feature = QgsFeature()
                         polygon_xy_vec_vec = [
                             mask_corners_crs
                         ]
@@ -217,7 +222,7 @@ class MapProcessorDetection(MapProcessorWithModel):
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
         filtered_bounding_boxes = sorted(filtered_bounding_boxes, reverse=True)
-        
+
         pick_ids_kde = MapProcessorDetection.non_max_kdtree(filtered_bounding_boxes, iou_threshold)
 
         filtered_bounding_boxes = [x for i, x in enumerate(filtered_bounding_boxes) if i in pick_ids_kde]
