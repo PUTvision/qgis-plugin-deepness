@@ -27,6 +27,9 @@ jobs:
     - name: Update
       run: |
         sudo apt update
+    - if: matrix.os == 'ubuntu-24.04'
+      run: |
+        sudo apt-get update && sudo apt-get install -y protobuf-compiler
     - name: Install qgis
       run: |
         sudo apt install -yq qgis
