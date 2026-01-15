@@ -3,19 +3,34 @@ from typing import List
 
 import cv2
 import numpy as np
-from qgis.core import QgsFeature, QgsGeometry, QgsProject, QgsVectorLayer
+from qgis.core import (
+    Qgis,
+    QgsFeature,
+    QgsField,
+    QgsFields,
+    QgsGeometry,
+    QgsPointXY,
+    QgsProject,
+    QgsRectangle,
+    QgsVectorLayer,
+)
 from qgis.PyQt.QtCore import QVariant
-from qgis.core import QgsFields, QgsField
 
-from deepness.common.processing_parameters.detection_parameters import DetectionParameters
+from deepness.common.processing_parameters.detection_parameters import (
+    DetectionParameters,
+)
 from deepness.processing import processing_utils
-from deepness.processing.map_processor.map_processing_result import (MapProcessingResult, MapProcessingResultCanceled,
-                                                                     MapProcessingResultSuccess)
-from deepness.processing.map_processor.map_processor_with_model import MapProcessorWithModel
+from deepness.processing.map_processor.map_processing_result import (
+    MapProcessingResult,
+    MapProcessingResultCanceled,
+    MapProcessingResultSuccess,
+)
+from deepness.processing.map_processor.map_processor_with_model import (
+    MapProcessorWithModel,
+)
 from deepness.processing.map_processor.utils.ckdtree import cKDTree
-from deepness.processing.models.detector import Detection, Detector
+from deepness.processing.models.detector import Detection, Detector, DetectorType
 from deepness.processing.tile_params import TileParams
-from deepness.processing.models.detector import DetectorType
 
 
 class MapProcessorDetection(MapProcessorWithModel):
@@ -130,7 +145,7 @@ class MapProcessorDetection(MapProcessorWithModel):
         for channel_id in channels:
             filtered_bounding_boxes = [det for det in bounding_boxes if det.clss == channel_id]
             print(f'Detections for class {channel_id}: {len(filtered_bounding_boxes)}')
-            
+
             vlayer = QgsVectorLayer("multipolygon", self.model.get_channel_name(0, channel_id), "memory")
             vlayer.setCrs(self.rlayer.crs())
             prov = vlayer.dataProvider()
@@ -186,7 +201,7 @@ class MapProcessorDetection(MapProcessorWithModel):
                 feature.setGeometry(geometry)
                 feature.setAttributes([float(det.conf)])
                 features.append(feature)
-            
+
             #vlayer = QgsVectorLayer("multipolygon", self.model.get_channel_name(0, channel_id), "memory")
             #vlayer.setCrs(self.rlayer.crs())
             #prov = vlayer.dataProvider()
@@ -229,19 +244,20 @@ class MapProcessorDetection(MapProcessorWithModel):
 
         filtered_bounding_boxes = [x for i, x in enumerate(bounding_boxes) if i in pick_ids]
         filtered_bounding_boxes = sorted(filtered_bounding_boxes, reverse=True)
-        
-        pick_ids_kde = MapProcessorDetection.non_max_kdtree(filtered_bounding_boxes, iou_threshold)
+
+        pick_ids_kde = MapProcessorDetection.non_max_kdtree(filtered_bounding_boxes, iou_threshold, with_rot)
 
         filtered_bounding_boxes = [x for i, x in enumerate(filtered_bounding_boxes) if i in pick_ids_kde]
 
         return filtered_bounding_boxes
 
     @staticmethod
-    def non_max_kdtree(bounding_boxes: List[Detection], iou_threshold: float) -> List[int]:
+    def non_max_kdtree(bounding_boxes: List[Detection], iou_threshold: float, with_rot: bool = False) -> List[int]:
         """ Remove overlapping bounding boxes using kdtree
 
         :param bounding_boxes: List of bounding boxes in (xyxy format)
         :param iou_threshold: Threshold for intersection over union
+        :param with_rot: If True, use rotated intersection calculation
         :return: Pick ids to keep
         """
 
@@ -264,7 +280,11 @@ class MapProcessorDetection(MapProcessorWithModel):
                 if i == j:
                     continue
 
-                iou = bbox.bbox.calculate_intersection_over_smaler_area(bounding_boxes[j].bbox)
+                if with_rot:
+                    iou = MapProcessorDetection._calculate_rotated_intersection_over_smaller_area(
+                        bbox.bbox, bounding_boxes[j].bbox)
+                else:
+                    iou = bbox.bbox.calculate_intersection_over_smaler_area(bounding_boxes[j].bbox)
 
                 if iou > iou_threshold:
                     removed_ids.add(j)
@@ -272,6 +292,62 @@ class MapProcessorDetection(MapProcessorWithModel):
             pick_ids.add(i)
 
         return pick_ids
+
+    @staticmethod
+    def _calculate_rotated_intersection_over_smaller_area(bbox1, bbox2):
+        """Calculate intersection over smaller area for rotated bounding boxes
+
+        :param bbox1: First bounding box
+        :param bbox2: Second bounding box
+        :return: Intersection over smaller area ratio
+        """
+
+        # Helper function to create a rotated QgsGeometry rectangle
+        def create_rotated_geom(bbox):
+            x1, y1, x2, y2 = bbox.x_min, bbox.y_min, bbox.x_max, bbox.y_max
+            rotation = bbox.rot
+
+            center_x = (x1 + x2) / 2
+            center_y = (y1 + y2) / 2
+
+            # Create a rectangle using QgsRectangle
+            rect = QgsRectangle(QgsPointXY(x1, y1), QgsPointXY(x2, y2))
+
+            # Convert to QgsGeometry
+            geom = QgsGeometry.fromRect(rect)
+
+            # Rotate the geometry around its center
+            result = geom.rotate(np.degrees(rotation), QgsPointXY(center_x, center_y))
+
+            if result == Qgis.GeometryOperationResult.Success:
+                return geom
+            else:
+                return QgsGeometry()
+
+        # Create geometries for both bounding boxes
+        geom1 = create_rotated_geom(bbox1)
+        geom2 = create_rotated_geom(bbox2)
+
+        # Compute the intersection geometry
+        intersection_geom = geom1.intersection(geom2)
+
+        # Check if intersection is empty
+        if intersection_geom.isEmpty():
+            intersection_area = 0.0
+        else:
+            # Compute the intersection area
+            intersection_area = intersection_geom.area()
+
+        # Calculate areas of both boxes (consistent with compute_rotated_iou)
+        area1 = (bbox1.x_max - bbox1.x_min + 1) * (bbox1.y_max - bbox1.y_min + 1)
+        area2 = (bbox2.x_max - bbox2.x_min + 1) * (bbox2.y_max - bbox2.y_min + 1)
+
+        # Return intersection over smaller area
+        smaller_area = min(area1, area2)
+        if smaller_area > 0:
+            return intersection_area / smaller_area
+        else:
+            return 0.0
 
     @staticmethod
     def convert_bounding_boxes_to_absolute_positions(bounding_boxes_relative: List[Detection],
