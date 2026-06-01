@@ -346,7 +346,7 @@ def check_pip_installed() -> bool:
 def check_required_packages_and_install_if_necessary(iface):
     os.makedirs(PACKAGES_INSTALL_DIR, exist_ok=True)
     if PACKAGES_INSTALL_DIR not in sys.path:
-        sys.path.append(PACKAGES_INSTALL_DIR)  # TODO: check for a less intrusive way to do this
+        sys.path.insert(0, PACKAGES_INSTALL_DIR)  # ensure plugin packages take priority over system packages
 
     if are_packages_importable():
         # if packages are importable we are fine, nothing more to do then
